@@ -57,8 +57,6 @@ class Post(models.Model):
     reviewer_comments = models.TextField(blank=True)
     reviewer = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='reviewed_posts')
 
-    is_translation = models.BooleanField(default=False)
-    
     def __str__(self):
         return self.title + "\n" + self.description
 
@@ -67,6 +65,9 @@ class Post(models.Model):
             category, created = Category.objects.get_or_create(name='الذكاء الاصطناعي')
             self.category = category
         super(Post, self).save(*args, **kwargs)
+
+class TranslationPost(Post):
+    translator = models.CharField(max_length=400)
 
 class KeywordTranslation(models.Model):
     english_keyword = models.CharField(max_length=200)

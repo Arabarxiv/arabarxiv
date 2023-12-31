@@ -54,7 +54,15 @@
     <ul class="nav">
       <li class="scroll-to-section"><a class="nav-link" href="/posts">قائمة المشاركات</a></li>
       <li class="scroll-to-section"><a class="nav-link" href="/terms">قائمة المصطلحات</a></li>
-      <li class="scroll-to-section"><a class="nav-link" href="/create-post">تقديم منشور</a></li>
+      <li class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle" href="#" id="submitPostDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            تقديم منشور
+        </a>
+        <div class="dropdown-menu" aria-labelledby="submitPostDropdown" style="background-color:black;">
+            <a class="dropdown-item" href="/create-post">تقديم منشور أصلي</a>
+            <a class="dropdown-item" href="/create-translation-post">تقديم ترجمة</a>
+        </div>
+    </li>
       
       {% if user.is_authenticated %}
       <li class="nav-item dropdown">

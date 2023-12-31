@@ -20,6 +20,7 @@ urlpatterns = [
     path("authors", views.authors, name="authors"), 
     path('search_results', views.search_posts, name="search"), 
     path("become_reviewer", views.become_reviewer, name="become_reviewer"),
+    path('create-translation-post', views.create_translation_post, name='create_translation_post'),
 ]
 
 

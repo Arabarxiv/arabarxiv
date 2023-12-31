@@ -3,7 +3,7 @@ from .forms import RegisterForm, PostForm
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.models import User, Group
-from .models import Post, KeywordTranslation, MainCategory, Category
+from .models import Post, KeywordTranslation, MainCategory, Category, TranslationPost
 from .forms import CustomLoginForm
 from django.contrib import messages
 from googleapiclient.discovery import build
@@ -93,7 +93,7 @@ def send_rejected(user, post):
 def home(request):
     posts = Post.objects.all()
     categories = MainCategory.objects.all()
-    
+
     return render(request, 'main/home.html', {"posts": posts,
                                               "categories":categories, 
                                               "is_mod": request.user.groups.filter(name='mod').exists()})
@@ -128,6 +128,23 @@ def create_post(request):
 
     return render(request, 'main/create_post.html', {"form": form})
 
+
+
+@login_required(login_url="/login")
+@permission_required("main.add_translationpost", login_url="/login", raise_exception=True)  # Update permission
+def create_translation_post(request):
+    if request.method == 'POST':
+        form = TranslationPostForm(request.POST, request.FILES)
+        if form.is_valid():
+            translation_post = form.save(commit=False)
+            translation_post.author = request.user  # Set the author as the current user
+            translation_post.save()
+            send_thank_you_email(request.user, translation_post)  # Send a thank you email
+            return redirect("/user_profile")  # Redirect to a relevant page after saving
+    else:
+        form = TranslationPostForm()  # Initialize an empty form for GET request
+
+    return render(request, 'main/create_translation_post.html', {"form": form})  # Render the specific template for creating a translation post
 
 def sign_up(request):
     if request.method == 'POST':

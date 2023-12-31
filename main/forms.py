@@ -6,7 +6,7 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.utils.translation import gettext_lazy as _
 from django_countries.widgets import CountrySelectWidget
 
-from .models import Post 
+from .models import Post, TranslationPost
 class RegisterForm(UserCreationForm):
     email = forms.EmailField(required=True, label=('البريد الإلكتروني'))
 
@@ -25,13 +25,12 @@ class RegisterForm(UserCreationForm):
 class PostForm(forms.ModelForm):
     class Meta:
         model = Post
-        fields = ['title',  "authors", 'description',  "keywords", "is_translation",'category', "comments", "external_doi",  "pdf"]  # Add 'category' here
+        fields = ['title',  "authors", 'description',  "keywords",'category', "comments", "external_doi",  "pdf"]  # Add 'category' here
         labels = {
             'title': 'عنوان المقال',
             "authors": "مؤلف المقال",
             'description': 'ملخص',
-            "keywords":"الكلمات الدالة", 
-            "is_translation": "هل المقال ترجمة؟", 
+            "keywords":"الكلمات الدالة",
             'category': 'التصنيف',  # Add a label for 'category'
             "comments": "تعليق", 
             "external_doi": "DOI", 
@@ -41,6 +40,24 @@ class PostForm(forms.ModelForm):
             'comments': 'إذا لم يكن التصنيف موجود، يرجى ذكره هنا.',
         }
 
+class TranslationPostForm(forms.ModelForm):
+    class Meta:
+        model = TranslationPost
+        fields = ['title', "authors", "translator", 'description', "keywords", 'category', "comments", "external_doi", "pdf"]
+        labels = {
+            'title': 'عنوان المقال',
+            "authors": "مؤلف المقال",
+            'description': 'ملخص',
+            "keywords": "الكلمات الدالة",
+            'category': 'التصنيف',
+            "comments": "تعليق",
+            "external_doi": "DOI",
+            "pdf": "الملف PDF",
+            'translator': 'مترجم المقال',  # Label for the translator field
+        }
+        help_texts = {
+            'comments': 'إذا لم يكن التصنيف موجود، يرجى ذكره هنا.',
+        }
 
 class CustomLoginForm(AuthenticationForm):
     def __init__(self, request=None, *args, **kwargs):
