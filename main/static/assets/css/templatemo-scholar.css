@@ -42,6 +42,10 @@ figure, header, nav, section, article, aside, footer, figcaption {
   text-align: right;
 }
 
+#id_is_translation{
+  margin-left: 50px; 
+}
+
 .notification-indicator {
   display: inline-block;
   margin-left: 5px;

@@ -167,7 +167,14 @@
                               <tr>
                                   <td><strong>{{ post.title }}</strong></td>
                                   <td>{{ post.created_at }}</td>
-                                  <td>{% if post.status == "َApproved" %}تم الموافقة{% elif post.status == "Rejected" %}لم يتم الموافقة {% else %} قيد الإنتظار  {% endif %}</td>
+                                  <td>{% if post.status == "َApproved" %}
+                                    تم الموافقة
+                                    {% elif post.status == "Rejected" %}
+                                    لم يتم الموافقة 
+                                    {% else %}
+                                     قيد الإنتظار  
+                                     {% endif %}
+                                  </td>
                               </tr>
                           {% endif %}
                       {% endfor %}
