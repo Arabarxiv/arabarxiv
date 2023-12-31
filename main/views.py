@@ -312,6 +312,7 @@ def review_post(request):
     current_reviewer = request.user  # You may need to adjust this based on your user model
     assigned_posts = Post.objects.all()
     mod_group = Group.objects.get(name='mod')
+    is_author = Post.objects.filter(author=request.user).exists()
     # Get users in the "mod" group
     mod_users = User.objects.filter(Q(groups=mod_group) | Q(is_staff=True))
 
@@ -340,7 +341,8 @@ def review_post(request):
 
     context = {
        "posts": assigned_posts, 
-       "moderators":mod_users
+       "moderators":mod_users, 
+       "is_author": is_author
     }
 
     return render(request, 'main/review.html', context)
