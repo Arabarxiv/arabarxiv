@@ -12,24 +12,22 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 
 from pathlib import Path
 import os 
-import django_on_heroku
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-django_on_heroku.settings(locals())
 
+import django_on_heroku
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure--(w5ln91oh)djklg6ap7i-d15y!dxk851gto^uyf^)(mvib@ul'
+#SECRET_KEY = 'django-insecure--(w5ln91oh)djklg6ap7i-d15y!dxk851gto^uyf^)(mvib@ul'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
 ALLOWED_HOSTS = []
 
-MEDIA_URL = '/home/haadj/Arabarxiv/media/'
-MEDIA_ROOT = MEDIA_URL
 # Application definition
 
 INSTALLED_APPS = [
@@ -46,10 +44,6 @@ INSTALLED_APPS = [
     'widget_tweaks'
 ]
 
-GOOGLE_DRIVE_STORAGE_JSON_KEY_FILE = '/home/haadj/Arabarxiv/arabarxiv-d287796b519e.json'
-GOOGLE_DRIVE_STORAGE_KEY = "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"
-GOOGLE_DRIVE_STORAGE_SERVICE_EMAIL = "haadjer.benmeziane@gmail.com"
-GOOGLE_DRIVE_STORAGE_MEDIA_ROOT = 'https://drive.google.com/drive/folders/1vuHwP6JIAmsrS8ioifV3wNvwS7MSgEOu?usp=sharing'
 
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 
@@ -64,14 +58,15 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+django_on_heroku.settings(locals())
+
 ROOT_URLCONF = 'arabicArxiv.urls'
 AUTH_PROFILE_MODULE = 'main.UserProfile'
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
-EMAIL_HOST_USER = 'arabarxiv@gmail.com'
-EMAIL_HOST_PASSWORD = 'juln nhlq tbyg xuev'
 EMAIL_USE_TLS = True
 EMAIL_USE_SSL = False
 
@@ -152,3 +147,4 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 LOGIN_REDIRECT_URL = "/home"
 LOGOUT_REDIRECT_URL = '/logout'
+
