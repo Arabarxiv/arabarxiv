@@ -1,0 +1,165 @@
+{% extends 'main/base.html' %}
+
+{% block title %}مراجعة المشاركات{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <!-- قائمة المشاركات المعينة للمراجعة -->
+            <h1>المشاركات المعينة للمراجعة</h1>
+{% if posts %}
+<table class="table">
+    <thead>
+        <tr>
+            <th>العنوان</th>
+            <th>المؤلفين</th>
+            <th>رابط الـ PDF</th>
+            <th>مراجعة</th>
+            <th>التعليق</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for post in posts %}
+            {% if post.reviewer == user %}
+                <tr>
+                    <td>{{ post.title }}</td>
+                    <td>{{ post.authors }}</td>
+                    <td>
+                        {% with modified_url=post.pdf.url|slice:':-16' %}
+                        <a href="{{ modified_url }}" target="_blank">عرض الـ PDF</a>
+                    {% endwith %}
+                    </td>
+                    
+                        {% if post.status == "Pending" %}
+                        <td>
+                        <button class="btn btn-primary review-button" data-toggle="modal" data-target="#reviewModal{{ post.id }}">
+                            مراجعة
+                        </button>
+                    </td>
+                    
+                        {% else %}
+                        <td>
+                            {% if post.status == "Approved"%}
+                            تمت الموافقة عليها         
+                            {% else%}
+                            تم رفضها    
+
+                             {% endif%}</td>
+                        
+                        
+                        {%endif%}
+                        <td>{{post.reviewer_comments}}</td>
+                </tr>
+            {% endif %}
+        {% empty %}
+            <tr>
+                <td colspan="4">
+                    <p>لا توجد مشاركات معينة للمراجعة.</p>
+                </td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>لا توجد مشاركات معينة للمراجعة.</p>
+{% endif %}
+
+
+            <!-- نافذة المراجعة -->
+            {% for post in posts %}
+            {% if post.reviewer == user %}
+                <div class="modal fade" id="reviewModal{{ post.id }}" tabindex="-1" role="dialog" aria-labelledby="reviewModalLabel{{ post.id }}" aria-hidden="true">
+                    <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="reviewModalLabel{{ post.id }}">مراجعة المشاركة: {{ post.title }}</h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="إغلاق">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body">
+                                <form method="post" action="/review" id="review">
+                                    {% csrf_token %}
+                                    <div class="form-group">
+                                        <label for="review">تعليق المراجعة</label>
+                                        <textarea class="form-control" id="review" name="review_comment" rows="4" required></textarea>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="status">حالة المراجعة</label>
+                                        <select class="form-control" id="status" name="review_status" required>
+                                            <option value="approved">تمت الموافقة عليها</option>
+                                            <option value="rejected">تم رفضها</option>
+                                        </select>
+                                    </div>
+                                    <input type="hidden" name="post_id" value="{{ post.id }}">
+                                    <button type="submit" class="btn btn-primary">إرسال المراجعة</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endif%}
+            {% endfor %}
+
+            {% if user.is_staff %}
+            <h2>المشاركات في انتظار المراجعة</h2>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>عنوان المشاركة</th>
+                            <th>تحديد مشرف</th>
+                            <th>الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for post in posts %}
+                            {% if post.status == 'Pending' and post.reviewer == None %}
+                                <tr>
+                                    <form method="post" action="review/assign_mod" id="reviwer_assign">
+                                        {% csrf_token %}
+                                    <td>{{ post.title }}</td>
+                                    <td>
+                                        <div class="form-group">
+                                            <select class="form-control" name="moderator_{{ post.id }}" required>
+                                                <option value="">اختر مشرفًا</option>
+                                                {% for moderator in moderators %}
+                                                    <option value="{{ moderator.id }}">{{ moderator.username }}</option>
+                                                {% endfor %}
+                                            </select>
+                                            <input type="hidden" name="post_id" value="{{ post.id }}">
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <button type="submit" class="btn btn-primary">تعيين مشرف</button>
+                                    </td>
+                                </form>
+                                </tr>
+                            {% elif post.status == "Pending" %}
+                            <tr>
+                                
+                                <td>{{ post.title }}</td>
+                                <td>
+                                   {{post.reviewer.username}}
+                                </td>
+                                <td>
+                                    في قيد المراجعة من  {{post.created_at}}
+                                 </td>
+                            </tr>
+                        {% endif%}
+                        {% empty %}
+                            <tr>
+                                <td colspan="3">
+                                    <p>لا توجد مشاركات في انتظار المراجعة.</p>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            
+        {% endif %}
+        
+        </div>
+    </div>
+</div>
+{% endblock content %}

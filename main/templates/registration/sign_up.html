@@ -1,0 +1,19 @@
+{% extends "main/base.html" %}
+{% block title %}
+تسجيل جديد
+{% endblock title %}
+{% load crispy_forms_tags %} 
+{% block content %}
+
+<div class="container"> <!-- Start container -->
+    <div class="row justify-content-center">
+        <div class="col-md-6"> 
+<form method="post">
+{% csrf_token %}{{ form|crispy }}
+<p>هل لديك حساب؟ قم بإنشاء واحد <a href="/login">هنا</a></p>
+<button type="submit" class="btn btn-success">تسجيل</button>
+</form>
+</div>
+</div>
+</div>
+{% endblock content %}

@@ -1,0 +1,25 @@
+{% extends "main/base.html" %}
+{% block title %}تسجيل الدخول{% endblock %}
+
+{% block content %}
+<div class="container"> <!-- Start container -->
+    <div class="row justify-content-center">
+        <div class="col-md-6"> <!-- Adjust the column size as needed -->
+            <form method="post">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="id_username">اسم المستخدم</label>
+                    <input type="text" name="username" class="form-control" id="id_username" required>
+                </div>
+                <div class="form-group">
+                    <label for="id_password">كلمة المرور</label>
+                    <input type="password" name="password" class="form-control" id="id_password" required>
+                </div>
+                <button type="submit" class="btn btn-success">تسجيل الدخول</button>
+            </form>
+
+            <p class="mt-3">ليس لديك حساب؟ <a href="/sign-up">سجل هنا</a></p>
+        </div>
+    </div>
+</div> <!-- End container -->
+{% endblock %}

@@ -1,0 +1,136 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <title>{% block title %}ArabArxiv{% endblock %}</title>
+
+    <link href="{% static 'vendor/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+    <!-- Additional CSS Files -->
+
+    <link rel="stylesheet" href="{% static 'assets/css/fontawesome.css' %}">
+    <link rel="stylesheet" href="{% static 'assets/css/templatemo-scholar.css' %}">
+    <link rel="stylesheet" href="{% static 'assets/css/owl.css' %}">
+    <link rel="stylesheet" href="{% static 'assets/css/animate.css' %}">
+    <link rel="stylesheet"href="https://unpkg.com/swiper@7/swiper-bundle.min.css"/>
+        <!-- Include Bootstrap CSS and JavaScript -->
+
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+
+</head>
+<body>
+  <div id="js-preloader" class="js-preloader">
+    <div class="preloader-inner">
+      <span class="dot"></span>
+      <div class="dots">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+    </div>
+  </div>
+  <!-- ***** Header Area Start ***** -->
+  <header class="header-area header-sticky background-header">
+    <div class="container">
+        <div class="row">
+            <div class="col-12">
+                
+    <nav class="main-nav">
+      <a href="/home" class="logo">
+        <h1>أرشيف العرب </h1>
+    </a>
+    <!-- ***** Serach Start ***** -->
+    <div class="search-input">
+      <form id="search" action="/search_results">
+        <input type="text" placeholder="ابحث عن منشور" id='searchText' name="searchKeyword" onkeypress="handle" />
+        <i class="fa fa-search"></i>
+      </form>
+    </div>
+
+    <!-- ***** Serach Start ***** -->
+    <ul class="nav">
+      <li class="scroll-to-section"><a class="nav-link" href="/posts">قائمة المشاركات</a></li>
+      <li class="scroll-to-section"><a class="nav-link" href="/terms">قائمة المصطلحات</a></li>
+      <li class="scroll-to-section"><a class="nav-link" href="/create-post">منشور</a></li>
+      
+      {% if user.is_authenticated %}
+      <li class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            تم تسجيل الدخول كـ  <b>{{ user.username }}</b>
+            {% if not user.userprofile.completed or has_reviews %}
+                <span class="notification-indicator"></span>
+            {% endif %}
+        </a>
+        <div class="dropdown-menu" aria-labelledby="userDropdown" style="background-color:black;">
+            <a class="dropdown-item" href="/user_profile">صفحة الملف الشخصي 
+              {% if not user.userprofile.completed %}
+              <span class="notification-indicator"></span>
+              {% endif %}
+           </a>
+            <a class="dropdown-item" href="/review">صفحة مراجعة المهام 
+              {% if has_reviews %}
+                <span class="notification-indicator"></span>
+            {% endif %}
+            </a>
+            <div class="dropdown-divider"></div>
+            <a class="dropdown-item" href="logout">تسجيل الخروج</a>
+        </div>
+    </li>
+    {% else %}
+    <li class="nav-item">
+        <a class="nav-link" href="/login">تسجيل الدخول</a>
+    </li>
+      {% endif %}
+  </ul> 
+  <a class='menu-trigger'>
+    <span>قائمة</span>
+</a>  
+    </nav>
+            </div>
+        </div>
+    </div>
+  </header>
+
+  
+  <div class="services section" id="services">
+      <div class="row">
+        <div class="col-lg-12">
+          <!-- ***** Banner Section Start ***** -->
+  <div class="palestinian-culture-banner">
+    <div class="container text-center">
+      <div class="d-inline-flex align-items-center">
+        <img src="{% static 'assets/images/palestine.png' %}" alt="Palestinian Flag" style="height: 30px;">
+        <p class="mb-0" style="margin-right: 10px;">نشجع المنشورات و المقالات حول ثقافة وتاريخ الحضارة الفلسطينية , <a href="/palestine" class="more-info-link">للمزيد من المعلومات</a> </p>
+      </div></div>
+  </div></div>
+</div>
+</div>
+
+    <div>
+        {% block content %}
+        
+        {% endblock content %}
+    </div>
+  
+
+
+<footer>
+  <div class="container">
+    <div class="col-lg-12">
+      <p>جميع الحقوق محفوظة لأرشيف العرب  &nbsp;&nbsp;&nbsp; </p>
+    </div>
+  </div>
+</footer>
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script src="{% static 'assets/js/isotope.min.js' %}"></script>
+<script src="{% static 'assets/js/owl-carousel.js' %}"></script>
+<script src="{% static 'assets/js/counter.js' %}"></script>
+<script src="{% static 'assets/js/custom.js' %}"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+<script src="{% static 'vendor/bootstrap/js/bootstrap.min.js' %}"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</html>

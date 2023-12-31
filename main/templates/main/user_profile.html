@@ -1,0 +1,186 @@
+{% extends 'main/base.html' %}
+{% block title %}الملف الشخصي{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="row">
+    <div class="col-md-4">
+      <div class="card mt-4">
+        <div class="card-body">
+          <h2 class="card-title">{{ user.username }}</h2>
+          <div class="profile-attribute">
+            <p><strong>الاسم الكامل:</strong> {{ user.first_name }} {{ user.last_name }} <button class="btn btn-link" data-toggle="modal" data-target="#affiliationModal" id="affiliationButton"><i class="fas fa-edit"></i></button></p>
+          </div>
+            <div class="profile-attribute">
+              <p><strong>الانتماء:</strong> {{ user.userprofile.affiliation }} <button class="btn btn-link" data-toggle="modal" data-target="#affiliationModal" id="affiliationButton"><i class="fas fa-edit"></i></button></p>
+            </div>
+            
+            <div class="profile-attribute">
+              <p><strong>الدولة:</strong> {{ user.userprofile.country.name }} <button class="btn btn-link"  data-toggle="modal" data-target="#countryModal" id="countryButton"><i class="fas fa-edit"></i></button></p>
+            </div>
+            
+            <div class="profile-attribute">
+              <p><strong>الموقع الإلكتروني:</strong> {{ user.userprofile.website }} <button class="btn btn-link" data-toggle="modal"  data-target="#websiteModal" id="websiteButton"><i class="fas fa-edit"></i></button></p>
+            </div>
+            
+            <div class="profile-attribute">
+              <p><strong>المهنة:</strong> {{ user.userprofile.career }} <button class="btn btn-link" data-toggle="modal"  data-target="#careerModal" id="careerButton"><i class="fas fa-edit"></i></button></p>
+            </div>
+            
+            <div class="profile-attribute">
+              <p><strong>التصنيف الرئيسي:</strong> {{ user.userprofile.main_category }} <button class="btn btn-link" data-toggle="modal" data-target="#mainCategoryModal" id="mainCategoryButton"><i class="fas fa-edit"></i></button></p>
+            </div>
+            
+            
+
+          <!-- Modify Affiliation Modal -->
+          <div class="modal fade" id="affiliationModal" tabindex="-1" role="dialog" aria-labelledby="affiliationModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="affiliationModalLabel">تعديل الانتماء</h5>
+                  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                  </button>
+                </div>
+                {% load crispy_forms_tags %} 
+                <div class="modal-body">
+                  <form method="post" action="/user_profile">
+                    {% csrf_token %}
+                    {{ affiliation_form|crispy }}
+                    <button type="submit" class="btn btn-primary">حفظ التغييرات</button>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Modify Country Modal -->
+          <div class="modal fade" id="countryModal" tabindex="-1" role="dialog" aria-labelledby="countryModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="countryModalLabel">تعديل الدولة</h5>
+                  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                  </button>
+                </div>
+                <div class="modal-body">
+                  
+                  <form method="post" action="/user_profile">
+                    {% csrf_token %}
+                    {{ country_form.country.label_tag }}
+                    {{ country_form.country }}
+                    <button type="submit" class="btn btn-primary">حفظ التغييرات</button>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        
+          <!-- Modify Website Modal -->
+          <div class="modal fade" id="websiteModal" tabindex="-1" role="dialog" aria-labelledby="websiteModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="websiteModalLabel">تعديل الموقع الإلكتروني</h5>
+                  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                  </button>
+                </div>
+                <div class="modal-body">
+                  <form method="post" action="/user_profile">
+                    {% csrf_token %}
+                    {{ website_form.as_p }}
+                    <button type="submit" class="btn btn-primary">حفظ التغييرات</button>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Modify Career Modal -->
+          <div class="modal fade" id="careerModal" tabindex="-1" role="dialog" aria-labelledby="careerModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="careerModalLabel">تعديل المهنة</h5>
+                  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                  </button>
+                </div>
+                <div class="modal-body">
+                  <form method="post" action="/user_profile">
+                    {% csrf_token %}
+                    {{ career_form.as_p }}
+                    <button type="submit" class="btn btn-primary">حفظ التغييرات</button>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          
+          <!-- Modify Main Category Modal -->
+          <div class="modal fade" id="mainCategoryModal" tabindex="-1" role="dialog" aria-labelledby="mainCategoryModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="mainCategoryModalLabel">تعديل التصنيف الرئيسي</h5>
+                  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                  </button>
+                </div>
+                <div class="modal-body">
+                  <form method="post" action="/user_profile">
+                    {% csrf_token %}
+                    {{ main_category_form.as_p }}
+                    <button type="submit" class="btn btn-primary">حفظ التغييرات</button>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Similar modals for Website, Career, Main Category -->
+          <!-- Modify Website Modal -->
+          <!-- Modify Career Modal -->
+          <!-- Modify Main Category Modal -->
+        </div>
+      </div>
+    </div>
+    <div class="col-md-8">
+      <!-- Submitted Posts Card -->
+      <div class="card mt-4">
+          <div class="card-body">
+              <h2 class="card-title">المشاركات المقدمة</h2>
+              <table class="table table-bordered">
+                  <thead>
+                      <tr>
+                          <th>العنوان</th>
+                          <th>تاريخ التقديم</th>
+                          <th>الحالة</th>
+                      </tr>
+                  </thead>
+                  <tbody>
+                      {% for post in posts %}
+                          {% if post.author == user %}
+                              <tr>
+                                  <td><strong>{{ post.title }}</strong></td>
+                                  <td>{{ post.created_at }}</td>
+                                  <td>{% if post.status == "َApproved" %}تم الموافقة{% elif post.status == "Rejected" %}لم يتم الموافقة {% else %} قيد الإنتظار  {% endif %}</td>
+                              </tr>
+                          {% endif %}
+                      {% endfor %}
+                  </tbody>
+              </table>
+          </div>
+      </div>
+      <div class="mt-4">
+        <p>إذا كان لديك أي استفسار أو مشكلة، يُرجى التواصل معنا عبر البريد الإلكتروني:</p>
+        <p><strong>submission_arabarxiv@gmail.com</strong></p>
+    </div>
+  </div>
+</div>
+</div>
+
+{% endblock %}

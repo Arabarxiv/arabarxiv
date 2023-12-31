@@ -1,0 +1,37 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <title>Thank You for Your Submission</title>
+    <link href="{% static 'vendor/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+    <!-- Additional CSS Files -->
+
+    <link rel="stylesheet" href="{% static 'assets/css/fontawesome.css' %}">
+    <link rel="stylesheet" href="{% static 'assets/css/templatemo-scholar.css' %}">
+    <link rel="stylesheet" href="{% static 'assets/css/owl.css' %}">
+    <link rel="stylesheet" href="{% static 'assets/css/animate.css' %}">
+    <link rel="stylesheet"href="https://unpkg.com/swiper@7/swiper-bundle.min.css"/>
+        <!-- Include Bootstrap CSS and JavaScript -->
+
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    <header style="background-color: #005109; text-align: center; padding: 20px;">
+        <h1 style="color: white;">أرشيف العرب</h1>
+    </header>
+    <div style="margin-top: 30px; padding: 20px;">
+        <p>مرحبًا،</p>
+        <p>تم قبول مشاركتكم الأخيرة بعنوان "{{ post_title }}" للنشر على منصتنا. تهانينا!</p>
+        <p>تقديراً لجهودكم، نعتقد أن مساهمتكم ستقدم رؤى قيمة لمجتمعنا. المشاركة متاحة الآن ويمكن مشاهدتها من قبل جمهورنا <a href="[رابط المشاركة المنشورة]">هنا</a>.</p>
+        <p>شكرًا لمساهمتكم القيمة، ونتطلع إلى المزيد من المساهمات منكم في المستقبل.</p>
+        <p>إذا كان لديكم أي أسئلة أو تحتاجون إلى مزيد من المساعدة، فلا تترددوا في الاتصال بنا.</p>
+        <p>بأطيب التحيات،</p>
+        أرشيف العرب
+    </div>
+
+</body>
+</html>

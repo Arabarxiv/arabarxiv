@@ -1,0 +1,91 @@
+from django import forms 
+
+from django.contrib.auth.forms import UserCreationForm, UsernameField
+from django.contrib.auth.models import User
+from django.contrib.auth.forms import AuthenticationForm
+from django.utils.translation import gettext_lazy as _
+from django_countries.widgets import CountrySelectWidget
+
+from .models import Post 
+class RegisterForm(UserCreationForm):
+    email = forms.EmailField(required=True, label=('البريد الإلكتروني'))
+
+    class Meta:
+        model = User
+        fields = ["username", "email", "first_name", "last_name", "password1", "password2"]
+
+    def __init__(self, *args, **kwargs):
+        super(RegisterForm, self).__init__(*args, **kwargs)
+        self.fields['username'].label = 'اسم المستخدم'
+        self.fields['first_name'].label = 'الإسم'
+        self.fields['last_name'].label = 'اللقب'
+        self.fields['password1'].label = 'كلمة المرور'
+        self.fields['password2'].label = 'تأكيد كلمة المرور'
+
+class PostForm(forms.ModelForm):
+    class Meta:
+        model = Post
+        fields = ['title',  "authors", 'description',  "keywords", "is_translation",'category', "comments", "external_doi",  "pdf"]  # Add 'category' here
+        labels = {
+            'title': 'عنوان المقال',
+            "authors": "مؤلف المقال",
+            'description': 'ملخص',
+            "keywords":"الكلمات الدالة", 
+            "is_translation": "هل المقال ترجمة؟", 
+            'category': 'التصنيف',  # Add a label for 'category'
+            "comments": "تعليق", 
+            "external_doi": "DOI", 
+            "pdf": "الملف PDF", 
+        }
+
+
+class CustomLoginForm(AuthenticationForm):
+    def __init__(self, request=None, *args, **kwargs):
+        super(CustomLoginForm, self).__init__(request=request, *args, **kwargs)
+        self.fields['username'].label = 'اسم المستخدم'
+        self.fields['password'].label = 'كلمة المرور'
+
+from .models import UserProfile
+class ModifyAffiliationForm(forms.Form):
+    affiliation = forms.CharField(label='الانتماء', max_length=255)
+
+
+from django_countries import countries
+# Add Arabic translations for country names
+class ModifyCountry(forms.Form):
+    country_choices = [(code, name) for code, name in list(countries)]
+    country = forms.ChoiceField(
+        label="الدولة", 
+        choices=country_choices,  # Specify the translated default choice
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+    
+from .models import Category 
+class ModifyMainCategoryForm(forms.Form):
+    main_category = forms.ModelChoiceField(
+        queryset=Category.objects.all(),
+        label='اختر تصنيفًا رئيسيًا',
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+
+class ModifyCareerForm(forms.Form):
+    career = forms.CharField(label='المهنة', max_length=255)
+
+class ModifyWebsiteForm(forms.Form):
+    website = forms.CharField(label='الموقع الإلكتروني', max_length=255)
+
+
+from .models import KeywordTranslation
+class KeywordTranslationForm(forms.ModelForm):
+    class Meta:
+        model = KeywordTranslation
+        fields = ['category', 'english_keyword', 'arabic_translation']
+
+        labels = {
+            'category': 'التصنيف',  # Add a label for 'category'
+            "english_keyword": "بالإنجليزية", 
+            "arabic_translation": "بالعربية", 
+        }
+
+    
+

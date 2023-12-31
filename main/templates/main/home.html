@@ -1,0 +1,175 @@
+{% extends 'main/base.html' %}
+
+{% block title %}Posts Page{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <!-- Tab Navigation -->
+            <ul class="nav nav-tabs" id="postTabs" role="tablist">
+                <li class="nav-item">
+                    <a class="nav-link active" id="all-tab" data-toggle="tab" href="#all" role="tab" aria-controls="all" aria-selected="true">All</a>
+                </li>
+                <!-- Create tabs dynamically for categories -->
+                {% for category in categories %}
+                    <li class="nav-item">
+                        <a class="nav-link" id="{{ category.name }}-tab" data-toggle="tab" href="#{{ category.name }}" role="tab" aria-controls="{{ category.name }}" aria-selected="false">{{ category.get_name_display }}</a>
+                    </li>
+                {% endfor %}
+            </ul>
+
+            <!-- Tab Content -->
+            <div class="tab-content" id="postTabContent">
+                <!-- Create tab content dynamically for categories -->
+                <div class="tab-pane fade show active" id="all" role="tabpanel" aria-labelledby="all-tab">
+                  {% for post in posts %}
+                      {% if post.is_approved %}
+                          <div class="card mt-2">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                              <h5>
+                                <i class="fas fa-file-pdf"></i> {{ post.title }}
+                              </h5>
+                              <div class="btn-group" role="group">
+                                {% if user == post.author or perms.main.delete_post %}
+                                <form method="post" id="delete-post-id">
+                                  {% csrf_token %}
+                                  <button
+                                    type="submit"
+                                    class="btn btn-danger"
+                                    name="delete-post-id"
+                                    value="{{post.id}}"
+                                  >
+                                    <i class="fas fa-trash"></i>
+                                  </button>
+                                </form>
+                                {% endif %}
+                                {% if user.is_staff %}
+                                <form method="post" >
+                                  {% csrf_token %}
+                                  <button
+                                    type="submit"
+                                    class="btn btn-warning"
+                                    name="user-id"
+                                    value="{{post.author.id}}"
+                                  >
+                                    <i class="fas fa-ban"></i>
+                                  </button>
+                                </form>
+                                  {% if not post.is_approved %}
+                                    <form method="post" id="approve-post-id">
+                                      {% csrf_token %}
+                                      <button
+                                        type="submit"
+                                        class="btn btn-success"
+                                        name="approve-post-id"
+                                        value="{{ post.id }}"
+                                      >
+                                        <i class="fas fa-check"></i>
+                                      </button>
+                                    </form>
+                                  {% endif %}
+                                {% endif %}
+                              </div>
+                            </div>
+                            <div class="card-body">
+                              <h6 class="card-title">{{ post.authors }}</h6>
+                              <p>{{ post.description }}</p>
+                              {% if post.pdf %}
+                                <p><a href="{{ post.pdf.url }}" download>Download PDF</a></p> <!-- PDF download link -->
+                              {% endif %}
+                            </div>
+                            <div class="card-footer text-muted">{{ post.created_at }}</div>
+                          </div>
+                      {% endif %}
+                  {% empty %}
+                      <p>لا توجد مشاركات بعد :(</p>
+                  {% endfor %}
+              </div>
+
+                {% for category in categories %}
+                    <div class="tab-pane fade" id="{{ category.name }}" role="tabpanel" aria-labelledby="{{ category.name }}-tab">
+                        {% for post in posts %}
+                            {% if post.is_approved and post.category_id == category.id %}
+                                <div class="card mt-2">
+                                  <div class="card mt-2">
+                                    <div class="card-header d-flex justify-content-between align-items-center">
+                                      <h5>
+                                        <i class="fas fa-file-pdf"></i> {{ post.title }}
+                                      </h5>
+                                      <div class="btn-group" role="group">
+                                        {% if user == post.author or perms.main.delete_post %}
+                                        <form method="post" id="delete-post-id">
+                                          {% csrf_token %}
+                                          <button
+                                            type="submit"
+                                            class="btn btn-danger"
+                                            name="delete-post-id"
+                                            value="{{post.id}}"
+                                          >
+                                            <i class="fas fa-trash"></i>
+                                          </button>
+                                        </form>
+                                        {% endif %}
+                                        {% if user.is_staff %}
+                                        <form method="post" >
+                                          {% csrf_token %}
+                                          <button
+                                            type="submit"
+                                            class="btn btn-warning"
+                                            name="user-id"
+                                            value="{{post.author.id}}"
+                                          >
+                                            <i class="fas fa-ban"></i>
+                                          </button>
+                                        </form>
+                                          {% if not post.is_approved %}
+                                            <form method="post" id="approve-post-id">
+                                              {% csrf_token %}
+                                              <button
+                                                type="submit"
+                                                class="btn btn-success"
+                                                name="approve-post-id"
+                                                value="{{ post.id }}"
+                                              >
+                                                <i class="fas fa-check"></i>
+                                              </button>
+                                            </form>
+                                          {% endif %}
+                                        {% endif %}
+                                      </div>
+                                    </div>
+                                    <div class="card-body">
+                                      <h6 class="card-title">{{ post.authors }}</h6>
+                                      <p>{{ post.description }}</p>
+                                      {% if post.pdf %}
+                                        <p><a href="{{ post.pdf.url }}" download>Download PDF</a></p> <!-- PDF download link -->
+                                      {% endif %}
+                                    </div>
+                                    <div class="card-footer text-muted">{{ post.created_at }}</div>
+                                  </div>
+                                </div>
+                            {% endif %}
+                        {% empty %}
+                            <p>لا توجد مشاركات في {{ category.get_name_display }} بعد :(</p>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript to toggle tab content visibility -->
+<script>
+$(document).ready(function () {
+  $('#postTabs a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+    // Get the ID of the shown tab
+    var tabId = $(e.target).attr('href');
+    // Show content of the active tab and hide others
+    $('.tab-pane').not(tabId).removeClass('show active');
+    $(tabId).addClass('show active');
+  });
+});
+</script>
+{% endblock content %}
