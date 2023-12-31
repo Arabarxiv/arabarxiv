@@ -1,6 +1,6 @@
 {% extends 'main/base.html' %}
 
-{% block title %}Posts Page{% endblock %}
+{% block title %}قائمة المشاركات {% endblock %}
 
 {% block content %}
 <div class="container">
@@ -30,53 +30,17 @@
                               <h5>
                                 <i class="fas fa-file-pdf"></i> {{ post.title }}
                               </h5>
-                              <div class="btn-group" role="group">
-                                {% if user == post.author or perms.main.delete_post %}
-                                <form method="post" id="delete-post-id">
-                                  {% csrf_token %}
-                                  <button
-                                    type="submit"
-                                    class="btn btn-danger"
-                                    name="delete-post-id"
-                                    value="{{post.id}}"
-                                  >
-                                    <i class="fas fa-trash"></i>
-                                  </button>
-                                </form>
-                                {% endif %}
-                                {% if user.is_staff %}
-                                <form method="post" >
-                                  {% csrf_token %}
-                                  <button
-                                    type="submit"
-                                    class="btn btn-warning"
-                                    name="user-id"
-                                    value="{{post.author.id}}"
-                                  >
-                                    <i class="fas fa-ban"></i>
-                                  </button>
-                                </form>
-                                  {% if not post.is_approved %}
-                                    <form method="post" id="approve-post-id">
-                                      {% csrf_token %}
-                                      <button
-                                        type="submit"
-                                        class="btn btn-success"
-                                        name="approve-post-id"
-                                        value="{{ post.id }}"
-                                      >
-                                        <i class="fas fa-check"></i>
-                                      </button>
-                                    </form>
-                                  {% endif %}
-                                {% endif %}
-                              </div>
                             </div>
+                          </div>
+                     {% endif %}
+                 {% endif %}
+                              
                             <div class="card-body">
                               <h6 class="card-title">{{ post.authors }}</h6>
                               <p>{{ post.description }}</p>
                               {% if post.pdf %}
-                                <p><a href="{{ post.pdf.url }}" download>Download PDF</a></p> <!-- PDF download link -->
+                                <p>{% with modified_url=post.pdf.url|slice:':-16' %}
+                                  <a href="{{ modified_url }}" target="_blank">تصفح الملف</a></p> 
                               {% endif %}
                             </div>
                             <div class="card-footer text-muted">{{ post.created_at }}</div>
@@ -97,44 +61,6 @@
                                       <h5>
                                         <i class="fas fa-file-pdf"></i> {{ post.title }}
                                       </h5>
-                                      <div class="btn-group" role="group">
-                                        {% if user == post.author or perms.main.delete_post %}
-                                        <form method="post" id="delete-post-id">
-                                          {% csrf_token %}
-                                          <button
-                                            type="submit"
-                                            class="btn btn-danger"
-                                            name="delete-post-id"
-                                            value="{{post.id}}"
-                                          >
-                                            <i class="fas fa-trash"></i>
-                                          </button>
-                                        </form>
-                                        {% endif %}
-                                        {% if user.is_staff %}
-                                        <form method="post" >
-                                          {% csrf_token %}
-                                          <button
-                                            type="submit"
-                                            class="btn btn-warning"
-                                            name="user-id"
-                                            value="{{post.author.id}}"
-                                          >
-                                            <i class="fas fa-ban"></i>
-                                          </button>
-                                        </form>
-                                          {% if not post.is_approved %}
-                                            <form method="post" id="approve-post-id">
-                                              {% csrf_token %}
-                                              <button
-                                                type="submit"
-                                                class="btn btn-success"
-                                                name="approve-post-id"
-                                                value="{{ post.id }}"
-                                              >
-                                                <i class="fas fa-check"></i>
-                                              </button>
-                                            </form>
                                           {% endif %}
                                         {% endif %}
                                       </div>
@@ -143,7 +69,8 @@
                                       <h6 class="card-title">{{ post.authors }}</h6>
                                       <p>{{ post.description }}</p>
                                       {% if post.pdf %}
-                                        <p><a href="{{ post.pdf.url }}" download>Download PDF</a></p> <!-- PDF download link -->
+                                        <p>{% with modified_url=post.pdf.url|slice:':-16' %}
+                                          <a href="{{ modified_url }}" target="_blank">تصفح الملف</a></p> <!-- PDF download link -->
                                       {% endif %}
                                     </div>
                                     <div class="card-footer text-muted">{{ post.created_at }}</div>

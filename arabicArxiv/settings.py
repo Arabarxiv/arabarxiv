@@ -151,3 +151,5 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_REDIRECT_URL = "/home"
 LOGOUT_REDIRECT_URL = '/logout'
 
+TIME_ZONE = 'Africa/Algiers'
+USE_TZ = True

@@ -93,36 +93,7 @@ def send_rejected(user, post):
 def home(request):
     posts = Post.objects.all()
     categories = MainCategory.objects.all()
-    if request.method == "POST":
-        delete_post_id = request.POST.get("delete-post-id")
-        approve_post_id = request.POST.get("approve-post-id")
-        user_id = request.POST.get("user-id")
-
-        if delete_post_id:
-            post = Post.objects.filter(id=delete_post_id).first()
-            if post and (post.author == request.user or request.user.has_perm("main.delete_post")):
-                post.delete()
-
-        elif approve_post_id:
-            post = Post.objects.filter(id=approve_post_id).first()
-            if post and (request.user.is_staff or request.user.groups.filter(name='mod').exists()):
-                post.is_approved = True
-                post.save()
-        elif user_id:
-            user = User.objects.filter(id=user_id).first()
-            if user and request.user.is_staff:
-                try:
-                    group = Group.objects.get(name='default')
-                    group.user_set.remove(user)
-                except Group.DoesNotExist:
-                    pass
-
-                try:
-                    group = Group.objects.get(name='mod')
-                    group.user_set.remove(user)
-                except Group.DoesNotExist:
-                    pass
-
+    
     return render(request, 'main/home.html', {"posts": posts,
                                               "categories":categories, 
                                               "is_mod": request.user.groups.filter(name='mod').exists()})

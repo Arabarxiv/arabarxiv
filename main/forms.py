@@ -37,6 +37,9 @@ class PostForm(forms.ModelForm):
             "external_doi": "DOI", 
             "pdf": "الملف PDF", 
         }
+        help_texts = {
+            'comments': 'إذا لم يكن التصنيف موجود، يرجى ذكره هنا.',
+        }
 
 
 class CustomLoginForm(AuthenticationForm):
