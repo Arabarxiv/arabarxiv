@@ -31,6 +31,9 @@ def palestine_view(request):
 def profile_view(request):
     return render(request, 'main/user_profile.html')
 
+def author_guidelines(request):
+    return render(request, 'main/author_guidelines.html')
+
 def search_posts(request):
     query = request.GET.get('searchKeyword', '')
     results = Post.objects.filter(
