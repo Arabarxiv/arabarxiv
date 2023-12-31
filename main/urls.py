@@ -22,6 +22,7 @@ urlpatterns = [
     path("become_reviewer", views.become_reviewer, name="become_reviewer"),
     path('create-translation-post', views.create_translation_post, name='create_translation_post'),
     path('author_guidelines', views.author_guidelines, name='author_guidelines'),
+    path('contact', views.contact, name='contact'),
 ]
 
 

@@ -7,6 +7,10 @@ from django.utils.translation import gettext_lazy as _
 from django_countries.widgets import CountrySelectWidget
 
 from .models import Post, TranslationPost
+
+from django import forms
+from django.core.validators import EmailValidator
+
 class RegisterForm(UserCreationForm):
     email = forms.EmailField(required=True, label=('البريد الإلكتروني'))
 

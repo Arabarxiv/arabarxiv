@@ -46,6 +46,8 @@ figure, header, nav, section, article, aside, footer, figcaption {
   margin-left: 50px; 
 }
 
+
+
 .notification-indicator {
   display: inline-block;
   margin-left: 5px;
@@ -1723,7 +1725,7 @@ footer {
 
 footer p {
   text-align: center;
-  line-height: 150px;
+  line-height: 50px;
   color: #fff;
   font-weight: 400;
 }
@@ -1737,6 +1739,23 @@ footer p a {
 
 footer p a:hover {
   opacity: 0.75;
+}
+.footer-menu {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+.footer-menu li {
+  display: inline;
+  margin-right: 15px; /* Adjust spacing as needed */
+}
+.footer-menu li a {
+  color: #fff; /* Adjust color as needed */
+  text-decoration: none;
+  font-size: 16px; /* Adjust font size as needed */
+}
+.footer-menu li a i {
+  margin-right: 5px; /* Space between icon and text */
 }
 
 footer::before {

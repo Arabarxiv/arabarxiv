@@ -34,6 +34,35 @@ def profile_view(request):
 def author_guidelines(request):
     return render(request, 'main/author_guidelines.html')
 
+from django.http import HttpResponse
+from django.core.validators import validate_email
+from django.core.exceptions import ValidationError
+
+def contact(request):
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        email = request.POST.get('email')
+        message = request.POST.get('message')
+
+        # Basic validation
+        try:
+            validate_email(email)
+            # Send an email
+            send_mail(
+                subject=f"Message from {name}",
+                message=f'This message was sent by {email}: \n {message}',
+                from_email=email,
+                recipient_list=['arabarxiv@gmail.com'], 
+            )
+            messages.success(request, 'شكرًا لرسالتك، تم إرسالها بنجاح.')
+        except ValidationError:
+            messages.error(request, 'البريد الإلكتروني غير صالح، يرجى العودة وتصحيحه.')
+
+        return redirect('contact')
+    
+    return render(request, 'main/contact.html')
+
+
 def search_posts(request):
     query = request.GET.get('searchKeyword', '')
     results = Post.objects.filter(
