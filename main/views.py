@@ -325,6 +325,14 @@ def review_post(request):
 
     return render(request, 'main/review.html', context)
 
+@login_required
+def become_reviewer(request):
+    if request.method == 'POST':
+        request.user.groups.add(Group.objects.get(name='mod'))
+        messages.success(request, 'طلبك لتصبح مراجعًا تم استلامه وهو قيد المراجعة.')
+        return redirect('home')
+
+    return render(request, 'main/real_home.html')
 
 @login_required
 def assign_mod(request):

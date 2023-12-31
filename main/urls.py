@@ -18,7 +18,8 @@ urlpatterns = [
     path('review', views.review_post, name='review'),
     path("review/assign_mod", views.assign_mod, name='assign_mod'), 
     path("authors", views.authors, name="authors"), 
-    path('search_results', views.search_posts, name="search")
+    path('search_results', views.search_posts, name="search"), 
+    path("become_reviewer", views.become_reviewer, name="become_reviewer"),
 ]
 
 
