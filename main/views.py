@@ -330,7 +330,7 @@ def become_reviewer(request):
     if request.method == 'POST':
         request.user.groups.add(Group.objects.get(name='mod'))
         messages.success(request, 'طلبك لتصبح مراجعًا تم استلامه وهو قيد المراجعة.')
-        return redirect('home')
+        return redirect('/review')
 
     return render(request, 'main/real_home.html')
 
