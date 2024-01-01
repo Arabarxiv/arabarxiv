@@ -1,0 +1,18 @@
+{% extends "main/base.html" %}
+{% block title %}تسجيل الدخول{% endblock %}
+
+{% block content %}
+<div class="container"> <!-- Start container -->
+    <div class="row justify-content-center">
+        <div class="col-md-6"> <!-- Adjust the column size as needed -->
+            <h1>فشل تأكيد البريد الإلكتروني</h1>
+            <div>
+                <p>لم يتم تأكيد البريد الإلكتروني الخاص بك. يرجى المحاولة مرة أخرى.</p>
+                {% if user_id %}
+                    <a href="{% url 'resend_confirmation_email' user_id %}" class="btn">إعادة إرسال بريد التأكيد</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div> <!-- End container -->
+{% endblock %}

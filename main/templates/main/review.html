@@ -3,18 +3,17 @@
 {% block title %}مراجعة المشاركات{% endblock %}
 
 {% block content %}
-
-{% if not user.is_staff and not user in moderators and is_author %}
 <style>
-    .custom-alert {
-        background-color: lightgreen;
+     .alert-info {
+        background-color: #b8e6bd;
+        margin-top:20px; 
         padding: 15px;
         border-radius: 5px;
         margin-bottom: 20px;
     }
     
     .custom-btn {
-        background-color: green;
+        background-color: #005109;
         color: white;
         border: none;
         padding: 10px 20px;
@@ -27,6 +26,20 @@
         background-color: darkgreen;
     }
     </style>
+{% if not user.is_staff and not user in moderators and not is_author %}
+ <!-- Message for users who do not have any accepted papers -->
+ <div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="alert alert-info">
+                <h2>قدم بحثك الأول</h2>
+                <p>قم بتقديم بحثك الأول وسيكون لديك فرصة لتصبح مراجعًا والانضمام إلى مجتمع أراب أركسيف!</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% elif  not user.is_staff and not user in moderators and is_author %}
+
 <div class="container">
     <div class="row justify-content-center">
         <div class="col-md-10">

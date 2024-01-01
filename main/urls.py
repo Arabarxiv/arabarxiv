@@ -23,6 +23,8 @@ urlpatterns = [
     path('create-translation-post', views.create_translation_post, name='create_translation_post'),
     path('author_guidelines', views.author_guidelines, name='author_guidelines'),
     path('contact', views.contact, name='contact'),
+    path('confirm-email/<uidb64>/<token>/', views.confirm_email, name='confirm_email'),
+    path('resend-confirmation-email/<int:user_id>/', views.resend_confirmation_email, name='resend_confirmation_email'),
 ]
 
 

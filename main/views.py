@@ -15,6 +15,9 @@ from django.conf import settings
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 
+from django.core.validators import validate_email
+from django.core.exceptions import ValidationError
+
 def logout_view(request):
     logout(request)
     return redirect("/home")
@@ -33,10 +36,6 @@ def profile_view(request):
 
 def author_guidelines(request):
     return render(request, 'main/author_guidelines.html')
-
-from django.http import HttpResponse
-from django.core.validators import validate_email
-from django.core.exceptions import ValidationError
 
 def contact(request):
     if request.method == 'POST':
@@ -61,6 +60,18 @@ def contact(request):
         return redirect('contact')
     
     return render(request, 'main/contact.html')
+
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.encoding import force_bytes
+from django.contrib.auth.tokens import default_token_generator
+
+def send_confirmation_email(user, request):
+    token = default_token_generator.make_token(user)
+    uid = urlsafe_base64_encode(force_bytes(user.pk))
+    url = request.build_absolute_uri('/confirm-email/' + uid + '/' + token + '/')
+
+    message = f"الرجاء الضغط على الرابط التالي لتأكيد تسجيلك: {url}"
+    send_mail('تأكيد تسجيلك', message, None, [user.email])
 
 
 def search_posts(request):
@@ -161,8 +172,18 @@ def create_post(request):
     return render(request, 'main/create_post.html', {"form": form})
 
 
+def email_confirmation_required(view_func):
+    def _wrapped_view_func(request, *args, **kwargs):
+        if request.user.is_authenticated and not request.user.userprofile.email_confirmed:
+            messages.warning(request, '.تأكيد البريد الإلكتروني إجباري')
+            # Optionally, redirect to a specific page
+            return redirect('/home')
+        return view_func(request, *args, **kwargs)
+    return _wrapped_view_func
+
 
 @login_required(login_url="/login")
+@email_confirmation_required
 @permission_required("main.add_translationpost", login_url="/login", raise_exception=True)  # Update permission
 def create_translation_post(request):
     if request.method == 'POST':
@@ -187,12 +208,42 @@ def sign_up(request):
             user.last_name =  form.cleaned_data['last_name']
             user.email =  form.cleaned_data['email']
             user.save()
+            send_confirmation_email(user, request)
             login(request, user)
             return redirect('/home')
     else:
         form = RegisterForm()
 
     return render(request, 'registration/sign_up.html', {"form": form})
+
+from django.utils.encoding import force_bytes, force_str
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+
+def confirm_email(request, uidb64, token):
+    try:
+        uid = force_str(urlsafe_base64_decode(uidb64))
+        user = User.objects.get(pk=uid)
+    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+        user = None
+
+    if user is not None and default_token_generator.check_token(user, token):
+        user.userprofile.email_confirmed = True
+        user.userprofile.save()
+        # Redirect to a success page or render a success template
+        return render(request, 'registration/email_confirmed.html')
+    else:
+        # Email confirmation failed
+        return render(request, 'registration/email_confirmation_failed.html', {'user_id': user.id if user else None})
+
+def resend_confirmation_email(request, user_id):
+    try:
+        user = User.objects.get(pk=user_id)
+        send_confirmation_email(user, request)
+        messages.success(request, 'تم إعادة إرسال بريد التأكيد.')
+    except User.DoesNotExist:
+        messages.error(request, 'حدث خطأ. لم يتم إرسال البريد.')
+    
+    return redirect('/home')  # Redirect to an appropriate view
 
 from .forms import *
 
@@ -312,7 +363,8 @@ def review_post(request):
     current_reviewer = request.user  # You may need to adjust this based on your user model
     assigned_posts = Post.objects.all()
     mod_group = Group.objects.get(name='mod')
-    is_author = Post.objects.filter(author=request.user).exists()
+    is_author = Post.objects.filter(author=request.user, status='Accepted').exists()
+
     # Get users in the "mod" group
     mod_users = User.objects.filter(Q(groups=mod_group) | Q(is_staff=True))
 

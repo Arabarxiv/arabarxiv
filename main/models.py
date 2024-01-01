@@ -30,6 +30,7 @@ class UserProfile(models.Model):
     main_category = models.ForeignKey(Category, on_delete=models.SET_NULL, related_name='user_profile', null=True, blank=True)
 
     completed = models.BooleanField(default=False)
+    email_confirmed = models.BooleanField(default=False)
 
     def __str__(self):
         return self.user.username

@@ -10,9 +10,10 @@ from .models import Post, TranslationPost
 
 from django import forms
 from django.core.validators import EmailValidator
+from django.core.exceptions import ValidationError
 
 class RegisterForm(UserCreationForm):
-    email = forms.EmailField(required=True, label=('البريد الإلكتروني'))
+    email = forms.EmailField(required=True, label='البريد الإلكتروني')
 
     class Meta:
         model = User
@@ -21,10 +22,16 @@ class RegisterForm(UserCreationForm):
     def __init__(self, *args, **kwargs):
         super(RegisterForm, self).__init__(*args, **kwargs)
         self.fields['username'].label = 'اسم المستخدم'
-        self.fields['first_name'].label = 'الإسم'
+        self.fields['first_name'].label     = 'الإسم'
         self.fields['last_name'].label = 'اللقب'
         self.fields['password1'].label = 'كلمة المرور'
         self.fields['password2'].label = 'تأكيد كلمة المرور'
+
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        if User.objects.filter(email=email).exists():
+            raise ValidationError("يوجد مستخدم بالفعل بهذا البريد الإلكتروني.")
+        return email
 
 class PostForm(forms.ModelForm):
     class Meta:
