@@ -15,7 +15,7 @@
             </div>
             
             <div class="profile-attribute">
-              <p><strong>الدولة:</strong> {{ user.userprofile.country.name }} <button class="btn btn-link"  data-toggle="modal" data-target="#countryModal" id="countryButton"><i class="fas fa-edit"></i></button></p>
+              <p><strong>الدولة:</strong> {{ user.userprofile.get_country_display }} <button class="btn btn-link"  data-toggle="modal" data-target="#countryModal" id="countryButton"><i class="fas fa-edit"></i></button></p>
             </div>
             
             <div class="profile-attribute">
@@ -68,8 +68,7 @@
                   
                   <form method="post" action="/user_profile">
                     {% csrf_token %}
-                    {{ country_form.country.label_tag }}
-                    {{ country_form.country }}
+                    {{ country_form|crispy  }}
                     <button type="submit" class="btn btn-primary">حفظ التغييرات</button>
                   </form>
                 </div>

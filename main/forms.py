@@ -6,7 +6,7 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.utils.translation import gettext_lazy as _
 from django_countries.widgets import CountrySelectWidget
 
-from .models import Post, TranslationPost
+from .models import Post, TranslationPost, COUNTRY_CHOICES
 
 from django import forms
 from django.core.validators import EmailValidator
@@ -85,16 +85,15 @@ from .models import UserProfile
 class ModifyAffiliationForm(forms.Form):
     affiliation = forms.CharField(label='الانتماء', max_length=255)
 
-
-from django_countries import countries
-# Add Arabic translations for country names
+# TODO: Add Arabic translations for country names
 class ModifyCountry(forms.Form):
-    country_choices = [(code, name) for code, name in list(countries)]
-    country = forms.ChoiceField(
-        label="الدولة", 
-        choices=country_choices,  # Specify the translated default choice
-        widget=forms.Select(attrs={'class': 'form-control'})
-    )
+    #country_choices = [(code, name) for code, name in list(countries)]
+    #country = forms.ChoiceField(
+    #    label="الدولة", 
+    #    choices=country_choices,  # Specify the translated default choice
+    #    widget=forms.Select(attrs={'class': 'form-control'})
+    #)
+    country = forms.ChoiceField(choices=COUNTRY_CHOICES, required=False, label='الدولة')
     
 from .models import Category 
 class ModifyMainCategoryForm(forms.Form):

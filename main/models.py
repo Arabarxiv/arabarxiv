@@ -6,22 +6,7 @@ from gdstorage.storage import GoogleDriveStorage
 # Define Google Drive Storage
 gd_storage = GoogleDriveStorage()
 
-class MainCategory(models.Model):
-    name = models.CharField(max_length=100, unique=True)
-    english_name = models.CharField(max_length=100)
-    def __str__(self):
-        return self.name
-    
-class Category(models.Model):
-    main_category = models.ForeignKey(MainCategory, on_delete=models.CASCADE, related_name='categories')
-    name = models.CharField(max_length=100, unique=True)
-
-    def __str__(self):
-        return f"{self.name}"
-
-class UserProfile(models.Model):
-
-    COUNTRY_CHOICES = [
+COUNTRY_CHOICES = [
         ("AF","أفغانستان "),
         ("US","الولايات المتحدة"),
         ("GP"," جزر جوادلوب"),
@@ -265,6 +250,22 @@ class UserProfile(models.Model):
         ("NL","هولندا"),
         ("HK","هونغ كونغ"),
         ("WF","والس/فوتونا)") ]
+
+class MainCategory(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    english_name = models.CharField(max_length=100)
+    def __str__(self):
+        return self.name
+    
+class Category(models.Model):
+    main_category = models.ForeignKey(MainCategory, on_delete=models.CASCADE, related_name='categories')
+    name = models.CharField(max_length=100, unique=True)
+
+    def __str__(self):
+        return f"{self.name}"
+
+class UserProfile(models.Model):
+
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     
     affiliation = models.TextField(max_length=200, null=True, blank=True)
