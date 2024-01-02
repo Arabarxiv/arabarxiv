@@ -5,22 +5,41 @@
     <h2>نتائج البحث</h2>
     {% if results %}
             {% for post in results %}
-                    <div class="card mt-2">
-                        <div class="card mt-2">
-                          <div class="card-header d-flex justify-content-between align-items-center">
-                            <h5>
-                              <i class="fas fa-file-pdf"></i> {{ post.title }}
-                            </h5>
-                            </div>
-                          </div>
-                          <div class="card-body">
-                            <h6 class="card-title">{{ post.authors }}</h6>
-                            <p>{{ post.description }}</p>
-                            {% if post.pdf %}
-                              <p><a href="{{ post.pdf.url }}" download>Download PDF</a></p> <!-- PDF download link -->
-                            {% endif %}
-                          </div>
-                          <div class="card-footer text-muted">{{ post.created_at }}</div>
+            <div class="card mt-2">
+              <div class="card-header d-flex justify-content-between align-items-center">
+                <h5>
+                  <i class="fas fa-file-pdf"></i> {{ post.title }}
+                </h5>
+              </div>
+            </div>
+                
+            <div class="card-body">
+              <h6 class="post-author">المؤلف: {{post.authors}}</h6>
+              
+
+
+              {% if post.translator %}
+              <p class="post-translator">المترجم: {{ post.translator }}</p>
+              {% endif %}
+              <p class="post-keywords">التصنيف: {{ post.category }}</p>
+              <p class="post-description" id="description-{{ post.id }}">
+                {{ post.description|truncatechars:200 }}
+                {% if post.description|length > 200 %}
+                    <span class="more-text" style="display:none;">{{ post.description|slice:"200:" }}</span>
+                    <button onclick="toggleDescription('description-{{ post.id }}')" class="see-more-btn">اقرأ المزيد</button>
+                {% endif %}
+            </p>
+            
+            <p class="post-keywords">الكلمات المفتاحية: {{ post.keywords }}</p>
+              {% if post.pdf %}
+                <p>{% with modified_url=post.pdf.url|slice:':-16' %}
+                  <a href="{{ modified_url }}" target="_blank">تصفح الملف</a>
+                  {% endwith %}
+                </p> 
+              {% endif %}
+            </div>
+            <div class="card-footer text-muted">{{ post.created_at }}</div>
+        
                         </div>
                     
             
