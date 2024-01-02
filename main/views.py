@@ -312,6 +312,23 @@ def modify_profile(request):
                                                       'website_form': website_form, 
                                                       })
 
+@login_required
+def delete_post(request, post_id):
+    post = get_object_or_404(Post.objects.select_related('translationpost'), id=post_id)
+
+    if request.method == "POST":
+        # Check if the current user is the author of the post
+        if post.author == request.user:
+            post.delete()
+            messages.success(request, "Post deleted successfully.")
+        else:
+            messages.error(request, "You are not authorized to delete this post.")
+
+        # Redirect to a success page, adjust the URL as needed
+        return redirect("/user_profile")  # Replace 'posts_list' with your actual view name
+
+    return redirect("/user_profile")
+                    
 def is_mod_or_staff(user):
     return user.groups.filter(name='mod').exists() or user.is_staff
 

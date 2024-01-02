@@ -176,6 +176,13 @@
                                     قيد الإنتظار
                                 {% endif %}
                                   </td>
+                                  <td>
+                                    <!-- Delete Button -->
+                                    <form action="{% url 'delete_post' post.id %}" method="post">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-danger">حذف</button>
+                                    </form>
+                                </td>
                               </tr>
                           {% endif %}
                       {% endfor %}
