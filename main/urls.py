@@ -27,6 +27,7 @@ urlpatterns = [
     path('resend-confirmation-email/<int:user_id>/', views.resend_confirmation_email, name='resend_confirmation_email'),
     path('bibtex', views.bibtex_converter, name='bibtex_converter'),
     path('post/delete/<int:post_id>/', views.delete_post, name='delete_post'),
+    path('get-categories/', views.get_categories, name='get_categories'),
 ]
 
 

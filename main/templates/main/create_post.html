@@ -18,4 +18,39 @@
     </div>
   </div>
 </div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const triggerField = document.getElementById('id_title');
+    const categoryField = document.getElementById('id_category');
+
+    function updateCategories() {
+        // You can also pass the trigger field's value if needed in the AJAX request
+        const triggerValue = triggerField.value; 
+        fetch(`/get-categories/?trigger_value=${triggerValue}`)
+            .then(response => response.json())
+            .then(data => {
+                // Clear existing options in category field
+                categoryField.innerHTML = '';
+
+                // Add a default option
+                const defaultOption = document.createElement('option');
+                defaultOption.value = '';
+                defaultOption.text = 'Select a Category';
+                categoryField.appendChild(defaultOption);
+
+                // Add new options from AJAX response
+                data.categories.forEach(category => {
+                    const option = document.createElement('option');
+                    option.value = category.id;
+                    option.text = category.name;
+                    categoryField.appendChild(option);
+                });
+            })
+            .catch(error => console.error('Error:', error));
+    }
+
+    // Event listener for when the trigger field changes
+    triggerField.addEventListener('change', updateCategories);
+});
+</script>
 {% endblock %}

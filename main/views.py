@@ -166,6 +166,7 @@ def custom_login_view(request):
 @login_required(login_url="/login")
 @permission_required("main.add_post", login_url="/login", raise_exception=True)
 def create_post(request):
+
     if request.method == 'POST':
         form = PostForm(request.POST, request.FILES)
         if form.is_valid():
@@ -179,6 +180,12 @@ def create_post(request):
 
     return render(request, 'main/create_post.html', {"form": form})
 
+from django.http import JsonResponse
+def get_categories(request):
+    trigger_value = request.GET.get('trigger_value')
+    # Your logic here to determine categories based on trigger_value
+    categories = list(Category.objects.values('id', 'name'))
+    return JsonResponse({'categories': categories})
 
 def email_confirmation_required(view_func):
     def _wrapped_view_func(request, *args, **kwargs):
