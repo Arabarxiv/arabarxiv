@@ -28,8 +28,16 @@ def authors(request):
 def real_home(request):
     return render(request, 'main/real_home.html')
 
+def get_categories_by_main_category(main_category_name):
+    # Retrieve categories where the main category matches the given name
+    categories = Category.objects.filter(main_category__name=main_category_name)
+    return categories
+
 def palestine_view(request):
-    return render(request, 'main/palestine.html')
+    main_category_name = "الثقافة والتاريخ الفلسطيني"  # Replace with the desired main category name
+    posts_in_main_category = get_categories_by_main_category(main_category_name)
+    
+    return render(request, 'main/palestine.html', {"cats": posts_in_main_category})
 
 def profile_view(request):
     return render(request, 'main/user_profile.html')
@@ -442,3 +450,19 @@ def assign_mod(request):
     }
 
     return render(request, 'main/review.html', context)
+
+
+from .forms import BibTexForm
+from .utils import format_bibtex_for_arabic  # Assuming you have a utility function for formatting
+
+def bibtex_converter(request):
+    formatted_bibtex = ""
+    if request.method == 'POST':
+        form = BibTexForm(request.POST)
+        if form.is_valid():
+            bibtex_input = form.cleaned_data['bibtex_input']
+            formatted_bibtex = format_bibtex_for_arabic(bibtex_input)
+    else:
+        form = BibTexForm()
+
+    return render(request, 'main/bibtex_converter.html', {'form': form, 'formatted_bibtex': formatted_bibtex})

@@ -14610,6 +14610,18 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
   }
 }
 </style>
+<style>
+  li a {
+      color: #1aa329; /* Link color */
+      text-decoration: underline; /* Underline to indicate it's a link */
+      font-weight: bold; /* Optional: makes the link text bold */
+  }
+
+  /* Optional: Change color on hover for visual feedback */
+  li a:hover {
+      color: #0056b3;
+  }
+</style>
 <div class="container">
     <div class="row">
         <!-- Vertical Menu -->
@@ -14619,7 +14631,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
                     <a class="vnav-link active" href="#generalInfo" onclick="showContent('generalInfo')">معلومات عامة</a>
                 </li>
                 <li class="vnav-item">
-                    <a class="vnav-link" href="#template" onclick="showContent('template')">القالب</a>
+                    <a class="vnav-link" href="#template" onclick="showContent('template')">النموذج</a>
                 </li>
                 <li class="vnav-item">
                     <a class="vnav-link" href="#pythonPlots" onclick="showContent('pythonPlots')">رسومات Python بالعربية</a>
@@ -14637,7 +14649,7 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
         
                 <section class="section-block">
                     <h2 class="section-subtitle">مساعدة في الإرسال للمؤلفين</h2>
-                    <p>توفر هذه الصفحة إرشادات للمؤلفين الراغبين في تقديم أعمالهم إلى Arab ArXiv.</p>
+                    <p>توفر هذه الصفحة إرشادات للمؤلفين الراغبين في تقديم أعمالهم إلى أرشيف العرب.</p>
                 </section>
         
                 <section class="section-block">
@@ -14682,16 +14694,20 @@ body[data-format='mobile'] .jp-OutputArea-child .jp-OutputArea-output {
                 </section>
             </div>
             <div id="template" class="content-section" style="display:none;">
-                <h2 class="section-title">القالب</h2>
-                <p>نظرًا لعدم وجود طريقة موحدة معتادة لكتابة الأوراق العلمية باللغة العربية في LaTeX، نحن نوفر لكم هذا القالب الذي يساعدكم على كتابة ترجماتكم أو أوراقكم البحثية. القالب مكتوب بالكامل باللغة العربية، بما في ذلك المعادلات والجداول والأشكال. نحن نشجع على كتابة الأوراق البحثية كاملة باللغة العربية، ولكننا نفهم أن بعض المصطلحات الفنية مثل أسماء الأدوات يجب الإبقاء عليها بلغتها الأصلية. لذلك، يسمح القالب أيضًا بالكتابة باللغة الإنجليزية.</p>
+                <h2 class="section-title">النموذج</h2>
+                <p>نظرًا لعدم وجود طريقة موحدة معتادة لكتابة الأوراق العلمية باللغة العربية في LaTeX، نحن نوفر لكم هذا النموذج الذي يساعدكم على كتابة ترجماتكم أو أوراقكم البحثية. النموذج مكتوب بالكامل باللغة العربية، بما في ذلك المعادلات والجداول والأشكال. نحن نشجع على كتابة الأوراق البحثية كاملة باللغة العربية، ولكننا نفهم أن بعض المصطلحات الفنية مثل أسماء الأدوات يجب الإبقاء عليها بلغتها الأصلية. لذلك، يسمح النموذج أيضًا بالكتابة باللغة الإنجليزية.</p>
                 
-                <h3 class="section-subtitle">كيفية العمل مع القالب:</h3>
+                <h3 class="section-subtitle">كيفية العمل مع النموذج:</h3>
                 <ul>
-                    <li>يمكنكم تحميل ملف القالب بصيغة <a href="your_sty_file_download_link">.sty من هنا</a>.</li>
-                    <li>استخدموا مشروع <a href="your_overleaf_project_link">Overleaf عبر هذا الرابط</a> للعمل مع القالب بشكل مباشر.</li>
+                    <li>يمكنكم تحميل ملف النموذج بصيغة <a href="https://github.com/Arabarxiv/template_arab_arxiv">.sty من هنا</a>.</li>
+                    <li>
+                      استخدموا مشروع <a href="">Overleaf عبر هذا الرابط</a> للعمل مع النموذج بشكل مباشر.
+                      <span style="color: red;">(قريبًا)</span>
+                  </li>
+                  
                 </ul>
             
-                <p>في حال كانت ورقتكم ترجمة، نشجع بشدة المؤلفين على اختبار منهجية الورقة على مهام عربية أو مهام ذات ثقافة مشتركة. يجب تسليط الضوء على هذه التجارب في الملخص وفي الأقسام المعنية.</p>
+                <p>في حال كانت ورقتكم ترجمة، نشجع بشدة المترجمين على اختبار منهجية الورقة على مهام  ذات صلة باللغة العربية أو ذات ثقافة مشتركة. يجب تسليط الضوء على هذه التجارب في الملخص وفي الأقسام المخصصة للمترجم كما هو مبين في النموذج.</p>
                 <p>بالنسبة للمراجع، نسمح بأن تكون المراجع باللغة العربية أو الإنجليزية حسب تفضيلكم.</p>
             </div>
             

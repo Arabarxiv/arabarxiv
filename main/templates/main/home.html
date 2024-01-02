@@ -1,8 +1,22 @@
 {% extends 'main/base.html' %}
-
+{% load my_filters  %}
 {% block title %}قائمة المشاركات {% endblock %}
 
 {% block content %}
+<style>
+  .author-link {
+    color: #007bff;
+    cursor: pointer;
+    text-decoration: underline;
+    display: inline; /* Ensures authors are displayed inline */
+}
+
+.author-link:hover {
+    color: #0056b3;
+}
+
+</style>
+
 <div class="container">
     <div class="row justify-content-center">
         <div class="col-md-10">
@@ -14,7 +28,7 @@
                 <!-- Create tabs dynamically for categories -->
                 {% for category in categories %}
                     <li class="nav-item">
-                        <a class="nav-link" id="{{ category.name }}-tab" data-toggle="tab" href="#{{ category.name }}" role="tab" aria-controls="{{ category.name }}" aria-selected="false">{{ category.get_name_display }}</a>
+                        <a class="nav-link" id="{{ category.english_name }}-tab" data-toggle="tab" href="#{{ category.english_name }}" role="tab" aria-controls="{{ category.english_name }}" aria-selected="false">{{ category.name }}</a>
                     </li>
                 {% endfor %}
             </ul>
@@ -24,7 +38,8 @@
                 <!-- Create tab content dynamically for categories -->
                 <div class="tab-pane fade show active" id="all" role="tabpanel" aria-labelledby="all-tab">
                   {% for post in posts %}
-                      {% if post.is_approved %}
+                      {% if post.status == "Approved" %}
+                  
                           <div class="card mt-2">
                             <div class="card-header d-flex justify-content-between align-items-center">
                               <h5>
@@ -34,8 +49,29 @@
                           </div>
                               
                             <div class="card-body">
-                              <h6 class="card-title">{{ post.authors }}</h6>
-                              <p>{{ post.description }}</p>
+                              <h6 class="post-author">المؤلف:</h6>
+                              <span class="authors-list">
+                                  {% with authors_list=post.authors|split:"," %}
+                                      {% for author in authors_list %}
+                                          <span class="author-link" onclick="searchAuthor('{{ author|strip }}')">{{ author|strip }}</span>{% if not forloop.last %}, {% endif %}
+                                      {% endfor %}
+                                  {% endwith %}
+                              </span>
+
+
+                              {% if post.translator %}
+                              <p class="post-translator">المترجم: {{ post.translator }}</p>
+                              {% endif %}
+                              <p class="post-keywords">التصنيف: {{ post.category }}</p>
+                              <p class="post-description" id="description-{{ post.id }}">
+                                {{ post.description|truncatechars:200 }}
+                                {% if post.description|length > 200 %}
+                                    <span class="more-text" style="display:none;">{{ post.description|slice:"200:" }}</span>
+                                    <button onclick="toggleDescription('description-{{ post.id }}')" class="see-more-btn">اقرأ المزيد</button>
+                                {% endif %}
+                            </p>
+                            
+                            <p class="post-keywords">الكلمات المفتاحية: {{ post.keywords }}</p>
                               {% if post.pdf %}
                                 <p>{% with modified_url=post.pdf.url|slice:':-16' %}
                                   <a href="{{ modified_url }}" target="_blank">تصفح الملف</a>
@@ -44,7 +80,7 @@
                               {% endif %}
                             </div>
                             <div class="card-footer text-muted">{{ post.created_at }}</div>
-                          </div>
+                        
                       {% endif %}
                   {% empty %}
                       <p>لا توجد مشاركات بعد :(</p>
@@ -52,34 +88,49 @@
               </div>
 
                 {% for category in categories %}
-                    <div class="tab-pane fade" id="{{ category.name }}" role="tabpanel" aria-labelledby="{{ category.name }}-tab">
-                        {% for post in posts %}
-                            {% if post.is_approved and post.category_id == category.id %}
-                                <div class="card mt-2">
-                                  <div class="card mt-2">
-                                    <div class="card-header d-flex justify-content-between align-items-center">
-                                      <h5>
-                                        <i class="fas fa-file-pdf"></i> {{ post.title }}
-                                      </h5>
-                                      </div>
-                                    </div>
-                                    <div class="card-body">
-                                      <h6 class="card-title">{{ post.authors }}</h6>
-                                      <p>{{ post.description }}</p>
-                                      {% if post.pdf %}
-                                        <p>{% with modified_url=post.pdf.url|slice:':-16' %}
-                                          <a href="{{ modified_url }}" target="_blank">تصفح الملف</a>
-                                          {% endwith %}
-                                        </p> <!-- PDF download link -->
-                                      {% endif %}
+                    <div class="tab-pane fade" id="{{ category.english_name }}" role="tabpanel" aria-labelledby="{{ category.english_name }}-tab">
+                      {% with approved_posts_count=posts|count_approved_posts_in_category:category %}
+                      {% if approved_posts_count > 0 %}
+                          {% for post in posts %}
+                            {% if post.status == "Approved" and post.category.main_category.id == category.id %}
+                            <div class="card mt-2">
+                              <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5>
+                                  <i class="fas fa-file-pdf"></i> {{ post.title }}
+                                </h5>
+                              </div>
+                            </div>
+                                
+                              <div class="card-body">
+                                <h6 class="post-author">المؤلف: {{ post.authors }}</h6>
+                                {% if post.translator %}
+                                <p class="post-translator">المترجم: {{ post.translator }}</p>
+                                {% endif %}
+                                <p class="post-keywords">التصنيف: {{ post.category }}</p>
+                                <p class="post-description" id="description-{{ post.id }}">
+                                  {{ post.description|truncatechars:200 }}
+                                  {% if post.description|length > 200 %}
+                                      <span class="more-text" style="display:none;">{{ post.description|slice:"200:" }}</span>
+                                      <button onclick="toggleDescription('description-{{ post.id }}')" class="see-more-btn">اقرأ المزيد</button>
+                                  {% endif %}
+                              </p>
+                              
+                              <p class="post-keywords">الكلمات المفتاحية: {{ post.keywords }}</p>
+                                {% if post.pdf %}
+                                  <p>{% with modified_url=post.pdf.url|slice:':-16' %}
+                                    <a href="{{ modified_url }}" target="_blank">تصفح الملف</a>
+                                    {% endwith %}
+                                  </p> 
+                                {% endif %}
                                     </div>
                                     <div class="card-footer text-muted">{{ post.created_at }}</div>
-                                  </div>
-                                </div>
+                                 
+                                  {% endif %}
+                                  {% endfor %}
+                              {% else %}
+                            <p>لا توجد مشاركات في {{ category.name }} بعد </p>
                             {% endif %}
-                        {% empty %}
-                            <p>لا توجد مشاركات في {{ category.get_name_display }} بعد :(</p>
-                        {% endfor %}
+                            {% endwith %}
                     </div>
                 {% endfor %}
             </div>
@@ -88,15 +139,36 @@
 </div>
 
 <!-- JavaScript to toggle tab content visibility -->
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
 <script>
 $(document).ready(function () {
   $('#postTabs a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
     // Get the ID of the shown tab
     var tabId = $(e.target).attr('href');
+    console.log(tabId);
     // Show content of the active tab and hide others
     $('.tab-pane').not(tabId).removeClass('show active');
     $(tabId).addClass('show active');
   });
 });
+
+function toggleDescription(descriptionId) {
+  var description = document.getElementById(descriptionId);
+  var moreText = description.getElementsByClassName('more-text')[0];
+
+  if (moreText.style.display === "none") {
+      moreText.style.display = "inline";
+  } else {
+      moreText.style.display = "none";
+  }
+}
+
 </script>
+<script>
+  function searchAuthor(authorName) {
+      var searchInput = document.getElementById('searchText');
+      searchInput.value = authorName; // Set the value to the author's name
+      searchInput.form.submit(); // Submit the form
+  }
+  </script>
 {% endblock content %}

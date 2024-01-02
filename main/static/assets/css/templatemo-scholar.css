@@ -1711,6 +1711,70 @@ Contact Style
 Footer Style
 --------------------------------------------- 
 */
+.card {
+  border: 1px solid #e2e2e2;
+  margin-top: 20px; /* Spacing between cards */
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  overflow: hidden; /* Ensures the border-radius clips the content */
+}
+
+.card-header {
+  background-color: #cff8d4;
+  color: white;
+  padding: 10px 15px;
+}
+
+.card-header h5 {
+  margin: 0; /* Remove default margin */
+  display: flex;
+  align-items: center;
+}
+
+.card-header i {
+  margin-right: 10px; /* Space between icon and title */
+}
+
+.card-body {
+  padding: 15px;
+  background-color: #f9f9f9;
+}
+
+.card-body p, .card-body h6 {
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.card-footer {
+  background-color: #f1f1f1;
+  padding: 10px 15px;
+  text-align: right; /* Align text for RTL */
+  color: #666;
+}
+
+.see-more-btn {
+  background-color: #28a745;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9em;
+  margin-top: 10px; /* Spacing above the button */
+}
+
+.see-more-btn:hover {
+  background-color: #218838;
+}
+
+.pdf-link {
+  color: #007bff;
+  text-decoration: none;
+}
+
+.pdf-link:hover {
+  text-decoration: underline;
+}
 
 footer {
   margin-top: 150px;

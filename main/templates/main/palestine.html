@@ -3,6 +3,31 @@
 {% block title %}حضارة فلسطين - الحفاظ على التراث{% endblock %}
 
 {% block content %}
+<style>
+    .list-group-item {
+        border: none !important; /* Remove borders */
+        background-color: transparent !important; /* Remove background color */
+        padding-right: 20px; /* Add some padding on the right */
+        position: relative; /* Needed for positioning the bullet */
+        text-align: right; /* Align text to the right */
+        margin-bottom: 5px; /* Space between list items */
+        line-height: 0.4; /* Reduce the line height */
+        font-weight: normal; /* Ensure text is not bold */
+    }
+
+    .list-group-item::before {
+        content: '•'; /* Unicode character for bullet */
+        color: #000; /* Bullet color */
+        font-size: 20px; /* Bullet size */
+        position: absolute;
+        right: 0; /* Position bullet on the right */
+        top: 50%;
+        transform: translateY(-50%);
+    }
+</style>
+
+
+
 <div class="container">
     <div class="row justify-content-center">
         <div class="col-md-10">
@@ -18,13 +43,11 @@
                     </p>
                     <h4>بعض المواضيع الممكنة للمشاركة:</h4>
                     <ul>
-                        <li>التاريخ والأثار الفلسطينية</li>
-                        <li>الأدب والشعر الفلسطيني</li>
-                        <li>الفنون التشكيلية والموسيقى الفلسطينية</li>
-                        <li>المأكولات والأكلات الفلسطينية التقليدية</li>
-                        <li>تاريخ الهجرة واللاجئين الفلسطينيين</li>
+                        {% for c in cats%}
+                        <li class="list-group-item">{{c.name}}</li>
+                        {% endfor %}
                     </ul>
-                    <h3>لن ننسى</h3>
+                    <h3>لا ننسى</h3>
                     <p>
                         ساهم معنا في الحفاظ على تراث حضارة فلسطين وشارك مع العالم قصصها وإرثها الثري. لنقم بالأمور الكبيرة سويًا.
                     </p>

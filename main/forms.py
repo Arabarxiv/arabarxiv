@@ -33,6 +33,10 @@ class RegisterForm(UserCreationForm):
             raise ValidationError("يوجد مستخدم بالفعل بهذا البريد الإلكتروني.")
         return email
 
+class BibTexForm(forms.Form):
+    bibtex_input = forms.CharField(widget=forms.Textarea, label='أدخل مدخل BibTeX الخاص بك هنا')
+
+
 class PostForm(forms.ModelForm):
     class Meta:
         model = Post
@@ -49,6 +53,7 @@ class PostForm(forms.ModelForm):
         }
         help_texts = {
             'comments': 'إذا لم يكن التصنيف موجود، يرجى ذكره هنا.',
+            'authors': '',
         }
 
 class TranslationPostForm(forms.ModelForm):

@@ -25,6 +25,7 @@ urlpatterns = [
     path('contact', views.contact, name='contact'),
     path('confirm-email/<uidb64>/<token>/', views.confirm_email, name='confirm_email'),
     path('resend-confirmation-email/<int:user_id>/', views.resend_confirmation_email, name='resend_confirmation_email'),
+    path('bibtex', views.bibtex_converter, name='bibtex_converter'),
 ]
 
 
