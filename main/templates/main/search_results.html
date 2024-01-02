@@ -49,4 +49,17 @@
         <p>لم يتم العثور على نتائج</p>
     {% endif %}
 </div>
+<script>
+  function toggleDescription(descriptionId) {
+    var description = document.getElementById(descriptionId);
+    var moreText = description.getElementsByClassName('more-text')[0];
+  
+    if (moreText.style.display === "none") {
+        moreText.style.display = "inline";
+    } else {
+        moreText.style.display = "none";
+    }
+  }
+  
+  </script>
 {% endblock %}
