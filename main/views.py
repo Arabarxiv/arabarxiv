@@ -325,9 +325,9 @@ def delete_post(request, post_id):
             messages.error(request, "You are not authorized to delete this post.")
 
         # Redirect to a success page, adjust the URL as needed
-        return redirect("/user_profile")  # Replace 'posts_list' with your actual view name
+        return redirect("user_profile")  # Replace 'posts_list' with your actual view name
 
-    return redirect("/user_profile")
+    return redirect("user_profile")
                     
 def is_mod_or_staff(user):
     return user.groups.filter(name='mod').exists() or user.is_staff
