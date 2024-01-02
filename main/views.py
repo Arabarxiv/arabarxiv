@@ -139,15 +139,15 @@ def send_rejected(user, post):
     email.attach_alternative(html_content, "text/html")
     email.send()
 
-
-@login_required(login_url="/login")
 def home(request):
     posts = Post.objects.all()
+    translation_post_ids = TranslationPost.objects.values_list('post_ptr_id', flat=True)
+    for post in posts:
+        post.is_translation = post.id in translation_post_ids
     categories = MainCategory.objects.all()
 
     return render(request, 'main/home.html', {"posts": posts,
-                                              "categories":categories, 
-                                              "is_mod": request.user.groups.filter(name='mod').exists()})
+                                              "categories":categories})
 
 def custom_login_view(request):
     if request.method == 'POST':

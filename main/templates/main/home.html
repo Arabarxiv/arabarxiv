@@ -58,9 +58,8 @@
                                   {% endwith %}
                               </span>
 
-
-                              {% if post.translator %}
-                              <p class="post-translator">المترجم: {{ post.translator }}</p>
+                              {% if post.is_translation  %}
+                              <p class="post-translator">المترجم: {{ post.translationpost.translator }}</p>
                               {% endif %}
                               <p class="post-keywords">التصنيف: {{ post.category }}</p>
                               <p class="post-description" id="description-{{ post.id }}">
