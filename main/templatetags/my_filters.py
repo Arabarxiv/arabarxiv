@@ -1,7 +1,7 @@
 from django import template
 
 register = template.Library()
-
+import re
 @register.filter
 def count_approved_posts_in_category(posts, category):
     return sum(1 for post in posts if post.status == "Approved" and post.category.main_category.id == category.id)
@@ -9,7 +9,9 @@ def count_approved_posts_in_category(posts, category):
 
 @register.filter(name='split')
 def split_string(value, key):
-    return value.split(key)
+    delimiters = [',', '،']
+    regex_pattern = '|'.join(map(re.escape, delimiters))
+    return re.split(regex_pattern, value)
 
 @register.filter(name='strip')
 def strip(value):
