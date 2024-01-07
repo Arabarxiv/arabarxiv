@@ -521,7 +521,7 @@ Header Style
   height: 40px;
   text-indent: -9999em;
   z-index: 99;
-  right: 20px;
+  left: 20px;
   display: none;
 }
 
@@ -634,16 +634,47 @@ Header Style
   .background-header .main-nav .nav,
   .header-area .main-nav .nav {
     background-color: #e2fdee;
+    height: auto;
   }
   .background-header .main-nav .nav li a,
   .header-area .main-nav .nav li a {
-    line-height: 50px;
     height: 50px;
     font-weight: 400;
     color: #1e1e1e;
-    background-color: #f1f0fe;
-     border-radius: 0px 0px 25px 25px;
+    background-color:rgb(195, 234, 204);
+    border-radius: 0px 0px 25px 25px;
   }
+  .nav-item .dropdown-menu {
+    background-color: black;
+    text-align: right;
+    position: absolute; /* Adjust if necessary */
+    width: 100%; /* Full width */
+    box-sizing: border-box; /* Optional, for padding */
+    right: 0; /* Align to the left */
+    top: 100%; /* Position below the dropdown toggle */
+}
+
+.nav-item .dropdown-menu {
+  /* Existing styles */
+  overflow: visible; /* Ensure contents aren't cut off */
+  max-height: none; /* Remove any max height restrictions */
+}
+
+.nav-item .dropdown-menu a {
+  /* Existing styles */
+  position: absolute;
+        width: 100%;
+        box-sizing: border-box;
+  visibility: visible; /* Ensure all links are visible */
+  display: block; /* Display each link as a block */
+  opacity: 1; /* Ensure full opacity */
+}
+
+.nav-item .dropdown-menu a {
+    color: white; /* Adjust for better visibility */
+    padding: 10px; /* More padding for touch targets */
+    display: block; /* Ensure full-width links */
+}
   .background-header .main-nav .nav li,
   .header-area .main-nav .nav li {
     border-top: 1px solid #ddd;
@@ -661,11 +692,7 @@ Header Style
   }
   .header-area .main-nav .logo {
     position: absolute;
-    left: 30px;
-    top: 10px;
-  }
-  .background-header .main-nav .logo {
-    top: 10px;
+    right: 30px;
   }
   .background-header .main-nav .border-button {
     top: 0px !important;
@@ -694,8 +721,8 @@ Header Style
     padding: 0px;
   }
   .header-area .logo {
-    margin-left: 0px;
-    margin-top: 30px;
+    margin-right: 0px;
+    margin-top: 10px;
   }
   .header-area .menu-trigger {
     display: block !important;
@@ -728,7 +755,6 @@ Header Style
     padding-left: 0px !important;
     padding-right: 0px !important;
   }
-  
 }
 
 /* 

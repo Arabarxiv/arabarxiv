@@ -265,7 +265,6 @@ class Category(models.Model):
         return f"{self.name}"
 
 class UserProfile(models.Model):
-
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     
     affiliation = models.TextField(max_length=200, null=True, blank=True)
