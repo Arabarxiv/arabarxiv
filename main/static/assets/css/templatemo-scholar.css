@@ -343,7 +343,6 @@ Header Style
 .background-header {
   background-color: #005109 !important;
   border-radius: 0px 0px 25px 25px;
-  height: 80px!important;
   position: fixed!important;
   top: 0!important;
   left: 0;
@@ -358,7 +357,6 @@ Header Style
 .header-area {
   background-color: #005109 !important;
   border-radius: 0px 0px 25px 25px;
-  height: 80px!important;
   position: fixed!important;
   z-index: 289;
   top: 0!important;
@@ -422,7 +420,6 @@ Header Style
 
 .header-area .main-nav #search input {
   background-color: rgba(255, 255, 255, 0.10);
-  height: 44px;
   width: 250px;
   border-radius: 23px;
   border: none;
@@ -476,7 +473,6 @@ Header Style
   border-radius: 20px;
   font-weight: 300;
   font-size: 16px;
-  height: 40px;
   line-height: 40px;
   text-transform: capitalize;
   color: #fff;
@@ -642,25 +638,28 @@ Header Style
     font-weight: 400;
     color: #1e1e1e;
     background-color:rgb(195, 234, 204);
-    border-radius: 0px 0px 25px 25px;
+    border-radius: 0px 0px 0px 0px;
   }
   .nav-item .dropdown-menu {
     background-color: black;
     text-align: right;
     position: absolute; /* Adjust if necessary */
     width: 100%; /* Full width */
-    box-sizing: border-box; /* Optional, for padding */
     right: 0; /* Align to the left */
     top: 100%; /* Position below the dropdown toggle */
 }
 
-.nav-item .dropdown-menu {
+.dropdown-menu {
+  padding:0; 
+}
+
+.nav-item .dropdown-item {
   /* Existing styles */
   overflow: visible; /* Ensure contents aren't cut off */
   max-height: none; /* Remove any max height restrictions */
 }
 
-.nav-item .dropdown-menu a {
+.nav-item .dropdown-item a {
   /* Existing styles */
   position: absolute;
         width: 100%;
@@ -670,7 +669,7 @@ Header Style
   opacity: 1; /* Ensure full opacity */
 }
 
-.nav-item .dropdown-menu a {
+.nav-item .dropdown-item a {
     color: white; /* Adjust for better visibility */
     padding: 10px; /* More padding for touch targets */
     display: block; /* Ensure full-width links */
@@ -726,9 +725,6 @@ Header Style
   }
   .header-area .menu-trigger {
     display: block !important;
-  }
-  .header-area .main-nav {
-    overflow: hidden;
   }
   .header-area .main-nav .nav {
     float: none;
