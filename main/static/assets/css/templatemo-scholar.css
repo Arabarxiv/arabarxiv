@@ -343,6 +343,7 @@ Header Style
 .background-header {
   background-color: #005109 !important;
   border-radius: 0px 0px 25px 25px;
+  height: 80px!important;
   position: fixed!important;
   top: 0!important;
   left: 0;
@@ -357,6 +358,7 @@ Header Style
 .header-area {
   background-color: #005109 !important;
   border-radius: 0px 0px 25px 25px;
+  height: 80px!important;
   position: fixed!important;
   z-index: 289;
   top: 0!important;
@@ -420,6 +422,7 @@ Header Style
 
 .header-area .main-nav #search input {
   background-color: rgba(255, 255, 255, 0.10);
+  height: 44px;
   width: 250px;
   border-radius: 23px;
   border: none;
@@ -473,6 +476,7 @@ Header Style
   border-radius: 20px;
   font-weight: 300;
   font-size: 16px;
+  height: 40px;
   line-height: 40px;
   text-transform: capitalize;
   color: #fff;
