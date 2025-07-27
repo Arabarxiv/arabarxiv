@@ -28,6 +28,8 @@ urlpatterns = [
     path('bibtex', views.bibtex_converter, name='bibtex_converter'),
     path('post/delete/<int:post_id>/', views.delete_post, name='delete_post'),
     path('get-categories/', views.get_categories, name='get_categories'),
+    path('test-auth/', views.test_authorization, name='test_authorization'),
+    path('reviewer-request-status/', views.check_reviewer_request_status, name='reviewer_request_status'),
 ]
 
 

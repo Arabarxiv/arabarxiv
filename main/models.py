@@ -1,10 +1,10 @@
 from django.db import models
 from django.contrib.auth.models import User, AbstractUser
 from django.core.files.storage import FileSystemStorage
-from gdstorage.storage import GoogleDriveStorage
+# from gdstorage.storage import GoogleDriveStorage
 
 # Define Google Drive Storage
-gd_storage = GoogleDriveStorage()
+# gd_storage = GoogleDriveStorage()
 
 COUNTRY_CHOICES = [
         ("AF","أفغانستان "),
@@ -254,13 +254,18 @@ COUNTRY_CHOICES = [
 class MainCategory(models.Model):
     name = models.CharField(max_length=100, unique=True)
     english_name = models.CharField(max_length=100)
+    class Meta:
+        verbose_name = 'التصنيف الرئيسي'
+        verbose_name_plural = 'التصنيفات الرئيسية'
     def __str__(self):
         return self.name
     
 class Category(models.Model):
     main_category = models.ForeignKey(MainCategory, on_delete=models.CASCADE, related_name='categories')
     name = models.CharField(max_length=100, unique=True)
-
+    class Meta:
+        verbose_name = 'تصنيف فرعي'
+        verbose_name_plural = 'التصنيفات الفرعية'
     def __str__(self):
         return f"{self.name}"
 
@@ -275,7 +280,9 @@ class UserProfile(models.Model):
 
     completed = models.BooleanField(default=False)
     email_confirmed = models.BooleanField(default=False)
-
+    class Meta:
+        verbose_name = 'ملف المستخدم'
+        verbose_name_plural = 'ملفات المستخدمين'
     def __str__(self):
         return self.user.username
     
@@ -288,7 +295,9 @@ class Post(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='posts', null=True, blank=True)
-    pdf = models.FileField(upload_to='pdfs', storage=gd_storage, null=True, blank=True)
+    pdf = models.FileField(upload_to='pdfs')
+    #pdf = models.FileField(upload_to='pdfs', storage=gd_storage, null=True, blank=True)
+
 
     keywords = models.CharField(max_length=200)  # Keywords for the post
     comments = models.CharField(max_length=200, blank=True)  # Comments related to the post (can be blank)
@@ -301,7 +310,9 @@ class Post(models.Model):
     is_approved = models.BooleanField(default=False)
     reviewer_comments = models.TextField(blank=True)
     reviewer = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='reviewed_posts')
-
+    class Meta:
+        verbose_name = 'مشاركة'
+        verbose_name_plural = 'المشاركات'
     def __str__(self):
         return self.title + "\n" + self.description
 
@@ -313,12 +324,38 @@ class Post(models.Model):
 
 class TranslationPost(Post):
     translator = models.CharField(max_length=400)
+    class Meta:
+        verbose_name = 'مشاركة مترجمة'
+        verbose_name_plural = 'المشاركات المترجمة'
 
 class KeywordTranslation(models.Model):
     english_keyword = models.CharField(max_length=200)
     arabic_translation = models.CharField(max_length=200)
     category = models.ForeignKey(MainCategory, on_delete=models.CASCADE)
-
+    class Meta:
+        verbose_name = 'ترجمة مصطلح'
+        verbose_name_plural = 'ترجمات المصطلحات'
     def __str__(self):
         return self.english_keyword
+
+class ReviewerRequest(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'قيد الانتظار'),
+        ('approved', 'تمت الموافقة'),
+        ('rejected', 'مرفوض'),
+    ]
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reviewer_requests')
+    request_date = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    admin_notes = models.TextField(blank=True, null=True)
+    processed_date = models.DateTimeField(null=True, blank=True)
+    processed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='processed_requests')
+    class Meta:
+        verbose_name = 'طلب مراجع'
+        verbose_name_plural = 'طلبات المراجعين'
+        ordering = ['-request_date']
+    def __str__(self):
+        return f"طلب مراجع من {self.user.username} - {self.get_status_display()}"
+    
+    ordering = ['-request_date']
 

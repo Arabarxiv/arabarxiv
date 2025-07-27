@@ -17,9 +17,13 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import include, path
 from django.contrib.auth import views as auth_views
+from main.views import custom_403_error
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path("", include("main.urls")),
     path("", include("django.contrib.auth.urls")), 
 ]
+
+# Custom error handlers
+handler403 = 'main.views.custom_403_error'

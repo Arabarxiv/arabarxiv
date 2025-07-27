@@ -17,6 +17,115 @@ from django.utils.html import strip_tags
 
 from django.core.validators import validate_email
 from django.core.exceptions import ValidationError
+from django.http import Http404
+from functools import wraps
+
+# Custom authorization decorators
+def email_confirmation_required(view_func):
+    """Decorator to check if user's email is confirmed"""
+    def _wrapped_view_func(request, *args, **kwargs):
+        if request.user.is_authenticated and not request.user.userprofile.email_confirmed:
+            return render(request, 'main/authorization_error.html', {
+                'error_type': 'email_not_confirmed',
+                'error_title': 'تأكيد البريد الإلكتروني مطلوب',
+                'error_message': 'يجب تأكيد بريدك الإلكتروني قبل إنشاء منشور جديد.',
+                'action_button_text': 'إعادة إرسال بريد التأكيد',
+                'action_url': f'/resend-confirmation-email/{request.user.id}/',
+                'back_button_text': 'العودة للصفحة الرئيسية',
+                'back_url': '/home'
+            })
+        return view_func(request, *args, **kwargs)
+    return _wrapped_view_func
+
+def moderator_required(view_func):
+    """Decorator to check if user is a moderator or staff"""
+    def _wrapped_view_func(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return render(request, 'main/authorization_error.html', {
+                'error_type': 'login_required',
+                'error_title': 'تسجيل الدخول مطلوب',
+                'error_message': 'يجب تسجيل الدخول للوصول إلى هذه الصفحة.',
+                'action_button_text': 'تسجيل الدخول',
+                'action_url': '/login',
+                'back_button_text': 'العودة للصفحة الرئيسية',
+                'back_url': '/home'
+            })
+        
+        if not is_mod_or_staff(request.user):
+            return render(request, 'main/authorization_error.html', {
+                'error_type': 'moderator_required',
+                'error_title': 'صلاحيات المراجع مطلوبة',
+                'error_message': 'يجب أن تكون مراجعًا للوصول إلى هذه الصفحة.',
+                'action_button_text': 'طلب أن تصبح مراجعًا',
+                'action_url': '/become_reviewer',
+                'back_button_text': 'العودة للصفحة الرئيسية',
+                'back_url': '/home'
+            })
+        return view_func(request, *args, **kwargs)
+    return _wrapped_view_func
+
+def author_required(view_func):
+    """Decorator to check if user is the author of a post"""
+    def _wrapped_view_func(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return render(request, 'main/authorization_error.html', {
+                'error_type': 'login_required',
+                'error_title': 'تسجيل الدخول مطلوب',
+                'error_message': 'يجب تسجيل الدخول للوصول إلى هذه الصفحة.',
+                'action_button_text': 'تسجيل الدخول',
+                'action_url': '/login',
+                'back_button_text': 'العودة للصفحة الرئيسية',
+                'back_url': '/home'
+            })
+        
+        # Get post_id from kwargs or request
+        post_id = kwargs.get('post_id') or request.POST.get('post_id')
+        if post_id:
+            try:
+                post = Post.objects.get(id=post_id)
+                if post.author != request.user:
+                    return render(request, 'main/authorization_error.html', {
+                        'error_type': 'author_required',
+                        'error_title': 'صلاحيات المؤلف مطلوبة',
+                        'error_message': 'يمكن فقط للمؤلف الأصلي حذف أو تعديل هذا المنشور.',
+                        'action_button_text': 'عرض المنشور',
+                        'action_url': f'/posts',
+                        'back_button_text': 'العودة للصفحة الرئيسية',
+                        'back_url': '/home'
+                    })
+            except Post.DoesNotExist:
+                raise Http404("المنشور غير موجود")
+        
+        return view_func(request, *args, **kwargs)
+    return _wrapped_view_func
+
+def profile_completion_required(view_func):
+    """Decorator to check if user profile is completed"""
+    def _wrapped_view_func(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return render(request, 'main/authorization_error.html', {
+                'error_type': 'login_required',
+                'error_title': 'تسجيل الدخول مطلوب',
+                'error_message': 'يجب تسجيل الدخول للوصول إلى هذه الصفحة.',
+                'action_button_text': 'تسجيل الدخول',
+                'action_url': '/login',
+                'back_button_text': 'العودة للصفحة الرئيسية',
+                'back_url': '/home'
+            })
+        
+        if not request.user.userprofile.completed:
+            return render(request, 'main/authorization_error.html', {
+                'error_type': 'profile_incomplete',
+                'error_title': 'ملف الملف الشخصي غير مكتمل',
+                'error_message': 'يجب إكمال ملفك الشخصي قبل الوصول إلى هذه الصفحة.',
+                'action_button_text': 'إكمال الملف الشخصي',
+                'action_url': '/user_profile',
+                'back_button_text': 'العودة للصفحة الرئيسية',
+                'back_url': '/home'
+            })
+        
+        return view_func(request, *args, **kwargs)
+    return _wrapped_view_func
 
 def logout_view(request):
     logout(request)
@@ -79,7 +188,8 @@ def send_confirmation_email(user, request):
     url = request.build_absolute_uri('/confirm-email/' + uid + '/' + token + '/')
 
     message = f"الرجاء الضغط على الرابط التالي لتأكيد تسجيلك: {url}"
-    send_mail('تأكيد تسجيلك', message, None, [user.email])
+    #send_mail('تأكيد تسجيلك', message, None, [user.email])
+    send_mail('تأكيد تسجيلك', message, settings.DEFAULT_FROM_EMAIL, [user.email])
 
 
 def search_posts(request):
@@ -164,6 +274,7 @@ def custom_login_view(request):
 
 
 @login_required(login_url="/login")
+@email_confirmation_required
 @permission_required("main.add_post", login_url="/login", raise_exception=True)
 def create_post(request):
 
@@ -187,14 +298,7 @@ def get_categories(request):
     categories = list(Category.objects.values('id', 'name'))
     return JsonResponse({'categories': categories})
 
-def email_confirmation_required(view_func):
-    def _wrapped_view_func(request, *args, **kwargs):
-        if request.user.is_authenticated and not request.user.userprofile.email_confirmed:
-            messages.warning(request, '.تأكيد البريد الإلكتروني إجباري')
-            # Optionally, redirect to a specific page
-            return redirect('/home')
-        return view_func(request, *args, **kwargs)
-    return _wrapped_view_func
+
 
 
 @login_required(login_url="/login")
@@ -223,8 +327,9 @@ def sign_up(request):
             user.last_name =  form.cleaned_data['last_name']
             user.email =  form.cleaned_data['email']
             user.save()
-            send_confirmation_email(user, request)
             login(request, user)
+            send_confirmation_email(user, request)
+            
             return redirect('/home')
     else:
         form = RegisterForm()
@@ -236,12 +341,24 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 
 def confirm_email(request, uidb64, token):
     try:
+        print('Raw uidb64:', uidb64) #added
+        print('Raw token:', token)  #added
         uid = force_str(urlsafe_base64_decode(uidb64))
+        print('Decoded UID:', uid)  #added
         user = User.objects.get(pk=uid)
-    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+        print('User found:', user) #added
+    except (TypeError, ValueError, OverflowError, User.DoesNotExist) as e:  # "ad e" is added
+        print('Exception during UID decode or user lookup:', e) #added
         user = None
 
-    if user is not None and default_token_generator.check_token(user, token):
+    if user is not None:
+        is_token_valid = default_token_generator.check_token(user, token)
+        print('Token valid:', is_token_valid) #added
+    else:
+        is_token_valid = False
+        print('User is None, cannot check token.') #added   
+
+    if user is not None and is_token_valid:
         user.userprofile.email_confirmed = True
         user.userprofile.save()
         # Redirect to a success page or render a success template
@@ -262,6 +379,7 @@ def resend_confirmation_email(request, user_id):
 
 from .forms import *
 
+@login_required
 def modify_profile(request):
     posts = Post.objects.all()
     if request.method == 'POST':
@@ -318,21 +436,17 @@ def modify_profile(request):
                                                       'career_form': career_form,
                                                       'website_form': website_form, 
                                                       })
+                                                    
 
 @login_required
+@author_required
 def delete_post(request, post_id):
     post = get_object_or_404(Post.objects.select_related('translationpost'), id=post_id)
 
     if request.method == "POST":
-        # Check if the current user is the author of the post
-        if post.author == request.user:
-            post.delete()
-            messages.success(request, "Post deleted successfully.")
-        else:
-            messages.error(request, "You are not authorized to delete this post.")
-
-        # Redirect to a success page, adjust the URL as needed
-        return redirect("user_profile")  # Replace 'posts_list' with your actual view name
+        post.delete()
+        messages.success(request, "تم حذف المنشور بنجاح.")
+        return redirect("user_profile")
 
     return redirect("user_profile")
                     
@@ -353,6 +467,17 @@ def term_list(request):
         keyword_list = KeywordTranslation.objects.all()
 
     if request.method == 'POST':
+        if not request.user.is_authenticated:
+            return render(request, 'main/authorization_error.html', {
+                'error_type': 'login_required',
+                'error_title': 'تسجيل الدخول مطلوب',
+                'error_message': 'يجب تسجيل الدخول لإضافة مصطلحات جديدة.',
+                'action_button_text': 'تسجيل الدخول',
+                'action_url': '/login',
+                'back_button_text': 'العودة للصفحة الرئيسية',
+                'back_url': '/home'
+            })
+        
         if is_mod_or_staff(request.user):
             # User is in "mod" group or is_staff, add the keyword directly
             form = KeywordTranslationForm(request.POST)
@@ -390,6 +515,7 @@ def term_list(request):
 
 from django.db.models import Q
 @login_required
+@moderator_required
 def review_post(request):
     # Assuming you have a way to identify the current reviewer (e.g., request.user)
     current_reviewer = request.user  # You may need to adjust this based on your user model
@@ -432,15 +558,58 @@ def review_post(request):
     return render(request, 'main/review.html', context)
 
 @login_required
+@email_confirmation_required
 def become_reviewer(request):
     if request.method == 'POST':
-        request.user.groups.add(Group.objects.get(name='mod'))
-        messages.success(request, 'طلبك لتصبح مراجعًا تم استلامه وهو قيد المراجعة.')
-        return redirect('/review')
+        # Check if user already has a pending request
+        from .models import ReviewerRequest
+        existing_request = ReviewerRequest.objects.filter(user=request.user, status='pending').first()
+        
+        if existing_request:
+            messages.warning(request, 'لديك طلب قيد الانتظار بالفعل.')
+            return redirect('/home')
+        
+        # Check if user is already a moderator
+        if is_mod_or_staff(request.user):
+            messages.info(request, 'أنت مراجع بالفعل.')
+            return redirect('/home')
+        
+        # Create new reviewer request
+        reviewer_request = ReviewerRequest.objects.create(user=request.user)
+        
+        # Send email to admin
+        from django.core.mail import send_mail
+        from django.conf import settings
+        admin_message = f"""
+        طلب جديد لتصبح مراجعًا:
+        
+        المستخدم: {request.user.username}
+        الاسم: {request.user.first_name} {request.user.last_name}
+        البريد الإلكتروني: {request.user.email}
+        تاريخ الطلب: {reviewer_request.request_date}
+        
+        للرد على الطلب، يرجى الذهاب إلى لوحة الإدارة.
+        """
+        
+        try:
+            send_mail(
+                'طلب جديد لتصبح مراجعًا',
+                admin_message,
+                settings.DEFAULT_FROM_EMAIL,
+                ['arabarxiv@gmail.com'],  # Admin email
+                fail_silently=False,
+            )
+        except Exception as e:
+            # If email fails, still create the request but log the error
+            print(f"Failed to send email: {e}")
+        
+        messages.success(request, 'تم إرسال طلبك لتصبح مراجعًا بنجاح. سيتم مراجعته من قبل الإدارة.')
+        return redirect('/home')
 
     return render(request, 'main/real_home.html')
 
 @login_required
+@moderator_required
 def assign_mod(request):
     if request.method == 'POST':
         post_id = request.POST.get('post_id')  # Extract post_id from the form post
@@ -490,3 +659,81 @@ def bibtex_converter(request):
         form = BibTexForm()
 
     return render(request, 'main/bibtex_converter.html', {'form': form, 'formatted_bibtex': formatted_bibtex})
+
+def custom_403_error(request, exception=None):
+    """Custom 403 Forbidden error handler"""
+    if not request.user.is_authenticated:
+        return render(request, 'main/authorization_error.html', {
+            'error_type': 'login_required',
+            'error_title': 'تسجيل الدخول مطلوب',
+            'error_message': 'يجب تسجيل الدخول للوصول إلى هذه الصفحة.',
+            'action_button_text': 'تسجيل الدخول',
+            'action_url': '/login',
+            'back_button_text': 'العودة للصفحة الرئيسية',
+            'back_url': '/home'
+        })
+    else:
+        return render(request, 'main/authorization_error.html', {
+            'error_type': 'permission_denied',
+            'error_title': 'صلاحيات غير كافية',
+            'error_message': 'ليس لديك الصلاحيات الكافية للوصول إلى هذه الصفحة.',
+            'action_button_text': 'العودة للصفحة الرئيسية',
+            'action_url': '/home',
+            'back_button_text': 'تواصل معنا',
+            'back_url': '/contact'
+        })
+
+def test_authorization(request):
+    """Test view to demonstrate different authorization scenarios"""
+    if not request.user.is_authenticated:
+        return render(request, 'main/authorization_error.html', {
+            'error_type': 'login_required',
+            'error_title': 'تسجيل الدخول مطلوب',
+            'error_message': 'هذه صفحة اختبار للصلاحيات. يجب تسجيل الدخول للوصول إليها.',
+            'action_button_text': 'تسجيل الدخول',
+            'action_url': '/login',
+            'back_button_text': 'العودة للصفحة الرئيسية',
+            'back_url': '/home'
+        })
+    
+    if not request.user.userprofile.email_confirmed:
+        return render(request, 'main/authorization_error.html', {
+            'error_type': 'email_not_confirmed',
+            'error_title': 'تأكيد البريد الإلكتروني مطلوب',
+            'error_message': 'هذه صفحة اختبار للصلاحيات. يجب تأكيد بريدك الإلكتروني.',
+            'action_button_text': 'إعادة إرسال بريد التأكيد',
+            'action_url': f'/resend-confirmation-email/{request.user.id}/',
+            'back_button_text': 'العودة للصفحة الرئيسية',
+            'back_url': '/home'
+        })
+    
+    if not is_mod_or_staff(request.user):
+        return render(request, 'main/authorization_error.html', {
+            'error_type': 'moderator_required',
+            'error_title': 'صلاحيات المراجع مطلوبة',
+            'error_message': 'هذه صفحة اختبار للصلاحيات. يجب أن تكون مراجعًا.',
+            'action_button_text': 'طلب أن تصبح مراجعًا',
+            'action_url': '/become_reviewer',
+            'back_button_text': 'العودة للصفحة الرئيسية',
+            'back_url': '/home'
+        })
+    
+    # If all checks pass, show success message
+    return render(request, 'main/authorization_success.html', {
+        'message': 'تم اجتياز جميع اختبارات الصلاحيات بنجاح!'
+    })
+
+def check_reviewer_request_status(request):
+    """Check the status of user's reviewer request"""
+    if not request.user.is_authenticated:
+        return redirect('/login')
+    
+    from .models import ReviewerRequest
+    try:
+        reviewer_request = ReviewerRequest.objects.filter(user=request.user).latest('request_date')
+        return render(request, 'main/reviewer_request_status.html', {
+            'reviewer_request': reviewer_request
+        })
+    except ReviewerRequest.DoesNotExist:
+        messages.info(request, 'لا توجد طلبات مراجع لك.')
+        return redirect('/home')

@@ -1,0 +1,161 @@
+{% extends 'main/base.html' %}
+{% load static %}
+
+{% block title %}خطأ في الصلاحيات - {{ error_title }}{% endblock %}
+
+{% block content %}
+<section class="section" id="services">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-10 offset-lg-1">
+                <div class="section-heading text-center">
+                    <div class="error-icon mb-4">
+                        {% if error_type == 'login_required' %}
+                            <i class="fas fa-sign-in-alt fa-4x" style="color: #005109;"></i>
+                        {% elif error_type == 'email_not_confirmed' %}
+                            <i class="fas fa-envelope fa-4x" style="color: #005109;"></i>
+                        {% elif error_type == 'moderator_required' %}
+                            <i class="fas fa-user-shield fa-4x" style="color: #005109;"></i>
+                        {% elif error_type == 'author_required' %}
+                            <i class="fas fa-user-edit fa-4x" style="color: #005109;"></i>
+                        {% elif error_type == 'profile_incomplete' %}
+                            <i class="fas fa-user-cog fa-4x" style="color: #005109;"></i>
+                        {% else %}
+                            <i class="fas fa-exclamation-triangle fa-4x" style="color: #005109;"></i>
+                        {% endif %}
+                    </div>
+                    
+                    <h2 style="color: #005109; margin-bottom: 1rem;">{{ error_title }}</h2>
+                    <p style="color: #666; font-size: 1.1rem; margin-bottom: 2rem;">{{ error_message }}</p>
+                    
+                    <div class="error-actions mb-5">
+                        {% if action_button_text and action_url %}
+                            <a href="{{ action_url }}" class="main-button me-3">
+                                <i class="fas fa-arrow-right" style="margin-left: 8px;"></i>{{ action_button_text }}
+                            </a>
+                        {% endif %}
+                        
+                        {% if back_button_text and back_url %}
+                            <a href="{{ back_url }}" class="main-button" style="background-color: #f8f9fa; color: #005109; border: 2px solid #005109;">
+                                <i class="fas fa-home" style="margin-left: 8px;"></i>{{ back_button_text }}
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="row mt-5">
+                    <div class="col-md-4">
+                        <div class="service-item">
+                            <div class="icon">
+                                <i class="fas fa-question-circle fa-2x" style="color: #005109;"></i>
+                            </div>
+                            <div class="main-content">
+                                <h4>هل تحتاج مساعدة؟</h4>
+                                <p>يمكنك التواصل معنا للحصول على المساعدة</p>
+                                <a href="{% url 'contact' %}" class="main-button">
+                                    <i class="fas fa-envelope" style="margin-left: 8px;"></i>تواصل معنا
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="service-item">
+                            <div class="icon">
+                                <i class="fas fa-book fa-2x" style="color: #005109;"></i>
+                            </div>
+                            <div class="main-content">
+                                <h4>دليل المؤلفين</h4>
+                                <p>تعرف على كيفية استخدام المنصة</p>
+                                <a href="{% url 'author_guidelines' %}" class="main-button">
+                                    <i class="fas fa-file-alt" style="margin-left: 8px;"></i>الدليل
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="service-item">
+                            <div class="icon">
+                                <i class="fas fa-users fa-2x" style="color: #005109;"></i>
+                            </div>
+                            <div class="main-content">
+                                <h4>فريق العمل</h4>
+                                <p>تعرف على فريق العمل والمراجعين</p>
+                                <a href="{% url 'authors' %}" class="main-button">
+                                    <i class="fas fa-user-friends" style="margin-left: 8px;"></i>الفريق
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+.error-icon {
+    margin-bottom: 2rem;
+}
+
+.error-actions {
+    margin-bottom: 2rem;
+}
+
+.error-actions .main-button {
+    display: inline-block;
+    margin: 0 10px;
+    text-decoration: none;
+}
+
+.service-item {
+    text-align: center;
+    padding: 2rem 1rem;
+    border-radius: 15px;
+    background: #fff;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    margin-bottom: 2rem;
+}
+
+.service-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+}
+
+.service-item .icon {
+    margin-bottom: 1.5rem;
+}
+
+.service-item h4 {
+    color: #005109;
+    margin-bottom: 1rem;
+    font-weight: 600;
+}
+
+.service-item p {
+    color: #666;
+    margin-bottom: 1.5rem;
+    line-height: 1.6;
+}
+
+.service-item .main-button {
+    font-size: 0.9rem;
+    padding: 8px 20px;
+    height: auto;
+    line-height: 1.5;
+}
+
+@media (max-width: 768px) {
+    .error-actions .main-button {
+        display: block;
+        width: 100%;
+        margin: 10px 0;
+        text-align: center;
+    }
+    
+    .service-item {
+        margin-bottom: 1.5rem;
+    }
+}
+</style>
+{% endblock %} 

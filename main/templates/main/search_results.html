@@ -10,38 +10,34 @@
                 <h5>
                   {{ post.title }}
                   {% if post.pdf %}
-                  <p>{% with modified_url=post.pdf.url|slice:':-16' %}
-                    <a href="{{ modified_url }}" target="_blank"><i class="fas fa-file-pdf"></i></a>
-                    {% endwith %}
+                  <p>
+                    <a href="{{ post.pdf.url }}" target="_blank"><i class="fas fa-file-pdf"></i></a>
                   </p> 
                 {% endif %} 
                 </h5>
               </div>
-            </div>
                 
-            <div class="card-body">
-              <h6 class="post-author">المؤلف: {{post.authors}}</h6>
-              
+              <div class="card-body">
+                <h6 class="post-author">المؤلف: {{post.authors}}</h6>
+                
 
-
-              {% if post.translator %}
-              <p class="post-translator">المترجم: {{ post.translator }}</p>
-              {% endif %}
-              <p class="post-keywords">التصنيف: {{ post.category }}</p>
-              <p class="post-description" id="description-{{ post.id }}">
-                {{ post.description|truncatechars:200 }}
-                {% if post.description|length > 200 %}
-                    <span class="more-text" style="display:none;">{{ post.description|slice:"200:" }}</span>
-                    <button onclick="toggleDescription('description-{{ post.id }}')" class="see-more-btn">اقرأ المزيد</button>
+                {% if post.translator %}
+                <p class="post-translator">المترجم: {{ post.translator }}</p>
                 {% endif %}
-            </p>
-            
-            <p class="post-keywords">الكلمات المفتاحية: {{ post.keywords }}</p>
-             
+                <p class="post-keywords">التصنيف: {{ post.category }}</p>
+                <p class="post-description" id="description-{{ post.id }}">
+                  {{ post.description|truncatechars:200 }}
+                  {% if post.description|length > 200 %}
+                      <span class="more-text" style="display:none;">{{ post.description|slice:"200:" }}</span>
+                      <button onclick="toggleDescription('description-{{ post.id }}')" class="see-more-btn">اقرأ المزيد</button>
+                  {% endif %}
+                </p>
+                
+                <p class="post-keywords">الكلمات المفتاحية: {{ post.keywords }}</p>
+                 
+              </div>
+              <div class="card-footer text-muted">{{ post.created_at }}</div>
             </div>
-            <div class="card-footer text-muted">{{ post.created_at }}</div>
-        
-                        </div>
                     
             
             {% endfor %}

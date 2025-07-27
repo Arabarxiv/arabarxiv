@@ -54,6 +54,7 @@ class PostForm(forms.ModelForm):
         help_texts = {
             'comments': 'إذا لم يكن التصنيف موجود، يرجى ذكره هنا.',
             'authors': '',
+            'pdf': 'يجب رفع ملف PDF للمقال (إجباري)',
         }
 
 class TranslationPostForm(forms.ModelForm):
@@ -73,6 +74,7 @@ class TranslationPostForm(forms.ModelForm):
         }
         help_texts = {
             'comments': 'إذا لم يكن التصنيف موجود، يرجى ذكره هنا.',
+            'pdf': 'يجب رفع ملف PDF للمقال (إجباري)',
         }
 
 class CustomLoginForm(AuthenticationForm):
@@ -102,6 +104,7 @@ class ModifyMainCategoryForm(forms.Form):
         label='اختر تصنيفًا رئيسيًا',
         widget=forms.Select(attrs={'class': 'form-control'})
     )
+    
 
 class ModifyCareerForm(forms.Form):
     career = forms.CharField(label='المهنة', max_length=255)

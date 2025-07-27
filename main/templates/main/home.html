@@ -23,12 +23,12 @@
             <!-- Tab Navigation -->
             <ul class="nav nav-tabs" id="postTabs" role="tablist">
                 <li class="nav-item">
-                    <a class="nav-link active" id="all-tab" data-toggle="tab" href="#all" role="tab" aria-controls="all" aria-selected="true">All</a>
+                    <a class="nav-link active" id="all-tab" data-toggle="tab" href="#all" role="tab" aria-controls="all" aria-selected="true">الكل</a>
                 </li>
                 <!-- Create tabs dynamically for categories -->
                 {% for category in categories %}
                     <li class="nav-item">
-                        <a class="nav-link" id="{{ category.english_name }}-tab" data-toggle="tab" href="#{{ category.english_name }}" role="tab" aria-controls="{{ category.english_name }}" aria-selected="false">{{ category.name }}</a>
+                        <a class="nav-link" id="category-{{ category.id }}-tab" data-toggle="tab" href="#category-{{ category.id }}" role="tab" aria-controls="category-{{ category.id }}" aria-selected="false">{{ category.name }}</a>
                     </li>
                 {% endfor %}
             </ul>
@@ -45,9 +45,8 @@
                               <h5>
                                 {{ post.title }}
                                 {% if post.pdf %}
-                                <p>{% with modified_url=post.pdf.url|slice:':-16' %}
-                                  <a href="{{ modified_url }}" target="_blank"><i class="fas fa-file-pdf"></i></a>
-                                  {% endwith %}
+                                <p>
+                                  <a href="{{ post.pdf.url }}" target="_blank"><i class="fas fa-file-pdf"></i></a>
                                 </p> 
                               {% endif %} 
                               </h5>
@@ -77,7 +76,11 @@
                             </p>
                             
                             <p class="post-keywords">الكلمات المفتاحية: {{ post.keywords }}</p>
-                              
+                            {% if post.pdf %}
+                              <p>
+                                <a href="{{ post.pdf.url }}" target="_blank">تصفح الملف</a>
+                              </p> 
+                            {% endif %}
                             </div>
                             <div class="card-footer text-muted">{{ post.created_at }}</div>
                         
@@ -88,7 +91,7 @@
               </div>
 
                 {% for category in categories %}
-                    <div class="tab-pane fade" id="{{ category.english_name }}" role="tabpanel" aria-labelledby="{{ category.english_name }}-tab">
+                    <div class="tab-pane fade" id="category-{{ category.id }}" role="tabpanel" aria-labelledby="category-{{ category.id }}-tab">
                       {% with approved_posts_count=posts|count_approved_posts_in_category:category %}
                       {% if approved_posts_count > 0 %}
                           {% for post in posts %}
@@ -98,9 +101,8 @@
                                 <h5>
                                   {{ post.title }}
                                   {% if post.pdf %}
-                                  <p>{% with modified_url=post.pdf.url|slice:':-16' %}
-                                    <a href="{{ modified_url }}" target="_blank"><i class="fas fa-file-pdf"></i></a>
-                                    {% endwith %}
+                                  <p>
+                                    <a href="{{ post.pdf.url }}" target="_blank"><i class="fas fa-file-pdf"></i></a>
                                   </p> 
                                 {% endif %} 
                                 </h5>
@@ -108,7 +110,14 @@
                             </div>
                                 
                               <div class="card-body">
-                                <h6 class="post-author">المؤلف: {{ post.authors }}</h6>
+                                <h6 class="post-author">المؤلف:</h6>
+                                <span class="authors-list">
+                                    {% with authors_list=post.authors|split:"," %}
+                                        {% for author in authors_list %}
+                                            <span class="author-link" onclick="searchAuthor('{{ author|strip }}')">{{ author|strip }}</span>{% if not forloop.last %}, {% endif %}
+                                        {% endfor %}
+                                    {% endwith %}
+                                </span>
                                 {% if post.translator %}
                                 <p class="post-translator">المترجم: {{ post.translator }}</p>
                                 {% endif %}
@@ -123,9 +132,8 @@
                               
                               <p class="post-keywords">الكلمات المفتاحية: {{ post.keywords }}</p>
                                 {% if post.pdf %}
-                                  <p>{% with modified_url=post.pdf.url|slice:':-16' %}
-                                    <a href="{{ modified_url }}" target="_blank">تصفح الملف</a>
-                                    {% endwith %}
+                                  <p>
+                                    <a href="{{ post.pdf.url }}" target="_blank">تصفح الملف</a>
                                   </p> 
                                 {% endif %}
                                     </div>

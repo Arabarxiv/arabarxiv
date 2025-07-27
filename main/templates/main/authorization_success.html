@@ -1,0 +1,129 @@
+{% extends 'main/base.html' %}
+{% load static %}
+
+{% block title %}نجح اختبار الصلاحيات{% endblock %}
+
+{% block content %}
+<section class="section" id="services">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-10 offset-lg-1">
+                <div class="section-heading text-center">
+                    <div class="success-icon mb-4">
+                        <i class="fas fa-check-circle fa-4x" style="color: #005109;"></i>
+                    </div>
+                    
+                    <h2 style="color: #005109; margin-bottom: 1rem;">تم اجتياز اختبار الصلاحيات بنجاح!</h2>
+                    <p style="color: #666; font-size: 1.1rem; margin-bottom: 2rem;">{{ message }}</p>
+                    
+                    <div class="success-actions mb-5">
+                        <a href="/home" class="main-button me-3">
+                            <i class="fas fa-home" style="margin-left: 8px;"></i>العودة للصفحة الرئيسية
+                        </a>
+                        
+                        <a href="/user_profile" class="main-button" style="background-color: #f8f9fa; color: #005109; border: 2px solid #005109;">
+                            <i class="fas fa-user" style="margin-left: 8px;"></i>الملف الشخصي
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="row mt-5">
+                    <div class="col-md-4">
+                        <div class="service-item">
+                            <div class="icon">
+                                <i class="fas fa-user-check fa-2x" style="color: #005109;"></i>
+                            </div>
+                            <div class="main-content">
+                                <h4>تسجيل الدخول</h4>
+                                <p>تم تسجيل دخولك بنجاح</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="service-item">
+                            <div class="icon">
+                                <i class="fas fa-envelope-open fa-2x" style="color: #005109;"></i>
+                            </div>
+                            <div class="main-content">
+                                <h4>تأكيد البريد</h4>
+                                <p>تم تأكيد بريدك الإلكتروني</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="service-item">
+                            <div class="icon">
+                                <i class="fas fa-user-shield fa-2x" style="color: #005109;"></i>
+                            </div>
+                            <div class="main-content">
+                                <h4>صلاحيات المراجع</h4>
+                                <p>لديك صلاحيات المراجع</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+.success-icon {
+    margin-bottom: 2rem;
+}
+
+.success-actions {
+    margin-bottom: 2rem;
+}
+
+.success-actions .main-button {
+    display: inline-block;
+    margin: 0 10px;
+    text-decoration: none;
+}
+
+.service-item {
+    text-align: center;
+    padding: 2rem 1rem;
+    border-radius: 15px;
+    background: #fff;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    margin-bottom: 2rem;
+}
+
+.service-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+}
+
+.service-item .icon {
+    margin-bottom: 1.5rem;
+}
+
+.service-item h4 {
+    color: #005109;
+    margin-bottom: 1rem;
+    font-weight: 600;
+}
+
+.service-item p {
+    color: #666;
+    margin-bottom: 0;
+    line-height: 1.6;
+}
+
+@media (max-width: 768px) {
+    .success-actions .main-button {
+        display: block;
+        width: 100%;
+        margin: 10px 0;
+        text-align: center;
+    }
+    
+    .service-item {
+        margin-bottom: 1.5rem;
+    }
+}
+</style>
+{% endblock %} 

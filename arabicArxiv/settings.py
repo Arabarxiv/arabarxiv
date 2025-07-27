@@ -21,12 +21,15 @@ import django_on_heroku
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-#SECRET_KEY = 'django-insecure--(w5ln91oh)djklg6ap7i-d15y!dxk851gto^uyf^)(mvib@ul'
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure--(w5ln91oh)djklg6ap7i-d15y!dxk851gto^uyf^)(mvib@ul')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '192.168.1.9']
+
+# Custom error handlers
+HANDLER403 = 'main.views.custom_403_error'
 
 # Application definition
 
@@ -40,7 +43,7 @@ INSTALLED_APPS = [
     "main.apps.MainConfig", 
     "crispy_forms", 
     "crispy_bootstrap5",
-    'gdstorage', 
+    # 'gdstorage', 
     'widget_tweaks'
 ]
 
@@ -57,6 +60,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'main.middleware.AuthorizationMiddleware',
 ]
 
 django_on_heroku.settings(locals())
@@ -69,8 +73,10 @@ EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_USE_SSL = False
-EMAIL_HOST_USER = os.environ["EMAIL_HOST_USER"]
-EMAIL_HOST_PASSWORD = os.environ['EMAIL_HOST_PASSWORD']
+# EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'arabarxiv@gmail.com')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'arabarxiv@gmail.com')
 
 CSRF_TRUSTED_ORIGINS = ['https://*.herokuapp.com']
 
@@ -86,7 +92,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 "main.context_processor.review_count_processor",
-            ],
+            ],  
         },
     },
 ]
@@ -95,19 +101,29 @@ WSGI_APPLICATION = 'arabicArxiv.wsgi.application'
 
 
 # Database
-# https://docs.djangoproject.com/en/5.0/ref/settings/#databases
+#  replaced with a local database for development
+# # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
+
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME':"d3abgv2cvg8v4p", 
+#         "USER": "pexwfpuybglbxb", 
+#         "PASSWORD":"309b1344a44adfc80ccd4f1f7df601c7b71d7be8946d5c64b3c582f8465055a9", 
+#         "HOST":"ec2-54-73-22-169.eu-west-1.compute.amazonaws.com",
+#         "PORT":"5432"
+#     }
+# }
+
+
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME':"d3abgv2cvg8v4p", 
-        "USER": "pexwfpuybglbxb", 
-        "PASSWORD":"309b1344a44adfc80ccd4f1f7df601c7b71d7be8946d5c64b3c582f8465055a9", 
-        "HOST":"ec2-54-73-22-169.eu-west-1.compute.amazonaws.com",
-        "PORT":"5432"
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / "db.sqlite3",
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
@@ -142,6 +158,12 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
 STATIC_URL = 'static/'
+MEDIA_URL = '/media/'
+
+
+#STATICFILES_DIRS = [BASE_DIR / "static"]
+MEDIA_ROOT = BASE_DIR / "media"
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
@@ -153,3 +175,9 @@ LOGOUT_REDIRECT_URL = '/logout'
 
 TIME_ZONE = 'Africa/Algiers'
 USE_TZ = True
+
+# Google Drive Storage settings
+# DEFAULT_FILE_STORAGE = 'gdstorage.storage.GoogleDriveStorage'
+
+# GOOGLE_DRIVE_STORAGE_JSON_KEY_FILE = str(BASE_DIR / "credentials.json")
+# GOOGLE_DRIVE_STORAGE_MEDIA_ROOT = '13Z31sv2ho6puNU33BXVdOczs7vVngOkg' 

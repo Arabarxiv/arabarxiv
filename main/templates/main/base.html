@@ -120,6 +120,15 @@
 </div>
 {% endif %}
 
+          {% if user.is_authenticated and has_pending_reviewer_request %}
+<div class="alert alert-info text-center" role="alert" style="margin-bottom: 0;" id="reviewer-request-alert">
+    <strong>إشعار!</strong> طلبك لتصبح مراجعًا قيد المراجعة من قبل الإدارة. 
+    <button type="button" class="btn-close-custom" onclick="closeReviewerRequestAlert()" aria-label="Close" style="float: left; background: none; border: none; font-size: 1.2rem; color: #005109; cursor: pointer;">
+        <span aria-hidden="true">&times;</span>
+    </button>
+</div>
+{% endif %}
+
           <!-- ***** Banner Section Start ***** -->
   <div class="palestinian-culture-banner">
     <div class="container text-center">
@@ -229,4 +238,13 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+function closeReviewerRequestAlert() {
+    var alert = document.getElementById('reviewer-request-alert');
+    if (alert) {
+        alert.style.display = 'none';
+    }
+}
+</script>
 </html>
