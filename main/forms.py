@@ -1,6 +1,6 @@
 from django import forms 
 
-from django.contrib.auth.forms import UserCreationForm, UsernameField
+from django.contrib.auth.forms import UserCreationForm, UsernameField, PasswordResetForm
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import AuthenticationForm
 from django.utils.translation import gettext_lazy as _
@@ -32,6 +32,30 @@ class RegisterForm(UserCreationForm):
         if User.objects.filter(email=email).exists():
             raise ValidationError("يوجد مستخدم بالفعل بهذا البريد الإلكتروني.")
         return email
+
+class ModifyNameForm(forms.Form):
+    first_name = forms.CharField(label='الاسم الأول', max_length=30, required=True)
+    last_name = forms.CharField(label='اللقب', max_length=30, required=True)
+
+class ModifyEmailForm(forms.Form):
+    email = forms.EmailField(label='البريد الإلكتروني', required=True)
+    
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
+        super(ModifyEmailForm, self).__init__(*args, **kwargs)
+    
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        if User.objects.filter(email=email).exclude(id=self.user.id).exists():
+            raise ValidationError("يوجد مستخدم بالفعل بهذا البريد الإلكتروني.")
+        return email
+
+class CustomPasswordResetForm(PasswordResetForm):
+    email = forms.EmailField(
+        label='البريد الإلكتروني',
+        max_length=254,
+        widget=forms.EmailInput(attrs={'autocomplete': 'email', 'class': 'form-control'})
+    )
 
 class BibTexForm(forms.Form):
     bibtex_input = forms.CharField(widget=forms.Textarea, label='أدخل مدخل BibTeX الخاص بك هنا')

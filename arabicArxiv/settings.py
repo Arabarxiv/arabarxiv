@@ -12,10 +12,6 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 
 from pathlib import Path
 import os 
-from dotenv import load_dotenv
-
-# Load environment variables from .env file
-load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -25,15 +21,12 @@ import django_on_heroku
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure--(w5ln91oh)djklg6ap7i-d15y!dxk851gto^uyf^)(mvib@ul')
+SECRET_KEY = 'django-insecure--(w5ln91oh)djklg6ap7i-d15y!dxk851gto^uyf^)(mvib@ul'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DEBUG', 'True') == 'True'
+DEBUG = True
 
 ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '192.168.1.9']
-
-# Custom error handlers
-HANDLER403 = 'main.views.custom_403_error'
 
 # Application definition
 
@@ -64,7 +57,6 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'main.middleware.AuthorizationMiddleware',
 ]
 
 django_on_heroku.settings(locals())
@@ -78,9 +70,9 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_USE_SSL = False
 # EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'arabarxiv@gmail.com')
-EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
-DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'arabarxiv@gmail.com')
+EMAIL_HOST_USER = 'arabarxiv@gmail.com'
+EMAIL_HOST_PASSWORD = 'tjdaafurgtazcuqy'
+DEFAULT_FROM_EMAIL = 'arabarxiv@gmail.com'
 
 CSRF_TRUSTED_ORIGINS = ['https://*.herokuapp.com']
 

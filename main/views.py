@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from .forms import RegisterForm, PostForm
+from .forms import RegisterForm, PostForm, ModifyNameForm, ModifyEmailForm, CustomPasswordResetForm, KeywordTranslationForm
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.models import User, Group
@@ -20,10 +20,22 @@ from django.core.exceptions import ValidationError
 from django.http import Http404
 from functools import wraps
 
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.encoding import force_bytes, force_str
+from django.contrib.auth.tokens import default_token_generator
+from django.contrib.auth.views import PasswordResetCompleteView
+import logging
+
+logger = logging.getLogger(__name__)
+
 # Custom authorization decorators
 def email_confirmation_required(view_func):
     """Decorator to check if user's email is confirmed"""
     def _wrapped_view_func(request, *args, **kwargs):
+        # Superusers bypass all email confirmation requirements
+        if request.user.is_authenticated and request.user.is_superuser:
+            return view_func(request, *args, **kwargs)
+        
         if request.user.is_authenticated and not request.user.userprofile.email_confirmed:
             return render(request, 'main/authorization_error.html', {
                 'error_type': 'email_not_confirmed',
@@ -40,6 +52,8 @@ def email_confirmation_required(view_func):
 def moderator_required(view_func):
     """Decorator to check if user is a moderator or staff"""
     def _wrapped_view_func(request, *args, **kwargs):
+        logger.debug(f"Moderator decorator check for {request.user.username} - superuser: {request.user.is_superuser}")
+        
         if not request.user.is_authenticated:
             return render(request, 'main/authorization_error.html', {
                 'error_type': 'login_required',
@@ -50,6 +64,11 @@ def moderator_required(view_func):
                 'back_button_text': 'العودة للصفحة الرئيسية',
                 'back_url': '/home'
             })
+        
+        # Superusers bypass all moderator requirements
+        if request.user.is_superuser:
+            logger.debug(f"Superuser {request.user.username} bypassing moderator decorator")
+            return view_func(request, *args, **kwargs)
         
         if not is_mod_or_staff(request.user):
             return render(request, 'main/authorization_error.html', {
@@ -77,6 +96,10 @@ def author_required(view_func):
                 'back_button_text': 'العودة للصفحة الرئيسية',
                 'back_url': '/home'
             })
+        
+        # Superusers bypass all author requirements
+        if request.user.is_superuser:
+            return view_func(request, *args, **kwargs)
         
         # Get post_id from kwargs or request
         post_id = kwargs.get('post_id') or request.POST.get('post_id')
@@ -112,6 +135,10 @@ def profile_completion_required(view_func):
                 'back_button_text': 'العودة للصفحة الرئيسية',
                 'back_url': '/home'
             })
+        
+        # Superusers bypass all profile completion requirements
+        if request.user.is_superuser:
+            return view_func(request, *args, **kwargs)
         
         if not request.user.userprofile.completed:
             return render(request, 'main/authorization_error.html', {
@@ -179,7 +206,7 @@ def contact(request):
     return render(request, 'main/contact.html')
 
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
-from django.utils.encoding import force_bytes
+from django.utils.encoding import force_bytes, force_str
 from django.contrib.auth.tokens import default_token_generator
 
 def send_confirmation_email(user, request):
@@ -382,8 +409,45 @@ from .forms import *
 @login_required
 def modify_profile(request):
     posts = Post.objects.all()
+    
+    # Initialize all forms with current user data
+    name_form = ModifyNameForm(initial={
+        'first_name': request.user.first_name,
+        'last_name': request.user.last_name
+    })
+    email_form = ModifyEmailForm(initial={'email': request.user.email}, user=request.user)
+    affiliation_form = ModifyAffiliationForm(initial={'affiliation': request.user.userprofile.affiliation})
+    country_form = ModifyCountry(initial={'country': request.user.userprofile.country})
+    main_category_form = ModifyMainCategoryForm(initial={'main_category': request.user.userprofile.main_category})
+    career_form = ModifyCareerForm(initial={'career': request.user.userprofile.career})
+    website_form = ModifyWebsiteForm(initial={'website': request.user.userprofile.website})
+    
     if request.method == 'POST':
-        if 'affiliation' in request.POST:
+        if 'first_name' in request.POST:
+            name_form = ModifyNameForm(request.POST)
+            if name_form.is_valid():
+                request.user.first_name = name_form.cleaned_data['first_name']
+                request.user.last_name = name_form.cleaned_data['last_name']
+                request.user.save()
+                messages.success(request, 'تم تحديث الاسم بنجاح.')
+                return redirect('user_profile')
+
+        elif 'email' in request.POST:
+            email_form = ModifyEmailForm(request.POST, user=request.user)
+            if email_form.is_valid():
+                old_email = request.user.email
+                new_email = email_form.cleaned_data['email']
+                request.user.email = new_email
+                request.user.userprofile.email_confirmed = False
+                request.user.save()
+                request.user.userprofile.save()
+                
+                # Send confirmation email to new email
+                send_confirmation_email(request.user, request)
+                messages.success(request, f'تم تحديث البريد الإلكتروني إلى {new_email}. يرجى تأكيد البريد الإلكتروني الجديد.')
+                return redirect('user_profile')
+
+        elif 'affiliation' in request.POST:
             affiliation_form = ModifyAffiliationForm(request.POST)
             if affiliation_form.is_valid():
                 request.user.userprofile.affiliation = affiliation_form.cleaned_data['affiliation']
@@ -418,25 +482,53 @@ def modify_profile(request):
                 request.user.userprofile.save()
                 return redirect('user_profile')
 
-    else:
-        affiliation_form = ModifyAffiliationForm(initial={'affiliation': request.user.userprofile.affiliation})
-        country_form = ModifyCountry(initial={'country': request.user.userprofile.country})
-        main_category_form = ModifyMainCategoryForm(initial={'main_category': request.user.userprofile.main_category})
-        career_form = ModifyCareerForm(initial={'career': request.user.userprofile.career})
-        website_form = ModifyWebsiteForm(initial={'website': request.user.userprofile.website})
-
-    if request.user.userprofile.affiliation != None and request.user.userprofile.country != None and request.user.userprofile.main_category != None:
+    # Superusers automatically have completed profiles, or check if profile is complete
+    if request.user.is_superuser or (request.user.userprofile.affiliation != None and request.user.userprofile.country != None and request.user.userprofile.main_category != None):
         request.user.userprofile.completed = True
         request.user.userprofile.save()
 
     return render(request, 'main/user_profile.html', {"posts":posts,
+                                                      'name_form': name_form,
+                                                      'email_form': email_form,
                                                       'affiliation_form': affiliation_form,
                                                       'country_form': country_form,
                                                       'main_category_form': main_category_form,
                                                       'career_form': career_form,
                                                       'website_form': website_form, 
                                                       })
-                                                    
+
+def password_reset_request(request):
+    if request.method == "POST":
+        form = CustomPasswordResetForm(request.POST)
+        if form.is_valid():
+            email = form.cleaned_data['email']
+            associated_users = User.objects.filter(email=email)
+            if associated_users.exists():
+                for user in associated_users:
+                    subject = "إعادة تعيين كلمة المرور"
+                    email_template_name = "registration/password_reset_email.html"
+                    c = {
+                        "email": user.email,
+                        'domain': request.META['HTTP_HOST'],
+                        'site_name': 'أرشيف العرب',
+                        "uid": urlsafe_base64_encode(force_bytes(user.pk)),
+                        "user": user,
+                        'token': default_token_generator.make_token(user),
+                        'protocol': 'https' if request.is_secure() else 'http',
+                    }
+                    email = render_to_string(email_template_name, c)
+                    try:
+                        send_mail(subject, email, settings.DEFAULT_FROM_EMAIL, [user.email], fail_silently=False)
+                    except Exception as e:
+                        messages.error(request, f'حدث خطأ في إرسال البريد الإلكتروني: {e}')
+                        return redirect('password_reset')
+                    messages.success(request, 'تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني.')
+                    return redirect('login')
+            else:
+                messages.error(request, 'البريد الإلكتروني غير مسجل في النظام.')
+    else:
+        form = CustomPasswordResetForm()
+    return render(request, 'registration/password_reset_form.html', {"form": form})
 
 @login_required
 @author_required
@@ -449,9 +541,31 @@ def delete_post(request, post_id):
         return redirect("user_profile")
 
     return redirect("user_profile")
+
+@login_required
+@author_required
+def edit_post(request, post_id):
+    post = get_object_or_404(Post, id=post_id)
+    
+    # Only allow editing of pending or rejected posts
+    if post.status == "Approved":
+        messages.error(request, "لا يمكن تعديل المنشورات التي تمت الموافقة عليها.")
+        return redirect("user_profile")
+    
+    if request.method == "POST":
+        form = PostForm(request.POST, request.FILES, instance=post)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "تم تحديث المنشور بنجاح.")
+            return redirect("user_profile")
+    else:
+        form = PostForm(instance=post)
+    
+    return render(request, 'main/edit_post.html', {"form": form, "post": post})
                     
 def is_mod_or_staff(user):
-    return user.groups.filter(name='mod').exists() or user.is_staff
+    """Check if user is moderator, staff, or superuser"""
+    return user.is_superuser or user.is_staff or user.groups.filter(name='mod').exists()
 
 def term_list(request):
     categories = MainCategory.objects.all()
@@ -517,20 +631,30 @@ from django.db.models import Q
 @login_required
 @moderator_required
 def review_post(request):
-    # Assuming you have a way to identify the current reviewer (e.g., request.user)
-    current_reviewer = request.user  # You may need to adjust this based on your user model
-    assigned_posts = Post.objects.all()
-    mod_group = Group.objects.get(name='mod')
+    logger.debug(f"Review post view called by {request.user.username} - superuser: {request.user.is_superuser}")
+    
+    # Check if user is an author (has approved posts) - for template logic
     is_author = Post.objects.filter(author=request.user, status='Approved').exists()
-
-    # Get users in the "mod" group
-    mod_users = User.objects.filter(Q(groups=mod_group) | Q(is_staff=True))
+    
+    # Superusers see all pending posts, others see only assigned posts
+    if request.user.is_superuser:
+        assigned_posts = Post.objects.filter(status='Pending')
+        logger.debug(f"Superuser {request.user.username} seeing {assigned_posts.count()} pending posts")
+    else:
+        assigned_posts = Post.objects.filter(
+            Q(reviewer=request.user) | Q(reviewer__isnull=True),
+            status='Pending'
+        )
+        logger.debug(f"Regular user {request.user.username} seeing {assigned_posts.count()} assigned posts")
 
     if request.method == 'POST':
         post_id = request.POST.get('post_id')  # Extract post_id from the form post
 
-        # Get the post to be reviewed based on the post_id
-        post = get_object_or_404(Post, pk=post_id, reviewer=current_reviewer)
+        # Get the post to be reviewed - superusers can review any post
+        if request.user.is_superuser:
+            post = get_object_or_404(Post, pk=post_id, status='Pending')
+        else:
+            post = get_object_or_404(Post, pk=post_id, reviewer=request.user, status='Pending')
 
         review_status = request.POST.get('review_status')
         review_comment = request.POST.get('review_comment')
@@ -547,70 +671,96 @@ def review_post(request):
         post.reviewer_comments = review_comment
         
         post.save()
-        redirect("/review")
+        return redirect("/review")
+
+    # Get moderators for the template
+    mod_group = Group.objects.get(name='mod')
+    moderators = User.objects.filter(Q(groups=mod_group) | Q(is_staff=True) | Q(is_superuser=True))
 
     context = {
        "posts": assigned_posts, 
-       "moderators":mod_users, 
+       "moderators": moderators,
        "is_author": is_author
     }
 
     return render(request, 'main/review.html', context)
 
 @login_required
-@email_confirmation_required
 def become_reviewer(request):
+    print(f"become_reviewer called by user: {request.user.username}")
+    print(f"Request method: {request.method}")
+    print(f"POST data: {request.POST}")
+    
     if request.method == 'POST':
+        print(f"Processing POST request for reviewer application")
+        
+        # Check if user has confirmed email (superusers bypass this check)
+        if not request.user.is_superuser and hasattr(request.user, 'userprofile') and not request.user.userprofile.email_confirmed:
+            messages.warning(request, 'يرجى تأكيد بريدك الإلكتروني أولاً قبل طلب أن تصبح مراجعًا.')
+            return redirect('/review')
+        
         # Check if user already has a pending request
         from .models import ReviewerRequest
         existing_request = ReviewerRequest.objects.filter(user=request.user, status='pending').first()
         
         if existing_request:
+            print(f"User {request.user.username} already has pending request")
             messages.warning(request, 'لديك طلب قيد الانتظار بالفعل.')
-            return redirect('/home')
+            return redirect('/review')
         
-        # Check if user is already a moderator
-        if is_mod_or_staff(request.user):
+        # Check if user is already a moderator (but allow superusers to submit requests for testing)
+        if is_mod_or_staff(request.user) and not request.user.is_superuser:
+            print(f"User {request.user.username} is already a moderator")
             messages.info(request, 'أنت مراجع بالفعل.')
-            return redirect('/home')
+            return redirect('/review')
+        
+        # Debug: Check superuser status
+        if request.user.is_superuser:
+            print(f"Superuser {request.user.username} is submitting reviewer request")
         
         # Create new reviewer request
+        print(f"Creating new reviewer request for user: {request.user.username}")
         reviewer_request = ReviewerRequest.objects.create(user=request.user)
+        print(f"Reviewer request created with ID: {reviewer_request.id}")
         
-        # Send email to admin
-        from django.core.mail import send_mail
-        from django.conf import settings
-        admin_message = f"""
-        طلب جديد لتصبح مراجعًا:
-        
-        المستخدم: {request.user.username}
-        الاسم: {request.user.first_name} {request.user.last_name}
-        البريد الإلكتروني: {request.user.email}
-        تاريخ الطلب: {reviewer_request.request_date}
-        
-        للرد على الطلب، يرجى الذهاب إلى لوحة الإدارة.
-        """
-        
+        # Send email to admin (optional - don't let it break the request)
         try:
+            from django.core.mail import send_mail
+            from django.conf import settings
+            
+            admin_message = f"""
+            أحدهم طلب أن يصبح مراجعا:
+            
+            المستخدم: {request.user.username}
+            الاسم: {request.user.first_name} {request.user.last_name}
+            البريد الإلكتروني: {request.user.email}
+            تاريخ الطلب: {reviewer_request.request_date}
+            
+            للرد على الطلب، يرجى الذهاب إلى لوحة الإدارة.
+            """
+            
             send_mail(
-                'طلب جديد لتصبح مراجعًا',
+                'أحدهم طلب أن يصبح مراجعا',
                 admin_message,
                 settings.DEFAULT_FROM_EMAIL,
                 ['arabarxiv@gmail.com'],  # Admin email
-                fail_silently=False,
+                fail_silently=True,  # Changed to True to prevent errors
             )
+            print(f"Email sent successfully for reviewer request from {request.user.username}")
         except Exception as e:
             # If email fails, still create the request but log the error
-            print(f"Failed to send email: {e}")
+            print(f"Failed to send email for reviewer request: {e}")
+            # Don't let email failure break the request creation
         
         messages.success(request, 'تم إرسال طلبك لتصبح مراجعًا بنجاح. سيتم مراجعته من قبل الإدارة.')
-        return redirect('/home')
+        return redirect('/review')
 
     return render(request, 'main/real_home.html')
 
 @login_required
 @moderator_required
 def assign_mod(request):
+    logger.debug(f"Assign mod view called by {request.user.username} - superuser: {request.user.is_superuser}")
     if request.method == 'POST':
         post_id = request.POST.get('post_id')  # Extract post_id from the form post
 
@@ -630,9 +780,14 @@ def assign_mod(request):
 
         return redirect("/review")
 
-    # Assuming you have a way to identify the current reviewer (e.g., request.user)
-    current_reviewer = request.user  # You may need to adjust this based on your user model
-    assigned_posts = Post.objects.all()
+    # Superusers can assign any post, others only their assigned posts
+    if request.user.is_superuser:
+        assigned_posts = Post.objects.filter(status='Pending')
+        logger.debug(f"Superuser {request.user.username} seeing {assigned_posts.count()} posts for assignment")
+    else:
+        assigned_posts = Post.objects.filter(reviewer=request.user, status='Pending')
+        logger.debug(f"Regular user {request.user.username} seeing {assigned_posts.count()} posts for assignment")
+        
     mod_group = Group.objects.get(name='mod')
     # Get users in the "mod" group
     mod_users = User.objects.filter(Q(groups=mod_group) | Q(is_staff=True))
@@ -696,6 +851,12 @@ def test_authorization(request):
             'back_url': '/home'
         })
     
+    # Superusers bypass all authorization checks
+    if request.user.is_superuser:
+        return render(request, 'main/authorization_success.html', {
+            'message': 'تم اجتياز جميع اختبارات الصلاحيات بنجاح! (Superuser bypass)'
+        })
+    
     if not request.user.userprofile.email_confirmed:
         return render(request, 'main/authorization_error.html', {
             'error_type': 'email_not_confirmed',
@@ -737,3 +898,8 @@ def check_reviewer_request_status(request):
     except ReviewerRequest.DoesNotExist:
         messages.info(request, 'لا توجد طلبات مراجع لك.')
         return redirect('/home')
+
+class CustomPasswordResetCompleteView(PasswordResetCompleteView):
+    def get(self, request, *args, **kwargs):
+        messages.success(request, 'تم إعادة تعيين كلمة المرور بنجاح. يمكنك الآن تسجيل الدخول بكلمة المرور الجديدة.')
+        return redirect('login')

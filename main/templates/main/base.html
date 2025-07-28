@@ -71,13 +71,13 @@
       <li class="nav-item dropdown">
         <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
             تم تسجيل الدخول كـ  <b>{{ user.username }}</b>
-            {% if not user.userprofile.completed or has_reviews %}
+            {% if not user.is_superuser and not user.userprofile.completed or has_reviews %}
                 <span class="notification-indicator"></span>
             {% endif %}
         </a>
         <div class="dropdown-menu" aria-labelledby="userDropdown" style="background-color:black;text-align:right;">
             <a class="dropdown-item" href="/user_profile">صفحة الملف الشخصي 
-              {% if not user.userprofile.completed %}
+              {% if not user.is_superuser and not user.userprofile.completed %}
               <span class="notification-indicator"></span>
               {% endif %}
            </a>
@@ -109,12 +109,12 @@
   <div class="services section" id="services">
       <div class="row">
         <div class="col-lg-12">
-          {% if user.is_authenticated and not user.userprofile.email_confirmed %}
+          {% if user.is_authenticated and not user.is_superuser and not user.userprofile.email_confirmed %}
           <div class="alert alert-warning text-center" role="alert" style="margin-bottom: 0;">
             تأكيد البريد الإلكتروني إجباري  </div>
           {% endif %}
 
-          {% if user.is_authenticated and not user.userprofile.completed %}
+          {% if user.is_authenticated and not user.is_superuser and not user.userprofile.completed %}
 <div class="alert alert-warning text-center" role="alert" style="margin-bottom: 0;">
     <strong>تنبيه!</strong> يرجى إكمال ملفك الشخصي. <a href="/user_profile" class="alert-link">اضغط هنا لإكماله</a>.
 </div>

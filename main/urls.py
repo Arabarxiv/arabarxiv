@@ -27,9 +27,11 @@ urlpatterns = [
     path('resend-confirmation-email/<int:user_id>/', views.resend_confirmation_email, name='resend_confirmation_email'),
     path('bibtex', views.bibtex_converter, name='bibtex_converter'),
     path('post/delete/<int:post_id>/', views.delete_post, name='delete_post'),
+    path('post/edit/<int:post_id>/', views.edit_post, name='edit_post'),
     path('get-categories/', views.get_categories, name='get_categories'),
     path('test-auth/', views.test_authorization, name='test_authorization'),
     path('reviewer-request-status/', views.check_reviewer_request_status, name='reviewer_request_status'),
+
 ]
 
 

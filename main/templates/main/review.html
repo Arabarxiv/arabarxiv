@@ -36,7 +36,7 @@
   {% endfor %}
 {% endif %}
 
-{% if not user.is_staff and not user in moderators %}
+{% if not user.is_staff and not user in moderators and not user.is_superuser %}
 <div class="container">
     <div class="row justify-content-center">
         <div class="col-md-10">
@@ -50,7 +50,7 @@
         </div></div>
     </div>
 </div>
-{% elif not user.is_staff and not user in moderators and not is_author %}
+{% elif not is_author and not user.is_superuser %}
  <!-- Message for users who do not have any accepted papers -->
  <div class="container">
     <div class="row justify-content-center">
@@ -83,7 +83,7 @@
     </thead>
     <tbody>
         {% for post in posts %}
-            {% if post.reviewer == user %}
+            {% if post.reviewer == user or user.is_superuser %}
                 <tr>
                     <td>{{ post.title }}</td>
                     <td>{{ post.authors }}</td>
@@ -128,7 +128,7 @@
 
             <!-- نافذة المراجعة -->
             {% for post in posts %}
-            {% if post.reviewer == user %}
+            {% if post.reviewer == user or user.is_superuser %}
                 <div class="modal fade" id="reviewModal{{ post.id }}" tabindex="-1" role="dialog" aria-labelledby="reviewModalLabel{{ post.id }}" aria-hidden="true">
                     <div class="modal-dialog" role="document">
                         <div class="modal-content">
@@ -162,7 +162,7 @@
             {% endif%}
             {% endfor %}
 
-            {% if user.is_staff %}
+            {% if user.is_staff or user.is_superuser %}
             <h2>المشاركات في انتظار المراجعة</h2>
                 <table class="table">
                     <thead>

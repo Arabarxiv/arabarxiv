@@ -13,6 +13,8 @@ class ReviewerRequestAdmin(admin.ModelAdmin):
     
     def approve_requests(self, request, queryset):
         from django.utils import timezone
+        approved_count = 0
+        
         for reviewer_request in queryset.filter(status='pending'):
             reviewer_request.status = 'approved'
             reviewer_request.processed_date = timezone.now()
@@ -24,38 +26,56 @@ class ReviewerRequestAdmin(admin.ModelAdmin):
             mod_group = Group.objects.get(name='mod')
             reviewer_request.user.groups.add(mod_group)
             
-            # Send email notification to user
-            from django.core.mail import send_mail
-            from django.conf import settings
-            send_mail(
-                'تمت الموافقة على طلبك لتصبح مراجعًا',
-                f'مرحبًا {reviewer_request.user.first_name},\n\nتمت الموافقة على طلبك لتصبح مراجعًا في منصة أرشيف العرب.\nيمكنك الآن الوصول إلى صفحة المراجعة.\n\nشكرًا لك,\nفريق أرشيف العرب',
-                settings.DEFAULT_FROM_EMAIL,
-                [reviewer_request.user.email],
-                fail_silently=False,
-            )
-        self.message_user(request, f'تمت الموافقة على {queryset.count()} طلب.')
+            # Send email notification to user (with error handling)
+            try:
+                from django.core.mail import send_mail
+                from django.conf import settings
+                send_mail(
+                    'تمت الموافقة على طلبك لتصبح مراجعًا',
+                    f'مرحبًا {reviewer_request.user.first_name},\n\nتمت الموافقة على طلبك لتصبح مراجعًا في منصة أرشيف العرب.\nيمكنك الآن الوصول إلى صفحة المراجعة.\n\nشكرًا لك,\nفريق أرشيف العرب',
+                    settings.DEFAULT_FROM_EMAIL,
+                    [reviewer_request.user.email],
+                    fail_silently=True,  # Changed to True to prevent errors
+                )
+                print(f"Email sent successfully to {reviewer_request.user.email}")
+            except Exception as e:
+                print(f"Failed to send email to {reviewer_request.user.email}: {e}")
+                # Don't let email failure break the approval process
+            
+            approved_count += 1
+        
+        self.message_user(request, f'تمت الموافقة على {approved_count} طلب.')
     approve_requests.short_description = "الموافقة على الطلبات المحددة"
     
     def reject_requests(self, request, queryset):
         from django.utils import timezone
+        rejected_count = 0
+        
         for reviewer_request in queryset.filter(status='pending'):
             reviewer_request.status = 'rejected'
             reviewer_request.processed_date = timezone.now()
             reviewer_request.processed_by = request.user
             reviewer_request.save()
             
-            # Send email notification to user
-            from django.core.mail import send_mail
-            from django.conf import settings
-            send_mail(
-                'رد على طلبك لتصبح مراجعًا',
-                f'مرحبًا {reviewer_request.user.first_name},\n\nنعتذر، لم يتم قبول طلبك لتصبح مراجعًا في منصة أرشيف العرب.\nيمكنك إعادة تقديم الطلب لاحقًا.\n\nشكرًا لك,\nفريق أرشيف العرب',
-                settings.DEFAULT_FROM_EMAIL,
-                [reviewer_request.user.email],
-                fail_silently=False,
-            )
-        self.message_user(request, f'تم رفض {queryset.count()} طلب.')
+            # Send email notification to user (with error handling)
+            try:
+                from django.core.mail import send_mail
+                from django.conf import settings
+                send_mail(
+                    'رد على طلبك لتصبح مراجعًا',
+                    f'مرحبًا {reviewer_request.user.first_name},\n\nنعتذر، لم يتم قبول طلبك لتصبح مراجعًا في منصة أرشيف العرب.\nيمكنك إعادة تقديم الطلب لاحقًا.\n\nشكرًا لك,\nفريق أرشيف العرب',
+                    settings.DEFAULT_FROM_EMAIL,
+                    [reviewer_request.user.email],
+                    fail_silently=True,  # Changed to True to prevent errors
+                )
+                print(f"Rejection email sent successfully to {reviewer_request.user.email}")
+            except Exception as e:
+                print(f"Failed to send rejection email to {reviewer_request.user.email}: {e}")
+                # Don't let email failure break the rejection process
+            
+            rejected_count += 1
+        
+        self.message_user(request, f'تم رفض {rejected_count} طلب.')
     reject_requests.short_description = "رفض الطلبات المحددة"
 
 @admin.register(UserProfile)

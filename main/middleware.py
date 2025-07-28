@@ -1,12 +1,20 @@
 from django.shortcuts import render
 from django.urls import resolve
 from django.contrib.auth.models import Group
+import logging
+
+logger = logging.getLogger(__name__)
 
 class AuthorizationMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
 
     def __call__(self, request):
+        # Bypass all checks for superusers
+        if request.user.is_authenticated and request.user.is_superuser:
+            logger.debug(f"Superuser {request.user.username} bypassing all middleware checks")
+            return self.get_response(request)
+            
         # List of URLs that require email confirmation
         email_confirmation_required_urls = [
             'create_post',
@@ -14,16 +22,11 @@ class AuthorizationMiddleware:
             'become_reviewer',
         ]
         
-        # List of URLs that require moderator permissions
-        moderator_required_urls = [
-            'review',
-            'assign_mod',
-        ]
-        
         # List of URLs that require login
         login_required_urls = [
             'user_profile',
             'delete_post',
+            'edit_post',
         ]
         
         if request.user.is_authenticated:
@@ -45,19 +48,6 @@ class AuthorizationMiddleware:
                         'back_button_text': 'العودة للصفحة الرئيسية',
                         'back_url': '/home'
                     })
-            
-            # Check moderator permissions for specific URLs
-            if current_url_name in moderator_required_urls:
-                if not self.is_mod_or_staff(request.user):
-                    return render(request, 'main/authorization_error.html', {
-                        'error_type': 'moderator_required',
-                        'error_title': 'صلاحيات المراجع مطلوبة',
-                        'error_message': 'يجب أن تكون مراجعًا للوصول إلى هذه الصفحة.',
-                        'action_button_text': 'طلب أن تصبح مراجعًا',
-                        'action_url': '/become_reviewer',
-                        'back_button_text': 'العودة للصفحة الرئيسية',
-                        'back_url': '/home'
-                    })
         
         else:
             # Check if user is not authenticated for login-required URLs
@@ -66,7 +56,7 @@ class AuthorizationMiddleware:
             except:
                 current_url_name = None
             
-            if current_url_name in login_required_urls + email_confirmation_required_urls + moderator_required_urls:
+            if current_url_name in login_required_urls + email_confirmation_required_urls:
                 return render(request, 'main/authorization_error.html', {
                     'error_type': 'login_required',
                     'error_title': 'تسجيل الدخول مطلوب',
@@ -81,5 +71,5 @@ class AuthorizationMiddleware:
         return response
     
     def is_mod_or_staff(self, user):
-        """Check if user is moderator or staff"""
-        return user.groups.filter(name='mod').exists() or user.is_staff 
+        """Check if user is moderator, staff, or superuser"""
+        return user.is_superuser or user.is_staff or user.groups.filter(name='mod').exists() 

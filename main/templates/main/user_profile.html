@@ -1,4 +1,5 @@
 {% extends 'main/base.html' %}
+{% load crispy_forms_tags %}
 {% block title %}الملف الشخصي{% endblock %}
 {% block content %}
 <div class="container">
@@ -7,32 +8,117 @@
       <div class="card mt-4">
         <div class="card-body">
           <h2 class="card-title">{{ user.username }}</h2>
+          
+          <!-- Name -->
           <div class="profile-attribute">
-            <p><strong>الاسم الكامل:</strong> {{ user.first_name }} {{ user.last_name }} <button class="btn btn-link" data-toggle="modal" data-target="#affiliationModal" id="affiliationButton"><i class="fas fa-edit"></i></button></p>
+            <p><strong>الاسم الكامل:</strong> {{ user.first_name }} {{ user.last_name }} <button class="btn btn-link" data-toggle="modal" data-target="#nameModal"><i class="fas fa-edit"></i></button></p>
           </div>
-            <div class="profile-attribute">
-              <p><strong>الانتماء:</strong> {{ user.userprofile.affiliation }} <button class="btn btn-link" data-toggle="modal" data-target="#affiliationModal" id="affiliationButton"><i class="fas fa-edit"></i></button></p>
-            </div>
-            
-            <div class="profile-attribute">
-              <p><strong>الدولة:</strong> {{ user.userprofile.get_country_display }} <button class="btn btn-link"  data-toggle="modal" data-target="#countryModal" id="countryButton"><i class="fas fa-edit"></i></button></p>
-            </div>
-            
-            <div class="profile-attribute">
-              <p><strong>الموقع الإلكتروني:</strong> {{ user.userprofile.website }} <button class="btn btn-link" data-toggle="modal"  data-target="#websiteModal" id="websiteButton"><i class="fas fa-edit"></i></button></p>
-            </div>
-            
-            <div class="profile-attribute">
-              <p><strong>المهنة:</strong> {{ user.userprofile.career }} <button class="btn btn-link" data-toggle="modal"  data-target="#careerModal" id="careerButton"><i class="fas fa-edit"></i></button></p>
-            </div>
-            
-            <div class="profile-attribute">
-              <p><strong>التصنيف الرئيسي:</strong> {{ user.userprofile.main_category }} <button class="btn btn-link" data-toggle="modal" data-target="#mainCategoryModal" id="mainCategoryButton"><i class="fas fa-edit"></i></button></p>
-            </div>
-            
-            
+          
+          <!-- Email -->
+          <div class="profile-attribute">
+            <p><strong>البريد الإلكتروني:</strong> {{ user.email }} <button class="btn btn-link" data-toggle="modal" data-target="#emailModal"><i class="fas fa-edit"></i></button></p>
+            {% if not user.is_superuser and not user.userprofile.email_confirmed %}
+              <small class="text-warning">البريد الإلكتروني غير مؤكد</small>
+            {% else %}
+              <small class="text-success">البريد الإلكتروني مؤكد</small>
+            {% endif %}
+          </div>
+          
+          <!-- Password Reset -->
+          <div class="profile-attribute">
+            <p><strong>كلمة المرور:</strong> <button class="btn btn-link" data-toggle="modal" data-target="#passwordModal"><i class="fas fa-key"></i> تغيير كلمة المرور</button></p>
+          </div>
+          
+          <!-- Affiliation -->
+          <div class="profile-attribute">
+            <p><strong>الانتماء:</strong> {{ user.userprofile.affiliation }} <button class="btn btn-link" data-toggle="modal" data-target="#affiliationModal"><i class="fas fa-edit"></i></button></p>
+          </div>
+          
+          <!-- Country -->
+          <div class="profile-attribute">
+            <p><strong>الدولة:</strong> {{ user.userprofile.get_country_display }} <button class="btn btn-link" data-toggle="modal" data-target="#countryModal"><i class="fas fa-edit"></i></button></p>
+          </div>
+          
+          <!-- Website -->
+          <div class="profile-attribute">
+            <p><strong>الموقع الإلكتروني:</strong> {{ user.userprofile.website }} <button class="btn btn-link" data-toggle="modal" data-target="#websiteModal"><i class="fas fa-edit"></i></button></p>
+          </div>
+          
+          <!-- Career -->
+          <div class="profile-attribute">
+            <p><strong>المهنة:</strong> {{ user.userprofile.career }} <button class="btn btn-link" data-toggle="modal" data-target="#careerModal"><i class="fas fa-edit"></i></button></p>
+          </div>
+          
+          <!-- Main Category -->
+          <div class="profile-attribute">
+            <p><strong>التصنيف الرئيسي:</strong> {{ user.userprofile.main_category }} <button class="btn btn-link" data-toggle="modal" data-target="#mainCategoryModal"><i class="fas fa-edit"></i></button></p>
+          </div>
 
-          <!-- Modify Affiliation Modal -->
+          <!-- Name Edit Modal -->
+          <div class="modal fade" id="nameModal" tabindex="-1" role="dialog" aria-labelledby="nameModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="nameModalLabel">تعديل الاسم</h5>
+                  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                  </button>
+                </div>
+                <div class="modal-body">
+                  <form method="post" action="/user_profile">
+                    {% csrf_token %}
+                    {{ name_form|crispy }}
+                    <button type="submit" class="btn btn-primary">حفظ التغييرات</button>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Email Edit Modal -->
+          <div class="modal fade" id="emailModal" tabindex="-1" role="dialog" aria-labelledby="emailModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="emailModalLabel">تعديل البريد الإلكتروني</h5>
+                  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                  </button>
+                </div>
+                <div class="modal-body">
+                  <form method="post" action="/user_profile">
+                    {% csrf_token %}
+                    {{ email_form|crispy }}
+                    <button type="submit" class="btn btn-primary">حفظ التغييرات</button>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Password Reset Modal -->
+          <div class="modal fade" id="passwordModal" tabindex="-1" role="dialog" aria-labelledby="passwordModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="passwordModalLabel">إعادة تعيين كلمة المرور</h5>
+                  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                  </button>
+                </div>
+                <div class="modal-body">
+                  <p>سيتم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني: <strong>{{ user.email }}</strong></p>
+                  <form method="post" action="{% url 'password_reset' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="email" value="{{ user.email }}">
+                    <button type="submit" class="btn btn-primary">إرسال رابط إعادة التعيين</button>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Affiliation Edit Modal -->
           <div class="modal fade" id="affiliationModal" tabindex="-1" role="dialog" aria-labelledby="affiliationModalLabel" aria-hidden="true">
             <div class="modal-dialog" role="document">
               <div class="modal-content">
@@ -42,7 +128,6 @@
                     <span aria-hidden="true">&times;</span>
                   </button>
                 </div>
-                {% load crispy_forms_tags %} 
                 <div class="modal-body">
                   <form method="post" action="/user_profile">
                     {% csrf_token %}
@@ -54,7 +139,7 @@
             </div>
           </div>
 
-          <!-- Modify Country Modal -->
+          <!-- Country Edit Modal -->
           <div class="modal fade" id="countryModal" tabindex="-1" role="dialog" aria-labelledby="countryModalLabel" aria-hidden="true">
             <div class="modal-dialog" role="document">
               <div class="modal-content">
@@ -65,7 +150,6 @@
                   </button>
                 </div>
                 <div class="modal-body">
-                  
                   <form method="post" action="/user_profile">
                     {% csrf_token %}
                     {{ country_form|crispy  }}
@@ -76,8 +160,7 @@
             </div>
           </div>
 
-        
-          <!-- Modify Website Modal -->
+          <!-- Website Edit Modal -->
           <div class="modal fade" id="websiteModal" tabindex="-1" role="dialog" aria-labelledby="websiteModalLabel" aria-hidden="true">
             <div class="modal-dialog" role="document">
               <div class="modal-content">
@@ -98,7 +181,7 @@
             </div>
           </div>
 
-          <!-- Modify Career Modal -->
+          <!-- Career Edit Modal -->
           <div class="modal fade" id="careerModal" tabindex="-1" role="dialog" aria-labelledby="careerModalLabel" aria-hidden="true">
             <div class="modal-dialog" role="document">
               <div class="modal-content">
@@ -119,8 +202,7 @@
             </div>
           </div>
 
-          
-          <!-- Modify Main Category Modal -->
+          <!-- Main Category Edit Modal -->
           <div class="modal fade" id="mainCategoryModal" tabindex="-1" role="dialog" aria-labelledby="mainCategoryModalLabel" aria-hidden="true">
             <div class="modal-dialog" role="document">
               <div class="modal-content">
@@ -140,10 +222,6 @@
               </div>
             </div>
           </div>
-          <!-- Similar modals for Website, Career, Main Category -->
-          <!-- Modify Website Modal -->
-          <!-- Modify Career Modal -->
-          <!-- Modify Main Category Modal -->
         </div>
       </div>
     </div>
@@ -176,10 +254,12 @@
                                 {% endif %}
                                   </td>
                                   <td>
+                                    <!-- Edit Button -->
+                                    <a href="{% url 'edit_post' post.id %}" class="btn btn-primary">تعديل</a>
                                     <!-- Delete Button -->
-                                    <form action="{% url 'delete_post' post.id %}" method="post">
+                                    <form action="{% url 'delete_post' post.id %}" method="post" style="display: inline;">
                                         {% csrf_token %}
-                                        <button type="submit" class="btn btn-danger">حذف</button>
+                                        <button type="submit" class="btn btn-danger" onclick="return confirm('هل أنت متأكد من حذف هذا المنشور؟')">حذف</button>
                                     </form>
                                 </td>
                               </tr>
