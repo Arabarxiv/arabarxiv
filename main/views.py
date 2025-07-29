@@ -547,16 +547,19 @@ def delete_post(request, post_id):
 def edit_post(request, post_id):
     post = get_object_or_404(Post, id=post_id)
     
-    # Only allow editing of pending or rejected posts
-    if post.status == "Approved":
-        messages.error(request, "لا يمكن تعديل المنشورات التي تمت الموافقة عليها.")
-        return redirect("user_profile")
-    
     if request.method == "POST":
         form = PostForm(request.POST, request.FILES, instance=post)
         if form.is_valid():
+            # If the post was approved, set it back to pending for re-review
+            if post.status == "Approved":
+                post.status = "Pending"
+                post.reviewer = None  # Clear the reviewer assignment
+                post.reviewer_comments = ""  # Clear previous review comments
+                messages.success(request, "تم تحديث المنشور بنجاح. سيتم إعادة مراجعته.")
+            else:
+                messages.success(request, "تم تحديث المنشور بنجاح.")
+            
             form.save()
-            messages.success(request, "تم تحديث المنشور بنجاح.")
             return redirect("user_profile")
     else:
         form = PostForm(instance=post)

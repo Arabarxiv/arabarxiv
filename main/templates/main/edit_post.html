@@ -10,6 +10,12 @@
       <h1 class="text-right">تعديل المنشور</h1>
       <p class="text-right text-muted">تعديل: {{ post.title }}</p>
       
+      {% if post.status == "Approved" %}
+        <div class="alert alert-warning text-right" role="alert">
+          <strong>تنبيه:</strong> هذا المنشور تمت الموافقة عليه مسبقاً. عند التعديل، سيتم إعادة إرساله للمراجعة.
+        </div>
+      {% endif %}
+      
       <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
         {{ form|crispy }}

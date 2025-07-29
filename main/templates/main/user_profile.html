@@ -254,13 +254,24 @@
                                 {% endif %}
                                   </td>
                                   <td>
-                                    <!-- Edit Button -->
-                                    <a href="{% url 'edit_post' post.id %}" class="btn btn-primary">تعديل</a>
-                                    <!-- Delete Button -->
-                                    <form action="{% url 'delete_post' post.id %}" method="post" style="display: inline;">
-                                        {% csrf_token %}
-                                        <button type="submit" class="btn btn-danger" onclick="return confirm('هل أنت متأكد من حذف هذا المنشور؟')">حذف</button>
-                                    </form>
+                                    <div class="btn-group" role="group">
+                                      <!-- Edit Button - Show for all posts -->
+                                      <a href="{% url 'edit_post' post.id %}" class="btn btn-primary btn-sm"
+                                         {% if post.status == "Approved" %}
+                                         onclick="return confirm('هذا المنشور تمت الموافقة عليه. عند التعديل سيتم إعادة إرساله للمراجعة. هل تريد المتابعة؟')"
+                                         {% endif %}>
+                                        {% if post.status == "Approved" %}
+                                          تعديل (إعادة مراجعة)
+                                        {% else %}
+                                          تعديل
+                                        {% endif %}
+                                      </a>
+                                      <!-- Delete Button -->
+                                      <form action="{% url 'delete_post' post.id %}" method="post" style="display: inline;">
+                                          {% csrf_token %}
+                                          <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('هل أنت متأكد من حذف هذا المنشور؟')">حذف</button>
+                                      </form>
+                                    </div>
                                 </td>
                               </tr>
                           {% endif %}
