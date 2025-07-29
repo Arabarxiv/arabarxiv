@@ -15,6 +15,49 @@
     color: #0056b3;
 }
 
+/* File link styling for original vs translated posts */
+.original-file-link {
+    color: #007bff; /* Blue for original posts */
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.original-file-link:hover {
+    color: #0056b3;
+    text-decoration: underline;
+}
+
+.translated-file-link {
+    color: #dc3545; /* Light red for translated posts */
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.translated-file-link:hover {
+    color: #c82333;
+    text-decoration: underline;
+}
+
+/* Card coloring for original vs translated posts */
+.original-card {
+    border-left: 6px solid #007bff;
+    background: #f8faff;
+}
+.translated-card {
+    border-left: 6px solid #dc3545;
+    background: #fff5f5;
+}
+
+.card-header.original-header {
+    background: #e3f0ff;      /* Light blue */
+    border-left: 6px solid #007bff;
+    color: #222;
+}
+.card-header.translated-header {
+    background: #ffeaea;      /* Light red */
+    border-left: 6px solid #dc3545;
+    color: #222;
+}
 </style>
 
 <div class="container">
@@ -41,7 +84,7 @@
                       {% if post.status == "Approved" %}
                   
                           <div class="card mt-2">
-                            <div class="card-header d-flex justify-content-between align-items-center">
+                            <div class="card-header {% if post.is_translation %}translated-header{% else %}original-header{% endif %} d-flex justify-content-between align-items-center">
                               <h5>
                                 {{ post.title }}
                                 {% if post.pdf %}
@@ -75,12 +118,15 @@
                                 {% endif %}
                             </p>
                             
-                            <p class="post-keywords">الكلمات المفتاحية: {{ post.keywords }}</p>
-                            {% if post.pdf %}
-                              <p>
-                                <a href="{{ post.pdf.url }}" target="_blank">تصفح الملف</a>
-                              </p> 
-                            {% endif %}
+                                                          <p class="post-keywords">الكلمات المفتاحية: {{ post.keywords }}</p>
+                                {% if post.pdf %}
+                                  <p>
+                                    <a href="{{ post.pdf.url }}" target="_blank"
+                                       class="{% if post.is_translation %}translated-file-link{% else %}original-file-link{% endif %}">
+                                      تصفح الملف
+                                    </a>
+                                  </p> 
+                                {% endif %}
                             </div>
                             <div class="card-footer text-muted">{{ post.created_at }}</div>
                         
@@ -97,7 +143,7 @@
                           {% for post in posts %}
                             {% if post.status == "Approved" and post.category.main_category.id == category.id %}
                             <div class="card mt-2">
-                              <div class="card-header d-flex justify-content-between align-items-center">
+                              <div class="card-header {% if post.is_translation %}translated-header{% else %}original-header{% endif %} d-flex justify-content-between align-items-center">
                                 <h5>
                                   {{ post.title }}
                                   {% if post.pdf %}
@@ -118,7 +164,7 @@
                                         {% endfor %}
                                     {% endwith %}
                                 </span>
-                                {% if post.translator %}
+                                {% if post.is_translation %}
                                 <p class="post-translator">المترجم: {{ post.translator }}</p>
                                 {% endif %}
                                 <p class="post-keywords">التصنيف: {{ post.category }}</p>
@@ -133,7 +179,10 @@
                               <p class="post-keywords">الكلمات المفتاحية: {{ post.keywords }}</p>
                                 {% if post.pdf %}
                                   <p>
-                                    <a href="{{ post.pdf.url }}" target="_blank">تصفح الملف</a>
+                                    <a href="{{ post.pdf.url }}" target="_blank"
+                                       class="{% if post.is_translation %}translated-file-link{% else %}original-file-link{% endif %}">
+                                      تصفح الملف
+                                    </a>
                                   </p> 
                                 {% endif %}
                                     </div>

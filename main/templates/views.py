@@ -700,14 +700,7 @@ def become_reviewer(request):
         # Check if user has confirmed email (superusers bypass this check)
         if not request.user.is_superuser and hasattr(request.user, 'userprofile') and not request.user.userprofile.email_confirmed:
             messages.warning(request, 'يرجى تأكيد بريدك الإلكتروني أولاً قبل طلب أن تصبح مراجعًا.')
-            return redirect('/become_reviewer')
-        
-        # Check if user has at least one approved post (superusers bypass this check)
-        if not request.user.is_superuser:
-            approved_posts_count = Post.objects.filter(author=request.user, status='Approved').count()
-            if approved_posts_count == 0:
-                messages.warning(request, 'يجب أن يكون لديك مقال واحد على الأقل مقبول للنشر قبل طلب أن تصبح مراجعًا. يرجى تقديم مقالك الأول أولاً.')
-                return redirect('/become_reviewer')
+            return redirect('/review')
         
         # Check if user already has a pending request
         from .models import ReviewerRequest
@@ -765,30 +758,7 @@ def become_reviewer(request):
         messages.success(request, 'تم إرسال طلبك لتصبح مراجعًا بنجاح. سيتم مراجعته من قبل الإدارة.')
         return redirect('/review')
 
-    # Get context for the template
-    from .models import ReviewerRequest
-    
-    # Check if user has a pending request
-    has_pending_request = ReviewerRequest.objects.filter(user=request.user, status='pending').exists()
-    
-    # Check if user is already a moderator
-    is_moderator = is_mod_or_staff(request.user)
-    
-    # Check user's eligibility status
-    email_confirmed = request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.email_confirmed)
-    profile_completed = request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.completed)
-    has_approved_post = request.user.is_superuser or Post.objects.filter(author=request.user, status='Approved').exists()
-    
-    context = {
-        'has_pending_request': has_pending_request,
-        'is_moderator': is_moderator,
-        'email_confirmed': email_confirmed,
-        'profile_completed': profile_completed,
-        'has_approved_post': has_approved_post,
-        'approved_posts_count': Post.objects.filter(author=request.user, status='Approved').count(),
-    }
-    
-    return render(request, 'main/become_reviewer.html', context)
+    return render(request, 'main/real_home.html')
 
 @login_required
 @moderator_required

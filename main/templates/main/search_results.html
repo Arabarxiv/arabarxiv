@@ -1,6 +1,30 @@
 {% extends 'main/base.html' %}  <!-- Replace with your base template -->
 
 {% block content %}
+<style>
+/* File link styling for original vs translated posts */
+.original-file-link {
+    color: #007bff; /* Blue for original posts */
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.original-file-link:hover {
+    color: #0056b3;
+    text-decoration: underline;
+}
+
+.translated-file-link {
+    color: #dc3545; /* Light red for translated posts */
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.translated-file-link:hover {
+    color: #c82333;
+    text-decoration: underline;
+}
+</style>
 <div class="container">
     <h2>نتائج البحث</h2>
     {% if results %}
@@ -34,7 +58,15 @@
                 </p>
                 
                 <p class="post-keywords">الكلمات المفتاحية: {{ post.keywords }}</p>
-                 
+                {% if post.pdf %}
+                  <p>
+                    {% if post.translator %}
+                      <a href="{{ post.pdf.url }}" target="_blank" class="translated-file-link">تصفح الملف</a>
+                    {% else %}
+                      <a href="{{ post.pdf.url }}" target="_blank" class="original-file-link">تصفح الملف</a>
+                    {% endif %}
+                  </p> 
+                {% endif %}
               </div>
               <div class="card-footer text-muted">{{ post.created_at }}</div>
             </div>

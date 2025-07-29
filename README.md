@@ -11,6 +11,21 @@ A Django-based platform for Arabic academic papers and research publications.
 - BibTeX converter for Arabic papers
 - User profiles with academic information
 
+## Reviewer System
+
+### Requirements to Become a Reviewer:
+1. **Email Confirmation**: User must confirm their email address
+2. **Complete Profile**: User profile must be fully completed
+3. **Approved Publication**: User must have at least one approved research paper
+4. **Admin Approval**: Request must be approved by administrators
+
+### Reviewer Workflow:
+1. User submits a request to become a reviewer via `/become_reviewer`
+2. System checks all requirements automatically
+3. Admin reviews the request in Django admin panel
+4. If approved, user is added to the 'mod' group
+5. User gains access to review pending papers
+
 ## Security Setup
 
 ⚠️ **IMPORTANT**: Before running this project, you must set up environment variables for security.

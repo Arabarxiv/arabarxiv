@@ -25,6 +25,29 @@
     .custom-btn:hover {
         background-color: darkgreen;
     }
+    
+    /* File link styling for original vs translated posts */
+    .original-file-link {
+        color: #007bff; /* Blue for original posts */
+        text-decoration: none;
+        font-weight: bold;
+    }
+    
+    .original-file-link:hover {
+        color: #0056b3;
+        text-decoration: underline;
+    }
+    
+    .translated-file-link {
+        color: #dc3545; /* Light red for translated posts */
+        text-decoration: none;
+        font-weight: bold;
+    }
+    
+    .translated-file-link:hover {
+        color: #c82333;
+        text-decoration: underline;
+    }
     </style>
 
 {# Show Django messages #}
@@ -88,7 +111,11 @@
                     <td>{{ post.title }}</td>
                     <td>{{ post.authors }}</td>
                     <td>
-                        <a href="{{ post.pdf.url }}" target="_blank">عرض الـ PDF</a>
+                        {% if post.translator %}
+                          <a href="{{ post.pdf.url }}" target="_blank" class="translated-file-link">عرض الـ PDF</a>
+                        {% else %}
+                          <a href="{{ post.pdf.url }}" target="_blank" class="original-file-link">عرض الـ PDF</a>
+                        {% endif %}
                     </td>
                     
                         {% if post.status == "Pending" %}

@@ -1,0 +1,161 @@
+{% extends 'main/base.html' %}
+
+{% block title %}طلب أن تصبح مراجعًا{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header text-center">
+                    <h2>طلب أن تصبح مراجعًا</h2>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} text-center" role="alert">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <div class="row">
+                        <div class="col-md-8">
+                            <h4>متطلبات أن تصبح مراجعًا:</h4>
+                            <ul class="list-unstyled">
+                                <li>
+                                    {% if email_confirmed %}
+                                        <i class="fa fa-check text-success"></i> بريدك الإلكتروني مؤكد
+                                    {% else %}
+                                        <i class="fa fa-times text-danger"></i> بريدك الإلكتروني غير مؤكد
+                                    {% endif %}
+                                </li>
+                                <li>
+                                    {% if profile_completed %}
+                                        <i class="fa fa-check text-success"></i> ملفك الشخصي مكتمل
+                                    {% else %}
+                                        <i class="fa fa-times text-danger"></i> ملفك الشخصي غير مكتمل
+                                    {% endif %}
+                                </li>
+                                <li>
+                                    {% if has_approved_post %}
+                                        <i class="fa fa-check text-success"></i> لديك {{ approved_posts_count }} مقال مقبول للنشر
+                                    {% else %}
+                                        <i class="fa fa-times text-danger"></i> لا يوجد لديك مقالات مقبولة للنشر
+                                    {% endif %}
+                                </li>
+                                <li><i class="fa fa-info text-info"></i> سيتم مراجعة طلبك من قبل الإدارة</li>
+                                <li><i class="fa fa-info text-info"></i> ستتلقى إشعارًا عند الموافقة على طلبك</li>
+                            </ul>
+
+                            <h4>مسؤوليات المراجع:</h4>
+                            <ul class="list-unstyled">
+                                <li><i class="fa fa-star text-warning"></i> مراجعة المقالات المقدمة للنشر</li>
+                                <li><i class="fa fa-star text-warning"></i> تقييم جودة البحث والمنهجية</li>
+                                <li><i class="fa fa-star text-warning"></i> تقديم تعليقات بناءة للمؤلفين</li>
+                                <li><i class="fa fa-star text-warning"></i> المساهمة في تطوير المحتوى الأكاديمي</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h5>حالة طلبك</h5>
+                                    {% if has_pending_request %}
+                                        <div class="alert alert-warning">
+                                            <i class="fa fa-clock"></i> طلب قيد الانتظار
+                                        </div>
+                                        <a href="/reviewer-request-status/" class="btn btn-info btn-sm">عرض حالة الطلب</a>
+                                    {% elif is_moderator %}
+                                        <div class="alert alert-success">
+                                            <i class="fa fa-check-circle"></i> أنت مراجع بالفعل
+                                        </div>
+                                    {% elif email_confirmed and profile_completed and has_approved_post %}
+                                        <div class="alert alert-info">
+                                            <i class="fa fa-info-circle"></i> أنت مؤهل لطلب أن تصبح مراجعًا
+                                        </div>
+                                        <form method="post" action="/become_reviewer">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-primary">
+                                                <i class="fa fa-paper-plane"></i> إرسال الطلب
+                                            </button>
+                                        </form>
+                                    {% else %}
+                                        <div class="alert alert-warning">
+                                            <i class="fa fa-exclamation-triangle"></i> يجب إكمال جميع المتطلبات أولاً
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if not has_pending_request and not is_moderator %}
+                        <div class="text-center mt-4">
+                            {% if not email_confirmed %}
+                                <a href="/user_profile" class="btn btn-outline-warning">
+                                    <i class="fa fa-envelope"></i> تأكيد البريد الإلكتروني
+                                </a>
+                            {% endif %}
+                            {% if not profile_completed %}
+                                <a href="/user_profile" class="btn btn-outline-primary">
+                                    <i class="fa fa-user"></i> إكمال الملف الشخصي
+                                </a>
+                            {% endif %}
+                            {% if not has_approved_post %}
+                                <a href="/create-post" class="btn btn-outline-success">
+                                    <i class="fa fa-plus"></i> تقديم مقال جديد
+                                </a>
+                            {% endif %}
+                            <a href="/reviewer-request-status/" class="btn btn-outline-info">
+                                <i class="fa fa-history"></i> عرض الطلبات السابقة
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    border: none;
+    box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    margin-top: 30px;
+}
+
+.card-header {
+    background-color: #005109;
+    color: white;
+    border-bottom: none;
+}
+
+.list-unstyled li {
+    margin-bottom: 10px;
+    padding: 5px 0;
+}
+
+.list-unstyled li i {
+    margin-left: 10px;
+}
+
+.alert {
+    border-radius: 10px;
+}
+
+.btn {
+    border-radius: 25px;
+    padding: 10px 25px;
+}
+
+.btn-primary {
+    background-color: #005109;
+    border-color: #005109;
+}
+
+.btn-primary:hover {
+    background-color: #003d07;
+    border-color: #003d07;
+}
+</style>
+{% endblock %} 
