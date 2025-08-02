@@ -42,22 +42,14 @@
       <a href="/home" class="logo">
         <h1>أرشيف العرب </h1>
     </a>
-    <!-- ***** Serach Start ***** -->
-    <div class="search-input">
-      <form id="search" action="/search_results">
-        <input type="text" placeholder="ابحث عن منشور" id='searchText' name="searchKeyword" onkeypress="handle" />
-        <i class="fa fa-search"></i>
-      </form>
-    </div>
-
-    <!-- ***** Serach Start ***** -->
     
     <ul class="nav">
-      <li class="nav-item"><a class="nav-link" href="/posts">قائمة المشاركات</a></li>
+      <li class="nav-item"><a class="nav-link posts-highlight" href="/posts">قائمة المشاركات</a></li>
+      <li class="nav-item"><a class="nav-link" href="/newsletter/signup">اشتراك في النشرة</a></li>
       <li class="nav-item"><a class="nav-link" href="/terms">قاموس المصطلحات</a></li>
       <li class="nav-item dropdown">
         <a class="nav-link dropdown-toggle" href="#" id="submitPostDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-            تقديم منشور
+            حول المشاركة
         </a>
         <div class="dropdown-menu" aria-labelledby="submitPostDropdown" style="background-color:black;text-align:right;color:white">
           <a class="dropdown-item" href="/author_guidelines">دليل المؤلف</a>
@@ -114,7 +106,11 @@
         <div class="col-lg-12">
           {% if user.is_authenticated and not user.is_superuser and not user.userprofile.email_confirmed %}
           <div class="alert alert-warning text-center" role="alert" style="margin-bottom: 0;">
-            تأكيد البريد الإلكتروني إجباري  </div>
+            تأكيد البريد الإلكتروني إجباري 
+            <a href="/resend-confirmation-email/{{ user.id }}/" class="alert-link" style="margin-right: 10px;">
+              (إعادة إرسال)
+            </a>
+          </div>
           {% endif %}
 
           {% if user.is_authenticated and not user.is_superuser and not user.userprofile.completed %}

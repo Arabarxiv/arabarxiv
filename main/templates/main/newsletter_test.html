@@ -1,0 +1,61 @@
+{% extends 'main/base.html' %}
+
+{% block title %}اختبار النشرة الإخبارية{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h2 class="text-center">اختبار النشرة الإخبارية</h2>
+                </div>
+                <div class="card-body">
+                    <p class="text-center mb-4">هذه صفحة اختبار للنشرة الإخبارية</p>
+                    
+                    <!-- Newsletter Signup Form -->
+                    <div class="newsletter-section mb-4">
+                        <div class="row justify-content-center">
+                            <div class="col-md-8">
+                                <div class="card shadow" style="border: none; border-radius: 15px; background: linear-gradient(135deg, #005109 0%, #003d07 100%); color: white;">
+                                    <div class="card-body text-center p-4">
+                                        <h3 class="mb-3">
+                                            <i class="fas fa-envelope me-2"></i>
+                                            اشترك في النشرة الإخبارية
+                                        </h3>
+                                        <p class="mb-4">احصل على آخر الأخبار والتحديثات من أراب أركسيف</p>
+                                        
+                                        <form method="post" action="{% url 'newsletter_signup' %}" class="row g-3 justify-content-center">
+                                            {% csrf_token %}
+                                            <div class="col-md-4">
+                                                <input type="text" name="name" class="form-control" placeholder="الاسم (اختياري)" style="border-radius: 25px;">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <input type="email" name="email" class="form-control" placeholder="البريد الإلكتروني" required style="border-radius: 25px;">
+                                            </div>
+                                            <div class="col-md-2">
+                                                <button type="submit" class="btn btn-light" style="border-radius: 25px; font-weight: 600;">
+                                                    <i class="fas fa-paper-plane me-1"></i>اشتراك
+                                                </button>
+                                            </div>
+                                        </form>
+                                        
+                                        <small class="mt-3 d-block opacity-75">
+                                            <i class="fas fa-shield-alt me-1"></i>
+                                            لن نشارك بريدك الإلكتروني مع أي طرف ثالث
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center">
+                        <a href="{% url 'real_home' %}" class="btn btn-primary">العودة للصفحة الرئيسية</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

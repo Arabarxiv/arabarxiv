@@ -1,9 +1,9 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from .forms import RegisterForm, PostForm, ModifyNameForm, ModifyEmailForm, CustomPasswordResetForm, KeywordTranslationForm
+from .forms import RegisterForm, PostForm, ModifyNameForm, ModifyEmailForm, CustomPasswordResetForm, KeywordTranslationForm, TranslationPostForm, CommentForm, NewsletterSignupForm, ModifyWhoAmIForm, ModifyAffiliationForm, ModifyCountry, ModifyMainCategoryForm, ModifyCareerForm, ModifyWebsiteForm
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.models import User, Group
-from .models import Post, KeywordTranslation, MainCategory, Category, TranslationPost
+from .models import Post, KeywordTranslation, MainCategory, Category, TranslationPost, Comment, PostView, NewsletterSubscriber
 from .forms import CustomLoginForm
 from django.contrib import messages
 from googleapiclient.discovery import build
@@ -24,6 +24,7 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth.views import PasswordResetCompleteView
+from django.db.models import Q, Count
 import logging
 
 logger = logging.getLogger(__name__)
@@ -178,6 +179,47 @@ def palestine_view(request):
 def profile_view(request):
     return render(request, 'main/user_profile.html')
 
+def public_profile(request, user_id):
+    """Public profile view that allows anyone to view a user's profile"""
+    try:
+        user = User.objects.get(id=user_id)
+        
+        # Get translation post IDs for comparison
+        translation_post_ids = TranslationPost.objects.values_list('post_ptr_id', flat=True)
+        
+        # Get user's posts and mark which ones are translations
+        posts = Post.objects.filter(author=user)
+        for post in posts:
+            post.is_translation = post.id in translation_post_ids
+            # Add translator field for easy access in template
+            if post.is_translation:
+                try:
+                    post.translator = post.translationpost.translator
+                except:
+                    post.translator = ""
+        
+        # Get reviewed posts (posts that this user has reviewed)
+        reviewed_posts = Post.objects.filter(final_reviewer=user).order_by('-updated_at')
+        for reviewed_post in reviewed_posts:
+            reviewed_post.is_translation = reviewed_post.id in translation_post_ids
+            if reviewed_post.is_translation:
+                try:
+                    reviewed_post.translator = reviewed_post.translationpost.translator
+                except:
+                    reviewed_post.translator = ""
+        
+        context = {
+            'profile_user': user,  # The user whose profile is being viewed
+            'posts': posts,
+            'reviewed_posts': reviewed_posts,
+            'is_own_profile': request.user.is_authenticated and request.user.id == user_id
+        }
+        
+        return render(request, 'main/public_profile.html', context)
+    except User.DoesNotExist:
+        messages.error(request, 'المستخدم غير موجود.')
+        return redirect('posts')
+
 def author_guidelines(request):
     return render(request, 'main/author_guidelines.html')
 
@@ -222,8 +264,21 @@ def send_confirmation_email(user, request):
 def search_posts(request):
     query = request.GET.get('searchKeyword', '')
     results = Post.objects.filter(
-    Q(title__icontains=query) | Q(authors__icontains=query),is_approved=True
+        Q(title__icontains=query) | Q(authors__icontains=query), is_approved=True
     )
+    
+    # Get translation post IDs for comparison
+    translation_post_ids = TranslationPost.objects.values_list('post_ptr_id', flat=True)
+    
+    # Mark which posts are translations and add translator field
+    for post in results:
+        post.is_translation = post.id in translation_post_ids
+        if post.is_translation:
+            try:
+                post.translator = post.translationpost.translator
+            except:
+                post.translator = ""
+    
     return render(request, 'main/search_results.html', {'results': results})
 
 
@@ -245,11 +300,17 @@ def send_thank_you_email(user, post):
 
 
 def send_accepted(user, post):
-    subject = 'شكرًا لك على مشاركتك, {}'.format(user.first_name)
+    subject = 'تمت الموافقة على مشاركتك, {}'.format(user.first_name)
+    
+    # Debug: Print the reviewer comments to see if they're being passed
+    print(f"DEBUG: Sending accepted email to {user.email}")
+    print(f"DEBUG: Reviewer comments: '{post.reviewer_comments}'")
+    
     html_content = render_to_string('emails/post_accepted_email.html', {
         'user': user,
         'post_title': post.title,
         'post_abstract': post.description,
+        'reviewer_comments': post.reviewer_comments,
         'site_url': 'http://www.arabarxiv.org'  # Replace with your website URL
     })
     text_content = strip_tags(html_content)
@@ -261,11 +322,17 @@ def send_accepted(user, post):
     email.send()
 
 def send_rejected(user, post):
-    subject = 'شكرًا لك على مشاركتك, {}'.format(user.first_name)
+    subject = 'تم رفض مشاركتك, {}'.format(user.first_name)
+    
+    # Debug: Print the reviewer comments to see if they're being passed
+    print(f"DEBUG: Sending rejected email to {user.email}")
+    print(f"DEBUG: Reviewer comments: '{post.reviewer_comments}'")
+    
     html_content = render_to_string('emails/post_rejected_email.html', {
         'user': user,
         'post_title': post.title,
-        'post_comments': post.comments,
+        'post_abstract': post.description,
+        'reviewer_comments': post.reviewer_comments,
         'site_url': 'http://www.arabarxiv.org'  # Replace with your website URL
     })
     text_content = strip_tags(html_content)
@@ -277,14 +344,111 @@ def send_rejected(user, post):
     email.send()
 
 def home(request):
-    posts = Post.objects.all()
-    translation_post_ids = TranslationPost.objects.values_list('post_ptr_id', flat=True)
+    # Get filter parameter from request
+    filter_type = request.GET.get('filter', 'all')  # Default to 'all' if no filter specified
+    sort_by = request.GET.get('sort', 'newest')  # Default to newest
+    search_query = request.GET.get('search', '')  # Search query
+    
+
+    
+    # Get translation post IDs for comparison (same logic used in filters)
+    translation_post_ids = set(TranslationPost.objects.values_list('post_ptr_id', flat=True))
+    
+    # Query posts based on filter
+    if filter_type == 'original':
+        # Get only original posts (exclude translation posts)
+        posts = Post.objects.filter(status="Approved").exclude(
+            id__in=translation_post_ids
+        )
+    elif filter_type == 'translated':
+        # Get only translation posts
+        posts = Post.objects.filter(
+            status="Approved",
+            id__in=translation_post_ids
+        )
+    else:  # 'all' or any other value
+        # Get all posts
+        posts = Post.objects.filter(status="Approved")
+    
+    # Apply search filter if provided
+    if search_query:
+        posts = posts.filter(
+            Q(title__icontains=search_query) |
+            Q(authors__icontains=search_query) |
+            Q(keywords__icontains=search_query) |
+            Q(description__icontains=search_query)
+        )
+    
+    # Apply sorting
+    if sort_by == 'oldest':
+        posts = posts.order_by('created_at')
+    elif sort_by == 'title':
+        posts = posts.order_by('title')
+    elif sort_by == 'views':
+        # Note: This would require a custom ordering method
+        posts = posts.order_by('-created_at')  # Fallback to newest
+    elif sort_by == 'comments':
+        # Note: This would require a custom ordering method
+        posts = posts.order_by('-created_at')  # Fallback to newest
+    else:  # 'newest' or default
+        posts = posts.order_by('-created_at')
+    
+    # Set translation attributes AFTER all filtering and sorting
     for post in posts:
         post.is_translation = post.id in translation_post_ids
+        
+        if post.is_translation:
+            try:
+                translation_post = TranslationPost.objects.get(post_ptr_id=post.id)
+                post.translator = translation_post.translator
+            except TranslationPost.DoesNotExist:
+                post.translator = ""
+        else:
+            post.translator = ""
+    
+    # Add additional post properties for enhanced display
+    for post in posts:
+        # Calculate engagement score (views + comments)
+        post.engagement_score = post.get_view_count() + post.comments.count()
+        
+        # Add reading time estimate (rough calculation)
+        word_count = len(post.description.split()) if post.description else 0
+        post.reading_time = max(1, round(word_count / 200))  # Assuming 200 words per minute
+        
+        # Add excerpt for better display
+        if post.description:
+            post.excerpt = post.description[:150] + "..." if len(post.description) > 150 else post.description
+        else:
+            post.excerpt = "لا يوجد وصف متاح"
+    
     categories = MainCategory.objects.all()
+    
+    # Get some statistics for the dashboard
+    total_posts = Post.objects.filter(status="Approved").count()
+    translation_post_ids = set(TranslationPost.objects.values_list('post_ptr_id', flat=True))
+    original_posts = Post.objects.filter(status="Approved").exclude(id__in=translation_post_ids).count()
+    translated_posts = Post.objects.filter(status="Approved", id__in=translation_post_ids).count()
+    
+    # Get recent activity
+    recent_posts = Post.objects.filter(status="Approved").order_by('-created_at')[:5]
+    
+    # Get top categories
+    top_categories = Category.objects.annotate(
+        post_count=Count('posts', filter=Q(posts__status="Approved"))
+    ).order_by('-post_count')[:5]
 
-    return render(request, 'main/home.html', {"posts": posts,
-                                              "categories":categories})
+    return render(request, 'main/home.html', {
+        "posts": posts,
+        "categories": categories,
+        "current_filter": filter_type,
+        "current_sort": sort_by,
+        "search_query": search_query,
+        "total_posts": total_posts,
+        "original_posts": original_posts,
+        "translated_posts": translated_posts,
+        "recent_posts": recent_posts,
+        "top_categories": top_categories,
+    })
 
 def custom_login_view(request):
     if request.method == 'POST':
@@ -304,19 +468,91 @@ def custom_login_view(request):
 @email_confirmation_required
 @permission_required("main.add_post", login_url="/login", raise_exception=True)
 def create_post(request):
+    draft_id = request.GET.get('draft_id')
+    draft = None
+    
+    if draft_id:
+        try:
+            draft = Post.objects.get(id=draft_id, author=request.user, status='Draft')
+        except Post.DoesNotExist:
+            pass
 
     if request.method == 'POST':
-        form = PostForm(request.POST, request.FILES)
+        form = PostForm(request.POST, request.FILES, user=request.user)
         if form.is_valid():
-            post = form.save(commit=False)
+            # Check if this is a draft saving or new submission
+            is_draft_saving = 'save_draft' in request.POST
+            
+            if is_draft_saving:
+                # Save as draft
+                post = form.save(commit=False)
+                post.author = request.user
+                post.status = 'Draft'  # Mark as draft
+                
+                # Handle custom author selection
+                authors_input = request.POST.get('authors', '')
+                if authors_input:
+                    author_ids = [int(id.strip()) for id in authors_input.split(',') if id.strip()]
+                    additional_authors = User.objects.filter(id__in=author_ids, is_superuser=False)
+                    
+                    # Build the authors string: current user + selected additional authors
+                    authors_list = [f"{request.user.first_name} {request.user.last_name}".strip() or request.user.username]
+                    
+                    # Add selected additional authors
+                    for author in additional_authors:
+                        author_name = f"{author.first_name} {author.last_name}".strip() or author.username
+                        if author_name not in authors_list:
+                            authors_list.append(author_name)
+                    
+                    post.authors = ', '.join(authors_list)
+                else:
+                    # Only current user as author
+                    post.authors = f"{request.user.first_name} {request.user.last_name}".strip() or request.user.username
+                
+                post.save()
+                messages.success(request, 'تم حفظ المسودة بنجاح.')
+                return redirect("/user_profile")
+            else:
+                # Create new post
+                post = form.save(commit=False)
+                post.status = 'Pending'  # Set status to Pending for new submissions
+            
+            # Handle custom author selection
+            authors_input = request.POST.get('authors', '')
+            if authors_input:
+                author_ids = [int(id.strip()) for id in authors_input.split(',') if id.strip()]
+                additional_authors = User.objects.filter(id__in=author_ids, is_superuser=False)
+                
+                # Build the authors string: current user + selected additional authors
+                authors_list = [f"{request.user.first_name} {request.user.last_name}".strip() or request.user.username]
+                
+                # Add selected additional authors
+                for author in additional_authors:
+                    author_name = f"{author.first_name} {author.last_name}".strip() or author.username
+                    if author_name not in authors_list:
+                        authors_list.append(author_name)
+                
+                post.authors = ', '.join(authors_list)
+            else:
+                # Only current user as author
+                post.authors = f"{request.user.first_name} {request.user.last_name}".strip() or request.user.username
+            
             post.author = request.user
             post.save()
             send_thank_you_email(request.user, post)
             return redirect("/user_profile")
     else:
-        form = PostForm()
+        if draft:
+            # Pre-fill form with draft data
+            form = PostForm(instance=draft, user=request.user)
+        else:
+            form = PostForm(user=request.user)
 
-    return render(request, 'main/create_post.html', {"form": form})
+    return render(request, 'main/create_post.html', {
+        "form": form, 
+        "draft": draft,
+        "active_submission_type": "original_post"
+    })
 
 from django.http import JsonResponse
 def get_categories(request):
@@ -327,23 +563,118 @@ def get_categories(request):
 
 
 
+def get_users(request):
+    # Get all users except superusers and the current user, ordered by first_name, last_name, username
+    users = User.objects.filter(is_superuser=False).exclude(id=request.user.id).order_by('first_name', 'last_name', 'username')
+    users_data = []
+    for user in users:
+        # Create a display name that shows first_name last_name (username)
+        display_name = f"{user.first_name} {user.last_name} ({user.username})"
+        if not user.first_name and not user.last_name:
+            display_name = user.username
+        users_data.append({
+            'id': user.id,
+            'name': display_name,
+            'username': user.username
+        })
+    return JsonResponse({'users': users_data})
+
+
+
 
 @login_required(login_url="/login")
 @email_confirmation_required
 @permission_required("main.add_translationpost", login_url="/login", raise_exception=True)  # Update permission
 def create_translation_post(request):
+    draft_id = request.GET.get('draft_id')
+    draft = None
+    
+    if draft_id:
+        try:
+            draft = TranslationPost.objects.get(id=draft_id, author=request.user, status='Draft')
+        except TranslationPost.DoesNotExist:
+            pass
+
     if request.method == 'POST':
-        form = TranslationPostForm(request.POST, request.FILES)
+        form = TranslationPostForm(request.POST, request.FILES, user=request.user)
         if form.is_valid():
-            translation_post = form.save(commit=False)
-            translation_post.author = request.user  # Set the author as the current user
+            # Check if this is a draft saving or new submission
+            is_draft_saving = 'save_draft' in request.POST
+            
+            if is_draft_saving:
+                # Save as draft
+                translation_post = form.save(commit=False)
+                translation_post.author = request.user
+                translation_post.status = 'Draft'  # Mark as draft
+                
+                # Handle custom translator selection (additional translators)
+                translators_input = request.POST.get('translators', '')
+                if translators_input:
+                    translator_ids = [int(id.strip()) for id in translators_input.split(',') if id.strip()]
+                    additional_translators = User.objects.filter(id__in=translator_ids, is_superuser=False)
+                    
+                    # Build the translators string: current user + selected additional translators
+                    translators_list = [f"{request.user.first_name} {request.user.last_name}".strip() or request.user.username]
+                    
+                    # Add selected additional translators
+                    for translator in additional_translators:
+                        translator_name = f"{translator.first_name} {translator.last_name}".strip() or translator.username
+                        if translator_name not in translators_list:
+                            translators_list.append(translator_name)
+                    
+                    translation_post.translator = ', '.join(translators_list)
+                else:
+                    # Only current user as translator
+                    translation_post.translator = f"{request.user.first_name} {request.user.last_name}".strip() or request.user.username
+                
+                # Set the original author from the form
+                translation_post.authors = form.cleaned_data.get('original_author', '')
+                translation_post.save()
+                messages.success(request, 'تم حفظ مسودة الترجمة بنجاح.')
+                return redirect("/user_profile")
+            else:
+                # Create new translation post
+                translation_post = form.save(commit=False)
+                translation_post.status = 'Pending'  # Set status to Pending for new submissions
+            
+            # Handle custom translator selection (additional translators)
+            translators_input = request.POST.get('translators', '')
+            if translators_input:
+                translator_ids = [int(id.strip()) for id in translators_input.split(',') if id.strip()]
+                additional_translators = User.objects.filter(id__in=translator_ids, is_superuser=False)
+                
+                # Build the translators string: current user + selected additional translators
+                translators_list = [f"{request.user.first_name} {request.user.last_name}".strip() or request.user.username]
+                
+                # Add selected additional translators
+                for translator in additional_translators:
+                    translator_name = f"{translator.first_name} {translator.last_name}".strip() or translator.username
+                    if translator_name not in translators_list:
+                        translators_list.append(translator_name)
+                
+                translation_post.translator = ', '.join(translators_list)
+            else:
+                # Only current user as translator
+                translation_post.translator = f"{request.user.first_name} {request.user.last_name}".strip() or request.user.username
+            
+            # Set the original author from the form
+            translation_post.authors = form.cleaned_data.get('original_author', '')
+            translation_post.author = request.user
             translation_post.save()
             send_thank_you_email(request.user, translation_post)  # Send a thank you email
             return redirect("/user_profile")  # Redirect to a relevant page after saving
     else:
-        form = TranslationPostForm()  # Initialize an empty form for GET request
+        if draft:
+            # Pre-fill form with draft data
+            form = TranslationPostForm(instance=draft, user=request.user)
+        else:
+            form = TranslationPostForm(user=request.user)  # Initialize an empty form for GET request
 
-    return render(request, 'main/create_translation_post.html', {"form": form})  # Render the specific template for creating a translation post
+    return render(request, 'main/create_translation_post.html', {
+        "form": form,
+        "draft": draft,
+        "active_submission_type": "translation_post"
+    })  # Render the specific template for creating a translation post
 
 def sign_up(request):
     if request.method == 'POST':
@@ -398,17 +729,57 @@ def resend_confirmation_email(request, user_id):
     try:
         user = User.objects.get(pk=user_id)
         send_confirmation_email(user, request)
-        messages.success(request, 'تم إعادة إرسال بريد التأكيد.')
+        messages.success(request, 'تم إرسال بريد التأكيد بنجاح. يرجى التحقق من بريدك الإلكتروني.')
     except User.DoesNotExist:
         messages.error(request, 'حدث خطأ. لم يتم إرسال البريد.')
+    except Exception as e:
+        messages.error(request, f'حدث خطأ أثناء إرسال البريد: {str(e)}')
     
-    return redirect('/home')  # Redirect to an appropriate view
+    # return redirect('/home')  # Redirect to an appropriate view
+     # Redirect back to the page that called this function
+    referer = request.META.get('HTTP_REFERER')
+    if referer:
+        return redirect(referer)
+    else:
+        return redirect('/become_reviewer')
 
 from .forms import *
 
 @login_required
 def modify_profile(request):
+    # Get translation post IDs for comparison
+    translation_post_ids = TranslationPost.objects.values_list('post_ptr_id', flat=True)
+    
+    # Get all posts and mark which ones are translations
     posts = Post.objects.all()
+    for post in posts:
+        post.is_translation = post.id in translation_post_ids
+        # Add translator field for easy access in template
+        if post.is_translation:
+            try:
+                post.translator = post.translationpost.translator
+            except:
+                post.translator = ""
+    
+    # Get drafts (posts with draft status)
+    drafts = Post.objects.filter(author=request.user, status='Draft')
+    for draft in drafts:
+        draft.is_translation = draft.id in translation_post_ids
+        if draft.is_translation:
+            try:
+                draft.translator = draft.translationpost.translator
+            except:
+                draft.translator = ""
+    
+    # Get reviewed posts (posts that this user has reviewed)
+    reviewed_posts = Post.objects.filter(final_reviewer=request.user).order_by('-updated_at')
+    for reviewed_post in reviewed_posts:
+        reviewed_post.is_translation = reviewed_post.id in translation_post_ids
+        if reviewed_post.is_translation:
+            try:
+                reviewed_post.translator = reviewed_post.translationpost.translator
+            except:
+                reviewed_post.translator = ""
     
     # Initialize all forms with current user data
     name_form = ModifyNameForm(initial={
@@ -421,6 +792,7 @@ def modify_profile(request):
     main_category_form = ModifyMainCategoryForm(initial={'main_category': request.user.userprofile.main_category})
     career_form = ModifyCareerForm(initial={'career': request.user.userprofile.career})
     website_form = ModifyWebsiteForm(initial={'website': request.user.userprofile.website})
+    who_am_i_form = ModifyWhoAmIForm(initial={'who_am_i': request.user.userprofile.who_am_i})
     
     if request.method == 'POST':
         if 'first_name' in request.POST:
@@ -482,19 +854,30 @@ def modify_profile(request):
                 request.user.userprofile.save()
                 return redirect('user_profile')
 
+        elif 'who_am_i' in request.POST:
+            who_am_i_form = ModifyWhoAmIForm(request.POST)
+            if who_am_i_form.is_valid():
+                request.user.userprofile.who_am_i = who_am_i_form.cleaned_data['who_am_i']
+                request.user.userprofile.save()
+                messages.success(request, 'تم تحديث "من أنا" بنجاح.')
+                return redirect('user_profile')
+
     # Superusers automatically have completed profiles, or check if profile is complete
     if request.user.is_superuser or (request.user.userprofile.affiliation != None and request.user.userprofile.country != None and request.user.userprofile.main_category != None):
         request.user.userprofile.completed = True
         request.user.userprofile.save()
 
     return render(request, 'main/user_profile.html', {"posts":posts,
+                                                      "drafts": drafts,
+                                                      "reviewed_posts": reviewed_posts,
                                                       'name_form': name_form,
                                                       'email_form': email_form,
                                                       'affiliation_form': affiliation_form,
                                                       'country_form': country_form,
                                                       'main_category_form': main_category_form,
                                                       'career_form': career_form,
-                                                      'website_form': website_form, 
+                                                      'website_form': website_form,
+                                                      'who_am_i_form': who_am_i_form,
                                                       })
 
 def password_reset_request(request):
@@ -532,6 +915,93 @@ def password_reset_request(request):
 
 @login_required
 @author_required
+def submit_draft(request, post_id):
+    """Submit a draft as a regular post"""
+    post = get_object_or_404(Post, id=post_id, author=request.user, status='Draft')
+    
+    if request.method == "POST":
+        # Change status from Draft to Pending
+        post.status = 'Pending'
+        post.save()
+        
+        # Send thank you email
+        send_thank_you_email(request.user, post)
+        
+        messages.success(request, "تم تقديم المقال بنجاح.")
+        return redirect("user_profile")
+    
+    return redirect("user_profile")
+
+@login_required
+@author_required
+def submit_translation_draft(request, post_id):
+    """Submit a translation draft as a regular translation post"""
+    post = get_object_or_404(TranslationPost, id=post_id, author=request.user, status='Draft')
+    
+    if request.method == "POST":
+        # Change status from Draft to Pending
+        post.status = 'Pending'
+        post.save()
+        
+        # Send thank you email
+        send_thank_you_email(request.user, post)
+        
+        messages.success(request, "تم تقديم الترجمة بنجاح.")
+        return redirect("user_profile")
+    
+    return redirect("user_profile")
+
+@login_required
+@author_required
+def request_re_review(request, post_id):
+    """Request re-review for a rejected post"""
+    post = get_object_or_404(Post, id=post_id, author=request.user, status='Rejected')
+    
+    if request.method == "POST":
+        # Get the current reviewer to exclude them
+        current_reviewer = post.reviewer
+        
+        # Add current reviewer to previous_reviewers if they exist
+        if current_reviewer:
+            post.previous_reviewers.add(current_reviewer)
+        
+        # Find available reviewers (excluding all previous reviewers)
+        available_reviewers = User.objects.filter(
+            groups__name='mod',
+            is_active=True
+        ).exclude(id__in=post.previous_reviewers.values_list('id', flat=True))
+        
+        if available_reviewers.exists():
+            # Assign a new reviewer randomly
+            import random
+            new_reviewer = random.choice(available_reviewers)
+            
+            # Reset the post for re-review
+            post.status = 'Pending'
+            post.reviewer = new_reviewer
+            post.reviewer_comments = ''  # Clear previous review comments
+            post.admin_comments = ''     # Clear admin comments
+            post.review_started = False  # Reset review started flag
+            post.save()
+            
+            messages.success(request, f"تم طلب إعادة مراجعة المقال. تم تعيين مراجع جديد: {new_reviewer.get_full_name() or new_reviewer.username}")
+        else:
+            # If no other reviewers available, just reset without assigning
+            post.status = 'Pending'
+            post.reviewer = None
+            post.reviewer_comments = ''
+            post.admin_comments = ''
+            post.review_started = False  # Reset review started flag
+            post.save()
+            
+            messages.success(request, "تم طلب إعادة مراجعة المقال. سيتم تعيين مراجع جديد قريباً.")
+        
+        return redirect("user_profile")
+    
+    return redirect("user_profile")
+
+@login_required
+@author_required
 def delete_post(request, post_id):
     post = get_object_or_404(Post.objects.select_related('translationpost'), id=post_id)
 
@@ -547,22 +1017,36 @@ def delete_post(request, post_id):
 def edit_post(request, post_id):
     post = get_object_or_404(Post, id=post_id)
     
+    # Check if this is a translation post
+    translation_post_ids = TranslationPost.objects.values_list('post_ptr_id', flat=True)
+    is_translation = post.id in translation_post_ids
+    
     if request.method == "POST":
-        form = PostForm(request.POST, request.FILES, instance=post)
+        if is_translation:
+            form = TranslationPostForm(request.POST, request.FILES, instance=post, user=request.user)
+        else:
+            form = PostForm(request.POST, request.FILES, instance=post)
+            
         if form.is_valid():
             # If the post was approved, set it back to pending for re-review
             if post.status == "Approved":
+                # Keep the same reviewer for approved posts that are edited
+                # Don't add to previous_reviewers since it's the same reviewer
                 post.status = "Pending"
-                post.reviewer = None  # Clear the reviewer assignment
                 post.reviewer_comments = ""  # Clear previous review comments
-                messages.success(request, "تم تحديث المنشور بنجاح. سيتم إعادة مراجعته.")
+                post.review_started = False  # Reset review started flag
+                post.is_edited_after_approval = True  # Mark as edited after approval
+                messages.success(request, "تم تحديث المنشور بنجاح. سيتم إعادة مراجعته من نفس المراجع.")
             else:
                 messages.success(request, "تم تحديث المنشور بنجاح.")
             
             form.save()
             return redirect("user_profile")
     else:
-        form = PostForm(instance=post)
+        if is_translation:
+            form = TranslationPostForm(instance=post, user=request.user)
+        else:
+            form = PostForm(instance=post)
     
     return render(request, 'main/edit_post.html', {"form": form, "post": post})
                     
@@ -630,6 +1114,43 @@ def term_list(request):
     
     return render(request, 'main/term_list.html', context)
 
+def category_hierarchy(request):
+    """Display the hierarchy of categories with post counts"""
+    from django.db.models import Count, Q, Prefetch
+    
+    # Get all main categories
+    main_categories = MainCategory.objects.all()
+    
+    # Get all categories for each main category
+    categories_by_main = {}
+    
+    for main_cat in main_categories:
+        # Get ALL categories under this main category (not just root ones)
+        categories = Category.objects.filter(main_category=main_cat).annotate(
+            post_count=Count('posts', filter=Q(posts__status='Approved'))
+        )
+        
+        # Convert to simple list format for display
+        category_list = []
+        for cat in categories:
+            category_list.append({
+                'category': cat,
+                'post_count': cat.post_count,
+                'total_posts': cat.post_count,  # For flat view, total = direct count
+            })
+        
+        categories_by_main[main_cat] = category_list
+        
+        # Calculate total posts for main category
+        main_cat.total_posts = sum(cat['post_count'] for cat in category_list)
+    
+    context = {
+        'main_categories': main_categories,
+        'categories_by_main': categories_by_main,
+    }
+    
+    return render(request, 'main/category_hierarchy.html', context)
+
 from django.db.models import Q
 @login_required
 @moderator_required
@@ -649,6 +1170,9 @@ def review_post(request):
             status='Pending'
         )
         logger.debug(f"Regular user {request.user.username} seeing {assigned_posts.count()} assigned posts")
+    
+    # Separate queryset for unassigned posts (المشاركات في انتظار المراجعة)
+    unassigned_posts = Post.objects.filter(status='Pending', reviewer__isnull=True)
 
     if request.method == 'POST':
         post_id = request.POST.get('post_id')  # Extract post_id from the form post
@@ -660,20 +1184,36 @@ def review_post(request):
             post = get_object_or_404(Post, pk=post_id, reviewer=request.user, status='Pending')
 
         review_status = request.POST.get('review_status')
-        review_comment = request.POST.get('review_comment')
+        public_comment = request.POST.get('public_comment')
+        admin_comment = request.POST.get('admin_comment', '')
 
-        # Update the post based on the review status and comment
+        # Save both types of comments first
+        post.reviewer_comments = public_comment  # This will be sent to author via email
+        post.admin_comments = admin_comment      # This is private, only for admins
+        
+        # Update the post based on the review status
         if review_status == 'approved':
             post.is_approved = True
             post.status = "Approved"
-            send_accepted(post.author, post)
+            post.is_edited_after_approval = False  # Reset edited flag when approved
+            post.final_reviewer = request.user  # Set the final reviewer
         elif review_status == 'rejected':
             post.is_approved = False
             post.status = "Rejected"
-            send_rejected(post.author, post)
-        post.reviewer_comments = review_comment
+            post.is_edited_after_approval = False  # Reset edited flag when rejected
+            post.final_reviewer = request.user  # Set the final reviewer
         
+        # Add the reviewer to previous_reviewers when they complete a review
+        post.previous_reviewers.add(request.user)
+        
+        # Save the post with all changes
         post.save()
+        
+        # Send email after saving the comments
+        if review_status == 'approved':
+            send_accepted(post.author, post)
+        elif review_status == 'rejected':
+            send_rejected(post.author, post)
         return redirect("/review")
 
     # Get moderators for the template
@@ -681,12 +1221,90 @@ def review_post(request):
     moderators = User.objects.filter(Q(groups=mod_group) | Q(is_staff=True) | Q(is_superuser=True))
 
     context = {
-       "posts": assigned_posts, 
+       "posts": assigned_posts,
+       "unassigned_posts": unassigned_posts,  # Separate queryset for unassigned posts
        "moderators": moderators,
        "is_author": is_author
     }
 
     return render(request, 'main/review.html', context)
+
+@login_required
+@moderator_required
+def start_reviewing(request, post_id):
+    """Start reviewing a specific post - moves it to 'in review' state"""
+    if request.method == 'POST':
+        # Get the post to be reviewed
+        if request.user.is_superuser:
+            post = get_object_or_404(Post, pk=post_id, status='Pending')
+        else:
+            post = get_object_or_404(Post, pk=post_id, reviewer=request.user, status='Pending')
+        
+        # Mark the post as being reviewed by this user
+        post.reviewer = request.user
+        post.review_started = True
+        post.save()
+        
+        messages.success(request, f'تم بدء مراجعة المشاركة: {post.title}')
+        return redirect('/review')
+    
+    return redirect('/review')
+
+@login_required
+@moderator_required
+def detailed_review(request, post_id):
+    """Detailed review page for a specific post"""
+    # Get the post to be reviewed
+    if request.user.is_superuser:
+        post = get_object_or_404(Post, pk=post_id, status='Pending')
+    else:
+        post = get_object_or_404(Post, pk=post_id, reviewer=request.user, status='Pending')
+    
+    if request.method == 'POST':
+        review_status = request.POST.get('review_status')
+        public_comment = request.POST.get('public_comment')
+        admin_comment = request.POST.get('admin_comment', '')
+        best_article_month = request.POST.get('best_article_month') == 'on'  # Checkbox returns 'on' when checked
+
+        # Save both types of comments first
+        post.reviewer_comments = public_comment  # This will be sent to author via email
+        post.admin_comments = admin_comment      # This is private, only for admins
+        
+        # Save the best article recommendation
+        post.recommended_for_best_article = best_article_month
+        
+        # Update the post based on the review status
+        if review_status == 'approved':
+            post.is_approved = True
+            post.status = "Approved"
+            post.is_edited_after_approval = False  # Reset edited flag when approved
+            post.final_reviewer = request.user  # Set the final reviewer
+        elif review_status == 'rejected':
+            post.is_approved = False
+            post.status = "Rejected"
+            post.is_edited_after_approval = False  # Reset edited flag when rejected
+            post.final_reviewer = request.user  # Set the final reviewer
+        
+        # Add the reviewer to previous_reviewers when they complete a review
+        post.previous_reviewers.add(request.user)
+        
+        # Save the post with all changes
+        post.save()
+        
+        # Send email after saving the comments
+        if review_status == 'approved':
+            send_accepted(post.author, post)
+        elif review_status == 'rejected':
+            send_rejected(post.author, post)
+        
+        messages.success(request, f'تم إرسال مراجعة المشاركة: {post.title}')
+        return redirect("/review")
+
+    context = {
+        'post': post
+    }
+    
+    return render(request, 'main/detailed_review.html', context)
 
 @login_required
 def become_reviewer(request):
@@ -806,11 +1424,22 @@ def assign_mod(request):
         # Get the selected moderator based on the moderator_id
         moderator = User.objects.get(pk=moderator_id)
 
+        # Check if this moderator has already reviewed this post
+        if post.previous_reviewers.filter(id=moderator.id).exists():
+            messages.error(request, f"لا يمكن تعيين {moderator.username} مرة أخرى لأنه قام بمراجعة هذا المقال سابقاً.")
+            return redirect("/review")
+
+        # If there was a previous reviewer, add them to previous_reviewers
+        if post.reviewer and post.reviewer != moderator:
+            post.previous_reviewers.add(post.reviewer)
+
         # Assign the selected moderator to the post
         post.reviewer = moderator
         post.status = "Pending"
+        post.review_started = False  # Reset review started flag
         post.save()
 
+        messages.success(request, f"تم تعيين {moderator.username} لمراجعة المقال بنجاح.")
         return redirect("/review")
 
     # Superusers can assign any post, others only their assigned posts
@@ -871,51 +1500,7 @@ def custom_403_error(request, exception=None):
             'back_url': '/contact'
         })
 
-def test_authorization(request):
-    """Test view to demonstrate different authorization scenarios"""
-    if not request.user.is_authenticated:
-        return render(request, 'main/authorization_error.html', {
-            'error_type': 'login_required',
-            'error_title': 'تسجيل الدخول مطلوب',
-            'error_message': 'هذه صفحة اختبار للصلاحيات. يجب تسجيل الدخول للوصول إليها.',
-            'action_button_text': 'تسجيل الدخول',
-            'action_url': '/login',
-            'back_button_text': 'العودة للصفحة الرئيسية',
-            'back_url': '/home'
-        })
-    
-    # Superusers bypass all authorization checks
-    if request.user.is_superuser:
-        return render(request, 'main/authorization_success.html', {
-            'message': 'تم اجتياز جميع اختبارات الصلاحيات بنجاح! (Superuser bypass)'
-        })
-    
-    if not request.user.userprofile.email_confirmed:
-        return render(request, 'main/authorization_error.html', {
-            'error_type': 'email_not_confirmed',
-            'error_title': 'تأكيد البريد الإلكتروني مطلوب',
-            'error_message': 'هذه صفحة اختبار للصلاحيات. يجب تأكيد بريدك الإلكتروني.',
-            'action_button_text': 'إعادة إرسال بريد التأكيد',
-            'action_url': f'/resend-confirmation-email/{request.user.id}/',
-            'back_button_text': 'العودة للصفحة الرئيسية',
-            'back_url': '/home'
-        })
-    
-    if not is_mod_or_staff(request.user):
-        return render(request, 'main/authorization_error.html', {
-            'error_type': 'moderator_required',
-            'error_title': 'صلاحيات المراجع مطلوبة',
-            'error_message': 'هذه صفحة اختبار للصلاحيات. يجب أن تكون مراجعًا.',
-            'action_button_text': 'طلب أن تصبح مراجعًا',
-            'action_url': '/become_reviewer',
-            'back_button_text': 'العودة للصفحة الرئيسية',
-            'back_url': '/home'
-        })
-    
-    # If all checks pass, show success message
-    return render(request, 'main/authorization_success.html', {
-        'message': 'تم اجتياز جميع اختبارات الصلاحيات بنجاح!'
-    })
+
 
 def check_reviewer_request_status(request):
     """Check the status of user's reviewer request"""
@@ -929,10 +1514,204 @@ def check_reviewer_request_status(request):
             'reviewer_request': reviewer_request
         })
     except ReviewerRequest.DoesNotExist:
-        messages.info(request, 'لا توجد طلبات مراجع لك.')
-        return redirect('/home')
+        return render(request, 'main/reviewer_request_status.html', {
+            'reviewer_request': None,
+            'no_requests': True
+        })
 
 class CustomPasswordResetCompleteView(PasswordResetCompleteView):
     def get(self, request, *args, **kwargs):
         messages.success(request, 'تم إعادة تعيين كلمة المرور بنجاح. يمكنك الآن تسجيل الدخول بكلمة المرور الجديدة.')
         return redirect('login')
+
+def post_detail(request, post_id):
+    post = get_object_or_404(Post, id=post_id)
+    comments = post.comments.all()
+    
+    # Get translation post IDs for comparison
+    translation_post_ids = TranslationPost.objects.values_list('post_ptr_id', flat=True)
+    
+    # Mark if this post is a translation and add translator field
+    post.is_translation = post.id in translation_post_ids
+    if post.is_translation:
+        try:
+            post.translator = post.translationpost.translator
+        except:
+            post.translator = ""
+    
+    # Record view if user is authenticated
+    if request.user.is_authenticated:
+        PostView.objects.get_or_create(post=post, user=request.user)
+    
+    if request.method == 'POST' and request.user.is_authenticated:
+        comment_form = CommentForm(request.POST)
+        if comment_form.is_valid():
+            comment = comment_form.save(commit=False)
+            comment.post = post
+            comment.author = request.user
+            comment.save()
+            return redirect('post_detail', post_id=post.id)
+    else:
+        comment_form = CommentForm()
+    
+    context = {
+        'post': post,
+        'comments': comments,
+        'comment_form': comment_form,
+    }
+    return render(request, 'main/post_detail.html', context)
+
+@login_required
+def edit_comment(request, comment_id):
+    """Edit a comment - only the author can edit their own comments"""
+    comment = get_object_or_404(Comment, id=comment_id)
+    
+    # Check if user is the author of the comment
+    if comment.author != request.user:
+        messages.error(request, 'لا يمكنك تعديل تعليق شخص آخر.')
+        return redirect('post_detail', post_id=comment.post.id)
+    
+    if request.method == 'POST':
+        form = CommentForm(request.POST, instance=comment)
+        if form.is_valid():
+            comment = form.save(commit=False)
+            comment.is_modified = True
+            comment.save()
+            messages.success(request, 'تم تعديل التعليق بنجاح.')
+            return redirect('post_detail', post_id=comment.post.id)
+    else:
+        form = CommentForm(instance=comment)
+    
+    context = {
+        'form': form,
+        'comment': comment,
+        'post': comment.post,
+    }
+    return render(request, 'main/edit_comment.html', context)
+
+@login_required
+def delete_comment(request, comment_id):
+    """Delete a comment - author can delete their own comments, superusers and mods can delete any comment"""
+    comment = get_object_or_404(Comment, id=comment_id)
+    
+    # Check if user can delete this comment
+    can_delete = (
+        comment.author == request.user or  # Author can delete their own comment
+        request.user.is_superuser or       # Superuser can delete any comment
+        is_mod_or_staff(request.user)      # Moderators can delete any comment
+    )
+    
+    if not can_delete:
+        messages.error(request, 'لا يمكنك حذف هذا التعليق.')
+        return redirect('post_detail', post_id=comment.post.id)
+    
+    if request.method == 'POST':
+        post_id = comment.post.id
+        comment.delete()
+        messages.success(request, 'تم حذف التعليق بنجاح.')
+        return redirect('post_detail', post_id=post_id)
+    
+    context = {
+        'comment': comment,
+        'post': comment.post,
+    }
+    return render(request, 'main/delete_comment.html', context)
+
+def find_user_by_name(request, author_name):
+    """Find a user by their display name and redirect to their profile"""
+    # Clean the author name
+    author_name = author_name.strip()
+    
+    # Try to find user by first_name + last_name
+    try:
+        # Split the name into parts
+        name_parts = author_name.split()
+        if len(name_parts) >= 2:
+            first_name = name_parts[0]
+            last_name = ' '.join(name_parts[1:])
+            
+            # Try to find user by first_name and last_name
+            user = User.objects.get(
+                first_name__iexact=first_name,
+                last_name__iexact=last_name,
+                is_superuser=False
+            )
+            return redirect('public_profile', user_id=user.id)
+        else:
+            # Try to find by username if it's a single word
+            user = User.objects.get(username__iexact=author_name, is_superuser=False)
+            return redirect('public_profile', user_id=user.id)
+    except User.DoesNotExist:
+        # If no user found, redirect to search results with the author name
+        return redirect(f'/search_results?searchKeyword={author_name}')
+    except User.MultipleObjectsReturned:
+        # If multiple users found, redirect to search results
+        return redirect(f'/search_results?searchKeyword={author_name}')
+
+def newsletter_signup(request):
+    """Handle newsletter signup"""
+    if request.method == 'POST':
+        form = NewsletterSignupForm(request.POST)
+        if form.is_valid():
+            # Generate confirmation token
+            import secrets
+            token = secrets.token_urlsafe(32)
+            
+            # Create subscriber with confirmation token
+            subscriber = form.save(commit=False)
+            subscriber.confirmation_token = token
+            subscriber.save()
+            
+            # Send confirmation email
+            subject = "تأكيد الاشتراك في النشرة الإخبارية - أراب أركسيف"
+            email_template_name = "main/newsletter_confirmation_email.html"
+            context = {
+                "subscriber": subscriber,
+                "token": token,
+                'domain': request.META['HTTP_HOST'],
+                'protocol': 'https' if request.is_secure() else 'http',
+            }
+            email = render_to_string(email_template_name, context)
+            
+            try:
+                send_mail(subject, email, settings.DEFAULT_FROM_EMAIL, [subscriber.email], fail_silently=False)
+                messages.success(request, 'تم إرسال رابط التأكيد إلى بريدك الإلكتروني. يرجى التحقق من بريدك وتأكيد الاشتراك.')
+            except Exception as e:
+                messages.error(request, f'حدث خطأ في إرسال بريد التأكيد: {e}')
+            
+            return redirect('real_home')
+    else:
+        form = NewsletterSignupForm()
+    
+    return render(request, 'main/newsletter_signup.html', {'form': form})
+
+def confirm_newsletter_signup(request, token):
+    """Confirm newsletter signup"""
+    try:
+        subscriber = NewsletterSubscriber.objects.get(confirmation_token=token, is_confirmed=False)
+        subscriber.is_confirmed = True
+        subscriber.confirmation_token = ''  # Clear the token
+        subscriber.save()
+        
+        messages.success(request, 'تم تأكيد اشتراكك في النشرة الإخبارية بنجاح!')
+    except NewsletterSubscriber.DoesNotExist:
+        messages.error(request, 'رابط التأكيد غير صحيح أو منتهي الصلاحية.')
+    
+    return redirect('real_home')
+
+def unsubscribe_newsletter(request, token):
+    """Unsubscribe from newsletter"""
+    try:
+        subscriber = NewsletterSubscriber.objects.get(confirmation_token=token, is_active=True)
+        subscriber.is_active = False
+        subscriber.save()
+        
+        messages.success(request, 'تم إلغاء اشتراكك في النشرة الإخبارية بنجاح.')
+    except NewsletterSubscriber.DoesNotExist:
+        messages.error(request, 'رابط إلغاء الاشتراك غير صحيح أو منتهي الصلاحية.')
+    
+    return redirect('real_home')
+
+def newsletter_test(request):
+    """Test page for newsletter signup"""
+    return render(request, 'main/newsletter_test.html')

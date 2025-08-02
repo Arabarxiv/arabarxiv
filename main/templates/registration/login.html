@@ -2,20 +2,160 @@
 {% block title %}تسجيل الدخول{% endblock %}
 
 {% block content %}
-<div class="container"> <!-- Start container -->
+<div class="container mt-5 mb-5">
     <div class="row justify-content-center">
-        <div class="col-md-6"> <!-- Adjust the column size as needed -->
-            <form method="post">
-                {% csrf_token %}
-                {{ form.as_p }}
-                <button type="submit" class="btn btn-success">تسجيل الدخول</button>
-            </form>
-
-            <div class="mt-3">
-                <p>ليس لديك حساب؟ <a href="/sign-up">سجل هنا</a></p>
-                <p>نسيت كلمة المرور؟ <a href="{% url 'password_reset' %}">إعادة تعيين كلمة المرور</a></p>
+        <div class="col-md-6 col-lg-5">
+            <div class="card shadow-lg border-0" style="border-radius: 15px;">
+                <div class="card-header text-center py-4" style="background: linear-gradient(135deg, #005109 0%, #007a14 100%); border-radius: 15px 15px 0 0; border: none;">
+                    <h2 class="text-white mb-0">
+                        <i class="fas fa-sign-in-alt me-2"></i>
+                        تسجيل الدخول
+                    </h2>
+                    <p class="text-white-50 mb-0 mt-2">مرحباً بك في أرشيف العرب</p>
+                </div>
+                
+                <div class="card-body p-4">
+                    {% if form.errors %}
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>خطأ!</strong> يرجى التحقق من اسم المستخدم وكلمة المرور.
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endif %}
+                    
+                    <form method="post" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.username.id_for_label }}" class="form-label">
+                                <i class="fas fa-user me-2 text-muted"></i>اسم المستخدم
+                            </label>
+                            {{ form.username }}
+                            {% if form.username.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.username.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="{{ form.password.id_for_label }}" class="form-label">
+                                <i class="fas fa-lock me-2 text-muted"></i>كلمة المرور
+                            </label>
+                            {{ form.password }}
+                            {% if form.password.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.password.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-success btn-lg" style="background: linear-gradient(135deg, #005109 0%, #007a14 100%); border: none; border-radius: 10px;">
+                                <i class="fas fa-sign-in-alt me-2"></i>
+                                تسجيل الدخول
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <hr class="my-4">
+                    
+                    <div class="text-center">
+                        <p class="mb-2">
+                            <i class="fas fa-user-plus me-2 text-muted"></i>
+                            ليس لديك حساب؟ 
+                            <a href="/sign-up" class="text-decoration-none fw-bold" style="color: #005109;">
+                                سجل هنا
+                            </a>
+                        </p>
+                        <p class="mb-0">
+                            <i class="fas fa-key me-2 text-muted"></i>
+                            نسيت كلمة المرور؟ 
+                            <a href="{% url 'password_reset' %}" class="text-decoration-none fw-bold" style="color: #005109;">
+                                إعادة تعيين كلمة المرور
+                            </a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Additional Info Card -->
+            <div class="card mt-3 border-0" style="background-color: #f8f9fa; border-radius: 10px;">
+                <div class="card-body text-center py-3">
+                    <p class="mb-0 text-muted">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <small>أرشيف العرب - منصة الأوراق البحثية العربية</small>
+                    </p>
+                </div>
             </div>
         </div>
     </div>
-</div> <!-- End container -->
+</div>
+
+<style>
+.card {
+    transition: transform 0.2s ease-in-out;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+}
+
+.form-control {
+    border-radius: 10px;
+    border: 2px solid #e9ecef;
+    padding: 12px 15px;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus {
+    border-color: #005109;
+    box-shadow: 0 0 0 0.2rem rgba(0, 81, 9, 0.25);
+}
+
+.btn {
+    transition: all 0.3s ease;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.alert {
+    border-radius: 10px;
+    border: none;
+}
+
+/* Custom styling for form fields */
+#id_username, #id_password {
+    width: 100%;
+    padding: 12px 15px;
+    border: 2px solid #e9ecef;
+    border-radius: 10px;
+    font-size: 16px;
+    transition: all 0.3s ease;
+}
+
+#id_username:focus, #id_password:focus {
+    outline: none;
+    border-color: #005109;
+    box-shadow: 0 0 0 0.2rem rgba(0, 81, 9, 0.25);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .container {
+        padding: 0 15px;
+    }
+    
+    .card-body {
+        padding: 1.5rem;
+    }
+}
+</style>
 {% endblock %}

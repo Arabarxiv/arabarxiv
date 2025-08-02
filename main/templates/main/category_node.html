@@ -1,0 +1,31 @@
+{% load category_tags %}
+<div class="tree-node" data-level="{{ level }}" data-category-id="{{ category.id }}">
+    <div class="tree-category-header" onclick="toggleCategory({{ category.id }})">
+        <div class="tree-category-content">
+            {% if children %}
+                <i class="fas fa-chevron-right tree-toggle" id="toggle-{{ category.id }}"></i>
+                <i class="fas fa-folder tree-folder-icon has-children"></i>
+            {% else %}
+                <i class="fas fa-circle tree-leaf"></i>
+                <i class="fas fa-folder-open tree-folder-icon leaf"></i>
+            {% endif %}
+            <span class="category-name">{{ category.name }}</span>
+        </div>
+        <div class="category-stats">
+            {% if post_count > 0 %}
+                <span class="post-count direct">{{ post_count }} مباشر</span>
+            {% endif %}
+            {% if total_posts > post_count %}
+                <span class="post-count total">{{ total_posts }} إجمالي</span>
+            {% endif %}
+        </div>
+    </div>
+    
+    {% if children %}
+        <div class="tree-children" id="children-{{ category.id }}" style="display: none;">
+            {% for child_tree in children %}
+                {% render_category_node child_tree %}
+            {% endfor %}
+        </div>
+    {% endif %}
+</div> 

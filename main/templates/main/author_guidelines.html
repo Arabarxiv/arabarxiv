@@ -14996,8 +14996,19 @@ class="
             el.style.display = 'none';
         });
 
+        // Remove active class from all navigation links
+        document.querySelectorAll('.vnav-link').forEach(function(el) {
+            el.classList.remove('active');
+        });
+
         // Show the selected section
         document.getElementById(section).style.display = 'block';
+
+        // Add active class to the clicked navigation link
+        const clickedLink = document.querySelector(`[onclick="showContent('${section}')"]`);
+        if (clickedLink) {
+            clickedLink.classList.add('active');
+        }
     }
 </script>
 

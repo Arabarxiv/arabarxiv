@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Post, TranslationPost, UserProfile, Category, MainCategory, KeywordTranslation, ReviewerRequest
+from .models import Post, TranslationPost, UserProfile, Category, MainCategory, KeywordTranslation, ReviewerRequest, Comment, PostView, NewsletterSubscriber
 
 # Register your models here.
 
@@ -121,3 +121,41 @@ class KeywordTranslationAdmin(admin.ModelAdmin):
     search_fields = ['english_keyword', 'arabic_translation']
     verbose_name = 'ترجمة مصطلح'
     verbose_name_plural = 'ترجمات المصطلحات'
+
+@admin.register(Comment)
+class CommentAdmin(admin.ModelAdmin):
+    list_display = ['author', 'post', 'created_at', 'content']
+    list_filter = ['created_at', 'post']
+    search_fields = ['author__username', 'post__title', 'content']
+    readonly_fields = ['created_at', 'updated_at']
+    verbose_name = 'تعليق'
+    verbose_name_plural = 'التعليقات'
+
+@admin.register(PostView)
+class PostViewAdmin(admin.ModelAdmin):
+    list_display = ['user', 'post', 'viewed_at']
+    list_filter = ['viewed_at', 'post']
+    search_fields = ['user__username', 'post__title']
+    readonly_fields = ['viewed_at']
+    verbose_name = 'مشاهدة مشاركة'
+    verbose_name_plural = 'مشاهدات المشاركات'
+
+@admin.register(NewsletterSubscriber)
+class NewsletterSubscriberAdmin(admin.ModelAdmin):
+    list_display = ['email', 'name', 'subscribed_at', 'is_active', 'is_confirmed']
+    list_filter = ['is_active', 'is_confirmed', 'subscribed_at']
+    search_fields = ['email', 'name']
+    readonly_fields = ['subscribed_at', 'confirmation_token']
+    actions = ['activate_subscribers', 'deactivate_subscribers']
+    verbose_name = 'مشترك في النشرة الإخبارية'
+    verbose_name_plural = 'المشتركون في النشرة الإخبارية'
+    
+    def activate_subscribers(self, request, queryset):
+        updated = queryset.update(is_active=True)
+        self.message_user(request, f'تم تفعيل {updated} مشترك.')
+    activate_subscribers.short_description = "تفعيل المشتركين المحددين"
+    
+    def deactivate_subscribers(self, request, queryset):
+        updated = queryset.update(is_active=False)
+        self.message_user(request, f'تم إلغاء تفعيل {updated} مشترك.')
+    deactivate_subscribers.short_description = "إلغاء تفعيل المشتركين المحددين"

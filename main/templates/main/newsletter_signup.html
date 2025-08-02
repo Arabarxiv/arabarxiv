@@ -1,0 +1,48 @@
+{% extends 'main/base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}الاشتراك في النشرة الإخبارية{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header text-white" style="background-color: #005109;">
+                    <h1 class="text-center mb-0">الاشتراك في النشرة الإخبارية</h1>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <p class="lead">احصل على آخر الأخبار والتحديثات من أراب أركسيف</p>
+                        <p>سنرسل لك إشعارات عن:</p>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-check text-success me-2"></i>الأوراق البحثية الجديدة</li>
+                            <li><i class="fas fa-check text-success me-2"></i>التحديثات في النظام</li>
+                            <li><i class="fas fa-check text-success me-2"></i>الأحداث الأكاديمية</li>
+                            <li><i class="fas fa-check text-success me-2"></i>فرص المراجعة</li>
+                        </ul>
+                    </div>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        {{ form|crispy }}
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="fas fa-envelope me-2"></i>اشتراك في النشرة الإخبارية
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <div class="mt-4 text-center">
+                        <small class="text-muted">
+                            <i class="fas fa-shield-alt me-1"></i>
+                            لن نشارك بريدك الإلكتروني مع أي طرف ثالث. يمكنك إلغاء الاشتراك في أي وقت.
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

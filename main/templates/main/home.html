@@ -1,237 +1,1236 @@
 {% extends 'main/base.html' %}
 {% load my_filters  %}
+{% load static %}
 {% block title %}قائمة المشاركات {% endblock %}
 
 {% block content %}
 <style>
+/* Translator styling for red color */
+.translator-link {
+    color: #dc3545 !important;
+    background: rgba(220, 53, 69, 0.1) !important;
+}
+
+.translator-link:hover {
+    color: #c82333 !important;
+    background: rgba(220, 53, 69, 0.2) !important;
+}
+
+.post-translator {
+    color: #dc3545;
+    font-weight: 600;
+}
+
+/* Enhanced card styling for translated posts */
+.post-card.translated {
+    border-left: 5px solid #dc3545;
+    background: linear-gradient(135deg, #ffffff 0%, #fff5f5 100%);
+}
+
+.post-card.original {
+    border-left: 5px solid #007bff;
+    background: linear-gradient(135deg, #ffffff 0%, #f0f8ff 100%);
+}
+
+/* General styling improvements */
+.post-card {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    margin-bottom: 25px;
+    overflow: hidden;
+}
+
+.post-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+}
+
+.card-header {
+    border: none;
+    padding: 20px 25px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+.card-header h5 {
+    font-weight: 600;
+    font-size: 1.25rem;
+    margin: 0;
+    line-height: 1.4;
+}
+
+.card-header h5 a {
+    color: #2c3e50;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.card-header h5 a:hover {
+    color: #005109;
+}
+
+.card-body {
+    padding: 25px;
+    background: white;
+}
+
   .author-link {
-    color: #007bff;
+    color: #005109;
     cursor: pointer;
-    text-decoration: underline;
-    display: inline; /* Ensures authors are displayed inline */
+    text-decoration: none;
+    display: inline-block;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    padding: 4px 8px;
+    border-radius: 6px;
+    margin: 2px;
+    background: rgba(0, 81, 9, 0.05);
 }
 
 .author-link:hover {
-    color: #0056b3;
+    color: #003d07;
+    text-decoration: none;
+    background: rgba(0, 81, 9, 0.1);
+    transform: translateY(-1px);
 }
 
-/* File link styling for original vs translated posts */
-.original-file-link {
-    color: #007bff; /* Blue for original posts */
+.author-name, .translator-name {
+    color: #6c757d;
+    font-style: italic;
+    font-weight: 400;
+}
+
+.post-author {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 8px;
+    font-size: 0.95rem;
+}
+
+.post-keywords {
+    color: #495057;
+    font-size: 0.9rem;
+    margin: 10px 0;
+    font-weight: 500;
+}
+
+.post-description {
+    color: #6c757d;
+    line-height: 1.6;
+    margin: 15px 0;
+    font-size: 0.95rem;
+}
+
+.see-more-btn {
+    color: #005109;
     text-decoration: none;
-    font-weight: bold;
+    font-weight: 500;
+    font-size: 0.9rem;
+    transition: color 0.3s ease;
+}
+
+.see-more-btn:hover {
+    color: #003d07;
+    text-decoration: underline;
+}
+
+.post-views {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    margin: 8px 0 !important;
+    padding: 8px 12px !important;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
+    border-radius: 8px !important;
+    font-size: 0.85rem !important;
+    color: #6c757d !important;
+    min-width: fit-content !important;
+}
+
+.post-views > div {
+    display: flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+}
+
+.post-views img {
+    width: 16px !important;
+    height: 16px !important;
+    object-fit: contain !important;
+    display: block !important;
+    margin-left: 0 !important;
+}
+
+.post-views i {
+    color: #28a745 !important;
+    font-size: 14px !important;
+    margin-left: 0 !important;
+}
+
+/* Enhanced File Links */
+.original-file-link, .translated-file-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    margin-top: 10px;
+}
+
+.original-file-link {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    color: white;
 }
 
 .original-file-link:hover {
-    color: #0056b3;
-    text-decoration: underline;
+    background: linear-gradient(135deg, #0056b3 0%, #004085 100%);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
 }
 
 .translated-file-link {
-    color: #dc3545; /* Light red for translated posts */
-    text-decoration: none;
-    font-weight: bold;
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    color: white;
 }
 
 .translated-file-link:hover {
-    color: #c82333;
-    text-decoration: underline;
+    background: linear-gradient(135deg, #c82333 0%, #a71e2a 100%);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
 }
 
-/* Card coloring for original vs translated posts */
-.original-card {
-    border-left: 6px solid #007bff;
-    background: #f8faff;
-}
-.translated-card {
-    border-left: 6px solid #dc3545;
-    background: #fff5f5;
+.card-footer {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border: none;
+    padding: 15px 25px;
+    color: #6c757d;
+    font-size: 0.85rem;
+    font-weight: 500;
 }
 
-.card-header.original-header {
-    background: #e3f0ff;      /* Light blue */
-    border-left: 6px solid #007bff;
-    color: #222;
+/* Dashboard Section */
+.dashboard-section {
+    margin-bottom: 30px;
 }
-.card-header.translated-header {
-    background: #ffeaea;      /* Light red */
-    border-left: 6px solid #dc3545;
-    color: #222;
+
+.stat-card {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border-radius: 15px;
+    padding: 25px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    height: 100%;
+}
+
+.stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+}
+
+.stat-card-link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+}
+
+.stat-card-link:hover {
+    text-decoration: none;
+    color: inherit;
+}
+
+.stat-card-link:hover .stat-card {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+    border: 2px solid #005109;
+}
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #005109 0%, #003d07 100%);
+    color: white;
+    font-size: 1.5rem;
+}
+
+.stat-icon.original {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+}
+
+.stat-icon.translated {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+}
+
+.stat-content h3 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0;
+    color: #2c3e50;
+}
+
+.stat-content p {
+    margin: 5px 0 0 0;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+/* Search and filter styling */
+.search-filter-section {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border-radius: 15px;
+    padding: 25px;
+    margin-bottom: 30px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.search-box {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.search-box input {
+    width: 100%;
+    padding: 12px 20px 12px 50px;
+    border: 2px solid #e9ecef;
+    border-radius: 25px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.search-box input:focus {
+    outline: none;
+    border-color: #005109;
+    box-shadow: 0 0 0 3px rgba(0, 81, 9, 0.1);
+}
+
+.search-box i {
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6c757d;
+    font-size: 1.1rem;
+}
+
+.filter-buttons {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.filter-btn {
+    padding: 8px 16px;
+    border: 2px solid #e9ecef;
+    border-radius: 20px;
+    background: white;
+    color: #6c757d;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+}
+
+.filter-btn:hover, .filter-btn.active {
+    background: #005109;
+    color: white;
+    border-color: #005109;
+    text-decoration: none;
+    transform: translateY(-1px);
+}
+
+.sort-select {
+    border: 2px solid #e9ecef;
+    border-radius: 25px;
+    padding: 12px 20px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.sort-select:focus {
+    outline: none;
+    border-color: #005109;
+    box-shadow: 0 0 0 3px rgba(0, 81, 9, 0.1);
+}
+
+/* Category tabs styling */
+.nav-tabs {
+    border: none;
+    margin-bottom: 30px;
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border-radius: 15px;
+    padding: 5px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.nav-tabs .nav-link {
+    border: none;
+    border-radius: 10px;
+    margin: 0 5px;
+    padding: 12px 20px;
+    color: #6c757d;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.nav-tabs .nav-link:hover {
+    background: rgba(0, 81, 9, 0.1);
+    color: #005109;
+}
+
+.nav-tabs .nav-link.active {
+    background: #005109;
+    color: white;
+}
+
+
+
+/* Loading Animation */
+.loading {
+    text-align: center;
+    padding: 40px;
+    color: #6c757d;
+}
+
+.loading i {
+    font-size: 2rem;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Badge styling */
+.badge {
+    padding: 6px 12px;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.badge-original {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    color: white;
+}
+
+.badge-translated {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    color: white;
+}
+
+/* Empty state styling */
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #6c757d;
+}
+
+.empty-state i {
+    font-size: 4rem;
+    color: #dee2e6;
+    margin-bottom: 20px;
+}
+
+.empty-state h4 {
+    color: #495057;
+    margin-bottom: 10px;
+}
+
+/* Sidebar Styling */
+.sidebar-card {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border-radius: 15px;
+    padding: 25px;
+    margin-bottom: 25px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    border: none;
+}
+
+.sidebar-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+}
+
+.sidebar-card h5 {
+    color: #2c3e50;
+    font-weight: 600;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #e9ecef;
+    padding-bottom: 10px;
+}
+
+/* Recent Activity */
+.activity-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 15px;
+    padding: 10px;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.activity-item:hover {
+    background: rgba(0, 81, 9, 0.05);
+}
+
+.activity-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #005109 0%, #003d07 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+}
+
+.activity-content h6 {
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+.activity-content h6 a {
+    color: #2c3e50;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.activity-content h6 a:hover {
+    color: #005109;
+}
+
+.activity-content p {
+    margin: 5px 0 0 0;
+    color: #6c757d;
+    font-size: 0.8rem;
+}
+
+/* Top Categories */
+.category-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 15px;
+    margin-bottom: 8px;
+    background: rgba(0, 81, 9, 0.05);
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.category-item:hover {
+    background: rgba(0, 81, 9, 0.1);
+    transform: translateX(5px);
+}
+
+.category-name {
+    font-weight: 500;
+    color: #2c3e50;
+}
+
+.category-count {
+    background: #005109;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+/* Quick Actions */
+.quick-actions .btn {
+    border-radius: 10px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.quick-actions .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .card-body {
+        padding: 20px;
+    }
+    
+    .card-header {
+        padding: 15px 20px;
+    }
+    
+    .search-filter-section {
+        padding: 20px;
+    }
+    
+    .filter-buttons {
+        justify-content: center;
+    }
+    
+    .post-views {
+        flex-direction: row !important;
+        gap: 8px !important;
+        align-items: center !important;
+        padding: 6px 10px !important;
+        font-size: 0.8rem !important;
+    }
+    
+    .post-views > div {
+        gap: 3px !important;
+    }
+    
+    .post-views img {
+        width: 14px !important;
+        height: 14px !important;
+    }
+    
+    .post-views i {
+        font-size: 12px !important;
+    }
+    
+    .sidebar-card {
+        margin-bottom: 20px;
+    }
+}
+
+/* Smooth animations */
+.post-card {
+    animation: fadeInUp 0.6s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 </style>
 
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-md-10">
-            <!-- Tab Navigation -->
+<div class="container-fluid">
+    <!-- Dashboard Section -->
+    <div class="dashboard-section mb-4">
+        <div class="row">
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-file-alt"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>{{ total_posts }}</h3>
+                        <p>إجمالي المشاركات</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-icon original">
+                        <i class="fas fa-pen"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>{{ original_posts }}</h3>
+                        <p>المشاركات الأصلية</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-icon translated">
+                        <i class="fas fa-language"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>{{ translated_posts }}</h3>
+                        <p>المشاركات المترجمة</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <a href="{% url 'category_hierarchy' %}" class="stat-card-link">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-folder"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3>{{ categories.count }}</h3>
+                            <p>التصنيفات</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+
+
+
+    <!-- Search and Filter Section -->
+    <div class="search-filter-section">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="searchInput" placeholder="ابحث في المشاركات..." class="form-control">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="filter-buttons">
+                    <a href="?filter=all" class="filter-btn {% if current_filter == 'all' %}active{% endif %}">الكل</a>
+                    <a href="?filter=original" class="filter-btn {% if current_filter == 'original' %}active{% endif %}">أصلي</a>
+                    <a href="?filter=translated" class="filter-btn {% if current_filter == 'translated' %}active{% endif %}">مترجم</a>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select sort-select" id="sortSelect">
+                    <option value="newest" {% if current_sort == 'newest' %}selected{% endif %}>الأحدث</option>
+                    <option value="oldest" {% if current_sort == 'oldest' %}selected{% endif %}>الأقدم</option>
+                    <option value="title" {% if current_sort == 'title' %}selected{% endif %}>حسب العنوان</option>
+                </select>
+            </div>
+      </div>
+    </div>
+
+
+
+    <!-- Category Navigation -->
             <ul class="nav nav-tabs" id="postTabs" role="tablist">
-                <li class="nav-item">
-                    <a class="nav-link active" id="all-tab" data-toggle="tab" href="#all" role="tab" aria-controls="all" aria-selected="true">الكل</a>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="all-tab" data-bs-toggle="tab" data-bs-target="#all" type="button" role="tab" aria-controls="all" aria-selected="true">
+                <i class="fas fa-th-large me-2"></i>الكل
+            </button>
                 </li>
-                <!-- Create tabs dynamically for categories -->
                 {% for category in categories %}
-                    <li class="nav-item">
-                        <a class="nav-link" id="category-{{ category.id }}-tab" data-toggle="tab" href="#category-{{ category.id }}" role="tab" aria-controls="category-{{ category.id }}" aria-selected="false">{{ category.name }}</a>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="category-{{ category.id }}-tab" data-bs-toggle="tab" data-bs-target="#category-{{ category.id }}" type="button" role="tab" aria-controls="category-{{ category.id }}" aria-selected="false">
+                <i class="fas fa-folder me-2"></i>{{ category.name }}
+            </button>
                     </li>
                 {% endfor %}
             </ul>
 
+    <!-- Main Content and Sidebar -->
+    <div class="row">
+        <!-- Main Content -->
+        <div class="col-lg-9">
             <!-- Tab Content -->
             <div class="tab-content" id="postTabContent">
-                <!-- Create tab content dynamically for categories -->
+                <!-- All Posts Tab -->
                 <div class="tab-pane fade show active" id="all" role="tabpanel" aria-labelledby="all-tab">
+                    <div id="postsContainer">
                   {% for post in posts %}
                       {% if post.status == "Approved" %}
-                  
-                          <div class="card mt-2">
-                            <div class="card-header {% if post.is_translation %}translated-header{% else %}original-header{% endif %} d-flex justify-content-between align-items-center">
-                              <h5>
-                                {{ post.title }}
+                                <div class="card post-card {% if post.is_translation %}translated{% else %}original{% endif %}" 
+                                     data-type="{% if post.is_translation %}translated{% else %}original{% endif %}" 
+                                     data-title="{{ post.title|lower }}" 
+                                     data-authors="{{ post.authors|lower }}" 
+                                     data-keywords="{{ post.keywords|lower }}">
+                                    
+                                    <div class="card-header d-flex justify-content-between align-items-center">
+                                        <div class="d-flex align-items-center gap-3">
+
+                                            <span class="badge {% if post.is_translation %}badge-translated{% else %}badge-original{% endif %}">
+                                                {% if post.is_translation %}مترجم{% else %}أصلي{% endif %}
+                                            </span>
+                                            <h5><a href="{% url 'post_detail' post.id %}">{{ post.title }}</a></h5>
+                                        </div>
                                 {% if post.pdf %}
-                                <p>
-                                  <a href="{{ post.pdf.url }}" target="_blank"><i class="fas fa-file-pdf"></i></a>
-                                </p> 
+                                            <a href="{{ post.pdf.url }}" target="_blank" class="btn btn-sm btn-outline-secondary">
+                                                <i class="fas fa-file-pdf me-1"></i>PDF
+                                            </a>
                               {% endif %} 
-                              </h5>
-                            </div>
                           </div>
                               
                             <div class="card-body">
-                              <h6 class="post-author">المؤلف:</h6>
-                              <span class="authors-list">
+                                        <div class="row">
+                                            <div class="col-md-8">
+                                                <h6 class="post-author">
+                                                    <i class="fas fa-user me-2"></i>{% if post.is_translation %}المؤلف الأصلي:{% else %}المؤلف:{% endif %}
                                   {% with authors_list=post.authors|split:"," %}
                                       {% for author in authors_list %}
-                                          <span class="author-link" onclick="searchAuthor('{{ author|strip }}')">{{ author|strip }}</span>{% if not forloop.last %}, {% endif %}
+                                          {% with author_name=author|strip %}
+                                              {% if author_name|user_exists %}
+                                                  <a href="{% url 'find_user_by_name' author_name=author_name %}" class="author-link">{{ author_name }}</a>{% if not forloop.last %}, {% endif %}
+                                              {% else %}
+                                                  <span class="author-name">{{ author_name }}</span>{% if not forloop.last %}, {% endif %}
+                                              {% endif %}
+                                          {% endwith %}
                                       {% endfor %}
                                   {% endwith %}
-                              </span>
-
-                              {% if post.is_translation  %}
-                              <p class="post-translator">المترجم: {{ post.translationpost.translator }}</p>
+                                                </h6>
+                                                
+                                                {% if post.is_translation and post.translator %}
+                                                    <p class="post-translator">
+                                                        <i class="fas fa-language me-2"></i>المترجم: 
+                                                        {% with translators_list=post.translator|split:"," %}
+                                                            {% for translator in translators_list %}
+                                                                {% with translator_name=translator|strip %}
+                                                                    {% if translator_name|user_exists %}
+                                                                        <a href="{% url 'find_user_by_name' author_name=translator_name %}" class="author-link translator-link">{{ translator_name }}</a>{% if not forloop.last %}, {% endif %}
+                                                                    {% else %}
+                                                                        <span class="translator-name">{{ translator_name }}</span>{% if not forloop.last %}, {% endif %}
+                                                                    {% endif %}
+                                                                {% endwith %}
+                                                            {% endfor %}
+                                                        {% endwith %}
+                                                    </p>
                               {% endif %}
-                              <p class="post-keywords">التصنيف: {{ post.category }}</p>
-                              <p class="post-description" id="description-{{ post.id }}">
-                                {{ post.description|truncatechars:200 }}
-                                {% if post.description|length > 200 %}
-                                    <span class="more-text" style="display:none;">{{ post.description|slice:"200:" }}</span>
-                                    <button onclick="toggleDescription('description-{{ post.id }}')" class="see-more-btn">اقرأ المزيد</button>
-                                {% endif %}
-                            </p>
-                            
-                                                          <p class="post-keywords">الكلمات المفتاحية: {{ post.keywords }}</p>
+                                                
+                                                <p class="post-keywords">
+                                                    <i class="fas fa-tag me-2"></i>التصنيف: {{ post.category }}
+                                                </p>
+                                                              <p class="post-description" id="description-{{ post.id }}" data-full-description="{{ post.description }}">
+                                  {{ post.description|truncatechars:200 }}
+                                  {% if post.description|length > 200 %}
+                                      <a href="{% url 'post_detail' post.id %}" class="see-more-btn">اقرأ المزيد</a>
+                                  {% endif %}
+                              </p>
+                                                <p class="post-keywords">
+                                                    <i class="fas fa-key me-2"></i>الكلمات المفتاحية: {{ post.keywords }}
+                                                </p>
+                                            </div>
+                                            
+                                            <div class="col-md-4">
+                                                <div class="post-views">
+                                                    <div>
+                                                        <img src="{% static 'assets/images/view.png' %}" alt="مشاهدات">
+                                {{ post.get_view_count }} مشاهدات
+                                                    </div>
+                                                    <div>
+                                                        <i class="fas fa-comments"></i>
+                                {{ post.comments.count }} تعليق
+                                                    </div>
+                                                </div>
+                                                
                                 {% if post.pdf %}
-                                  <p>
-                                    <a href="{{ post.pdf.url }}" target="_blank"
-                                       class="{% if post.is_translation %}translated-file-link{% else %}original-file-link{% endif %}">
+                                                    <a href="{{ post.pdf.url }}" target="_blank" class="{% if post.is_translation %}translated-file-link{% else %}original-file-link{% endif %}">
+                                                        <i class="fas fa-file-pdf"></i>
                                       تصفح الملف
                                     </a>
-                                  </p> 
                                 {% endif %}
                             </div>
-                            <div class="card-footer text-muted">{{ post.created_at }}</div>
+                                        </div>
+                                    </div>
                         
+                                    <div class="card-footer">
+                                        <span class="time-elapsed" data-timestamp="{{ post.created_at|date:'c' }}">
+                                            <i class="fas fa-clock me-1"></i>{{ post.created_at|time_elapsed }}
+                                        </span>
+                                    </div>
+                                </div>
                       {% endif %}
                   {% empty %}
-                      <p>لا توجد مشاركات بعد :(</p>
+                            <div class="empty-state">
+                                <i class="fas fa-file-alt"></i>
+                                <h4>لا توجد مشاركات بعد</h4>
+                                <p>كن أول من يشارك محتوى جديد!</p>
+                            </div>
                   {% endfor %}
+                    </div>
               </div>
 
+                <!-- Category Tabs -->
                 {% for category in categories %}
                     <div class="tab-pane fade" id="category-{{ category.id }}" role="tabpanel" aria-labelledby="category-{{ category.id }}-tab">
                       {% with approved_posts_count=posts|count_approved_posts_in_category:category %}
                       {% if approved_posts_count > 0 %}
                           {% for post in posts %}
                             {% if post.status == "Approved" and post.category.main_category.id == category.id %}
-                            <div class="card mt-2">
-                              <div class="card-header {% if post.is_translation %}translated-header{% else %}original-header{% endif %} d-flex justify-content-between align-items-center">
-                                <h5>
-                                  {{ post.title }}
-                                  {% if post.pdf %}
-                                  <p>
-                                    <a href="{{ post.pdf.url }}" target="_blank"><i class="fas fa-file-pdf"></i></a>
-                                  </p> 
+                                        <div class="card post-card {% if post.is_translation %}translated{% else %}original{% endif %}" 
+                                             data-type="{% if post.is_translation %}translated{% else %}original{% endif %}" 
+                                             data-title="{{ post.title|lower }}" 
+                                             data-authors="{{ post.authors|lower }}" 
+                                             data-keywords="{{ post.keywords|lower }}">
+                                            
+                                            <div class="card-header d-flex justify-content-between align-items-center">
+                                                <div class="d-flex align-items-center gap-3">
+                                                    <span class="badge {% if post.is_translation %}badge-translated{% else %}badge-original{% endif %}">
+                                                        {% if post.is_translation %}مترجم{% else %}أصلي{% endif %}
+                                                    </span>
+                                                    <h5><a href="{% url 'post_detail' post.id %}">{{ post.title }}</a></h5>
+                                                </div>
+                                {% if post.pdf %}
+                                                    <a href="{{ post.pdf.url }}" target="_blank" class="btn btn-sm btn-outline-secondary">
+                                                        <i class="fas fa-file-pdf me-1"></i>PDF
+                                                    </a>
                                 {% endif %} 
-                                </h5>
-                              </div>
                             </div>
                                 
                               <div class="card-body">
-                                <h6 class="post-author">المؤلف:</h6>
-                                <span class="authors-list">
+                                                <div class="row">
+                                                    <div class="col-md-8">
+                                                        <h6 class="post-author">
+                                                            <i class="fas fa-user me-2"></i>{% if post.is_translation %}المؤلف الأصلي:{% else %}المؤلف:{% endif %}
                                     {% with authors_list=post.authors|split:"," %}
                                         {% for author in authors_list %}
-                                            <span class="author-link" onclick="searchAuthor('{{ author|strip }}')">{{ author|strip }}</span>{% if not forloop.last %}, {% endif %}
+                                            {% with author_name=author|strip %}
+                                                {% if author_name|user_exists %}
+                                                    <a href="{% url 'find_user_by_name' author_name=author_name %}" class="author-link">{{ author_name }}</a>{% if not forloop.last %}, {% endif %}
+                                                {% else %}
+                                                    <span class="author-name">{{ author_name }}</span>{% if not forloop.last %}, {% endif %}
+                                                {% endif %}
+                                            {% endwith %}
                                         {% endfor %}
                                     {% endwith %}
-                                </span>
-                                {% if post.is_translation %}
-                                <p class="post-translator">المترجم: {{ post.translator }}</p>
+                                                        </h6>
+                                                        
+                                                        {% if post.is_translation and post.translator %}
+                                                            <p class="post-translator">
+                                                                <i class="fas fa-language me-2"></i>المترجم: 
+                                                                {% with translators_list=post.translator|split:"," %}
+                                                                    {% for translator in translators_list %}
+                                                                        {% with translator_name=translator|strip %}
+                                                                            {% if translator_name|user_exists %}
+                                                                                <a href="{% url 'find_user_by_name' author_name=translator_name %}" class="author-link translator-link">{{ translator_name }}</a>{% if not forloop.last %}, {% endif %}
+                                                                            {% else %}
+                                                                                <span class="translator-name">{{ translator_name }}</span>{% if not forloop.last %}, {% endif %}
+                                                                            {% endif %}
+                                                                        {% endwith %}
+                                                                    {% endfor %}
+                                                                {% endwith %}
+                                                            </p>
                                 {% endif %}
-                                <p class="post-keywords">التصنيف: {{ post.category }}</p>
-                                <p class="post-description" id="description-{{ post.id }}">
+                                                        
+                                                        <p class="post-keywords">
+                                                            <i class="fas fa-tag me-2"></i>التصنيف: {{ post.category }}
+                                                        </p>
+                                <p class="post-description" id="description-{{ post.id }}" data-full-description="{{ post.description }}">
                                   {{ post.description|truncatechars:200 }}
                                   {% if post.description|length > 200 %}
-                                      <span class="more-text" style="display:none;">{{ post.description|slice:"200:" }}</span>
-                                      <button onclick="toggleDescription('description-{{ post.id }}')" class="see-more-btn">اقرأ المزيد</button>
+                                      <a href="{% url 'post_detail' post.id %}" class="see-more-btn">اقرأ المزيد</a>
                                   {% endif %}
                               </p>
-                              
-                              <p class="post-keywords">الكلمات المفتاحية: {{ post.keywords }}</p>
+                                                        <p class="post-keywords">
+                                                            <i class="fas fa-key me-2"></i>الكلمات المفتاحية: {{ post.keywords }}
+                                                        </p>
+                                                    </div>
+                                                    
+                                                    <div class="col-md-4">
+                                                        <div class="post-views">
+                                                            <div>
+                                                                <img src="{% static 'assets/images/view.png' %}" alt="مشاهدات">
+                                {{ post.get_view_count }} مشاهدات
+                                                            </div>
+                                                            <div>
+                                                                <i class="fas fa-comments"></i>
+                                {{ post.comments.count }} تعليق
+                                                            </div>
+                                                        </div>
+                                                        
                                 {% if post.pdf %}
-                                  <p>
-                                    <a href="{{ post.pdf.url }}" target="_blank"
-                                       class="{% if post.is_translation %}translated-file-link{% else %}original-file-link{% endif %}">
+                                                            <a href="{{ post.pdf.url }}" target="_blank" class="{% if post.is_translation %}translated-file-link{% else %}original-file-link{% endif %}">
+                                                                <i class="fas fa-file-pdf"></i>
                                       تصفح الملف
                                     </a>
-                                  </p> 
                                 {% endif %}
                                     </div>
-                                    <div class="card-footer text-muted">{{ post.created_at }}</div>
+                                                </div>
+                                            </div>
                                  
+                                            <div class="card-footer">
+                                                <span class="time-elapsed" data-timestamp="{{ post.created_at|date:'c' }}">
+                                                    <i class="fas fa-clock me-1"></i>{{ post.created_at|time_elapsed }}
+                                                </span>
+                                            </div>
+                                        </div>
                                   {% endif %}
                                   {% endfor %}
                               {% else %}
-                            <p>لا توجد مشاركات في {{ category.name }} بعد </p>
+                                <div class="empty-state">
+                                    <i class="fas fa-folder-open"></i>
+                                    <h4>لا توجد مشاركات في هذا التصنيف</h4>
+                                    <p>كن أول من يشارك محتوى في هذا التصنيف!</p>
+                                </div>
                             {% endif %}
                             {% endwith %}
                     </div>
                 {% endfor %}
             </div>
         </div>
+        
+        <!-- Sidebar -->
+        <div class="col-lg-3">
+            <!-- Recent Activity -->
+            <div class="sidebar-card">
+                <h5><i class="fas fa-clock me-2"></i>النشاط الأخير</h5>
+                <div class="recent-activity">
+                    {% for post in recent_posts %}
+                        <div class="activity-item">
+                            <div class="activity-icon">
+                                <i class="fas fa-file-alt"></i>
+                            </div>
+                            <div class="activity-content">
+                                <h6><a href="{% url 'post_detail' post.id %}">{{ post.title|truncatechars:30 }}</a></h6>
+                                <p>{{ post.created_at|time_elapsed }}</p>
+                            </div>
+                        </div>
+                    {% empty %}
+                        <p class="text-muted">لا يوجد نشاط حديث</p>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Top Categories -->
+            <div class="sidebar-card">
+                <h5><i class="fas fa-chart-bar me-2"></i>أفضل التصنيفات</h5>
+                <div class="top-categories">
+                    {% for category in top_categories %}
+                        <div class="category-item">
+                            <div class="category-name">{{ category.name }}</div>
+                            <div class="category-count">{{ category.post_count }} مشاركة</div>
+                        </div>
+                    {% empty %}
+                        <p class="text-muted">لا توجد تصنيفات</p>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Quick Actions -->
+            <div class="sidebar-card">
+                <h5><i class="fas fa-plus me-2"></i>إجراءات سريعة</h5>
+                <div class="quick-actions">
+                    <a href="{% url 'create_post' %}" class="btn btn-success btn-sm w-100 mb-2">
+                        <i class="fas fa-plus me-2"></i>مشاركة جديدة
+                    </a>
+                    <a href="{% url 'create_translation_post' %}" class="btn btn-outline-success btn-sm w-100 mb-2">
+                        <i class="fas fa-language me-2"></i>ترجمة جديدة
+                    </a>
+                    <a href="{% url 'search' %}" class="btn btn-outline-primary btn-sm w-100">
+                        <i class="fas fa-search me-2"></i>البحث المتقدم
+                    </a>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
-<!-- JavaScript to toggle tab content visibility -->
-<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
 <script>
-$(document).ready(function () {
-  $('#postTabs a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
-    // Get the ID of the shown tab
-    var tabId = $(e.target).attr('href');
-    console.log(tabId);
-    // Show content of the active tab and hide others
-    $('.tab-pane').not(tabId).removeClass('show active');
-    $(tabId).addClass('show active');
+// Search functionality
+document.getElementById('searchInput').addEventListener('input', function() {
+    const searchTerm = this.value.toLowerCase();
+    const posts = document.querySelectorAll('.post-card');
+    
+    posts.forEach(post => {
+        const title = post.getAttribute('data-title');
+        const authors = post.getAttribute('data-authors');
+        const keywords = post.getAttribute('data-keywords');
+        
+        if (title.includes(searchTerm) || authors.includes(searchTerm) || keywords.includes(searchTerm)) {
+            post.style.display = 'block';
+            post.style.animation = 'fadeInUp 0.3s ease-out';
+        } else {
+            post.style.display = 'none';
+        }
+    });
+    
+    // Show/hide empty state
+    const visiblePosts = document.querySelectorAll('.post-card[style*="display: block"]');
+    const emptyStates = document.querySelectorAll('.empty-state');
+    
+    if (visiblePosts.length === 0 && searchTerm !== '') {
+        emptyStates.forEach(state => {
+            state.innerHTML = `
+                <i class="fas fa-search"></i>
+                <h4>لا توجد نتائج</h4>
+                <p>جرب البحث بكلمات مختلفة</p>
+            `;
+            state.style.display = 'block';
+        });
+    } else if (searchTerm === '') {
+        // Reset to original content
+        location.reload();
+    }
+});
+
+// Smooth scrolling for anchor links
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+            target.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
+        }
+    });
+});
+
+// Add loading animation for PDF links
+document.querySelectorAll('a[href*=".pdf"]').forEach(link => {
+    link.addEventListener('click', function() {
+        this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري التحميل...';
+        setTimeout(() => {
+            this.innerHTML = '<i class="fas fa-file-pdf"></i> تصفح الملف';
+        }, 2000);
+    });
+});
+
+// Add hover effects for cards
+document.querySelectorAll('.post-card').forEach(card => {
+    card.addEventListener('mouseenter', function() {
+        this.style.transform = 'translateY(-5px) scale(1.02)';
+    });
+    
+    card.addEventListener('mouseleave', function() {
+        this.style.transform = 'translateY(0) scale(1)';
   });
 });
 
-function toggleDescription(descriptionId) {
-  var description = document.getElementById(descriptionId);
-  var moreText = description.getElementsByClassName('more-text')[0];
+// Sort functionality
+document.getElementById('sortSelect').addEventListener('change', function() {
+    const currentUrl = new URL(window.location);
+    currentUrl.searchParams.set('sort', this.value);
+    window.location.href = currentUrl.toString();
+});
 
-  if (moreText.style.display === "none") {
-      moreText.style.display = "inline";
-  } else {
-      moreText.style.display = "none";
-  }
-}
+// Lazy loading for images
+document.addEventListener('DOMContentLoaded', function() {
+    const images = document.querySelectorAll('img[src*="view.png"]');
+    images.forEach(img => {
+        img.addEventListener('load', function() {
+            this.style.opacity = '1';
+        });
+        img.style.opacity = '0';
+        img.style.transition = 'opacity 0.3s ease';
+    });
+    
 
+    
+    // Add time elapsed badges to footer
+    document.querySelectorAll('.post-card').forEach(card => {
+        const timeElement = card.querySelector('.time-elapsed');
+        if (timeElement) {
+            const timestamp = timeElement.getAttribute('data-timestamp');
+            if (timestamp) {
+                const postDate = new Date(timestamp);
+                const now = new Date();
+                const delta = now - postDate;
+                
+                // Convert to total seconds
+                const totalSeconds = Math.floor(delta / 1000);
+                
+                let timeElapsed;
+                if (totalSeconds < 60) {
+                    timeElapsed = 'الآن';
+                } else if (totalSeconds < 3600) { // Less than 1 hour
+                    const minutes = Math.floor(totalSeconds / 60);
+                    if (minutes === 1) {
+                        timeElapsed = 'منذ دقيقة واحدة';
+                    } else {
+                        timeElapsed = `منذ ${minutes} دقيقة`;
+                    }
+                } else if (totalSeconds < 86400) { // Less than 1 day
+                    const hours = Math.floor(totalSeconds / 3600);
+                    if (hours === 1) {
+                        timeElapsed = 'منذ ساعة واحدة';
+                    } else {
+                        timeElapsed = `منذ ${hours} ساعة`;
+                    }
+                } else if (totalSeconds < 2592000) { // Less than 30 days
+                    const days = Math.floor(totalSeconds / 86400);
+                    if (days === 1) {
+                        timeElapsed = 'منذ يوم واحد';
+                    } else {
+                        timeElapsed = `منذ ${days} يوم`;
+                    }
+                } else if (totalSeconds < 31536000) { // Less than 1 year
+                    const months = Math.floor(totalSeconds / 2592000);
+                    if (months === 1) {
+                        timeElapsed = 'منذ شهر واحد';
+                    } else {
+                        timeElapsed = `منذ ${months} شهر`;
+                    }
+                } else { // More than 1 year
+                    const years = Math.floor(totalSeconds / 31536000);
+                    if (years === 1) {
+                        timeElapsed = 'منذ سنة واحدة';
+                    } else {
+                        timeElapsed = `منذ ${years} سنة`;
+                    }
+                }
+                
+                timeElement.innerHTML = `<i class="fas fa-clock me-1"></i>${timeElapsed}`;
+            }
+        }
+    });
+    
+    // Update time elapsed every minute
+    setInterval(function() {
+        document.querySelectorAll('.post-card').forEach(card => {
+            const timeElement = card.querySelector('.time-elapsed');
+            if (timeElement) {
+                const timestamp = timeElement.getAttribute('data-timestamp');
+                if (timestamp) {
+                    const postDate = new Date(timestamp);
+                    const now = new Date();
+                    const delta = now - postDate;
+                    
+                    // Convert to total seconds
+                    const totalSeconds = Math.floor(delta / 1000);
+                    
+                    let timeElapsed;
+                    if (totalSeconds < 60) {
+                        timeElapsed = 'الآن';
+                    } else if (totalSeconds < 3600) { // Less than 1 hour
+                        const minutes = Math.floor(totalSeconds / 60);
+                        if (minutes === 1) {
+                            timeElapsed = 'منذ دقيقة واحدة';
+                        } else {
+                            timeElapsed = `منذ ${minutes} دقيقة`;
+                        }
+                    } else if (totalSeconds < 86400) { // Less than 1 day
+                        const hours = Math.floor(totalSeconds / 3600);
+                        if (hours === 1) {
+                            timeElapsed = 'منذ ساعة واحدة';
+                        } else {
+                            timeElapsed = `منذ ${hours} ساعة`;
+                        }
+                    } else if (totalSeconds < 2592000) { // Less than 30 days
+                        const days = Math.floor(totalSeconds / 86400);
+                        if (days === 1) {
+                            timeElapsed = 'منذ يوم واحد';
+                        } else {
+                            timeElapsed = `منذ ${days} يوم`;
+                        }
+                    } else if (totalSeconds < 31536000) { // Less than 1 year
+                        const months = Math.floor(totalSeconds / 2592000);
+                        if (months === 1) {
+                            timeElapsed = 'منذ شهر واحد';
+                        } else {
+                            timeElapsed = `منذ ${months} شهر`;
+                        }
+                    } else { // More than 1 year
+                        const years = Math.floor(totalSeconds / 31536000);
+                        if (years === 1) {
+                            timeElapsed = 'منذ سنة واحدة';
+                        } else {
+                            timeElapsed = `منذ ${years} سنة`;
+                        }
+                    }
+                    
+                    timeElement.innerHTML = `<i class="fas fa-clock me-1"></i>${timeElapsed}`;
+                }
+            }
+        });
+    }, 60000); // Update every minute
+});
 </script>
-<script>
-  function searchAuthor(authorName) {
-      var searchInput = document.getElementById('searchText');
-      searchInput.value = authorName; // Set the value to the author's name
-      searchInput.form.submit(); // Submit the form
-  }
-  </script>
-{% endblock content %}
+{% endblock %}

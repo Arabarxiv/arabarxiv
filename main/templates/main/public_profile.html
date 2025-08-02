@@ -1,0 +1,300 @@
+{% extends 'main/base.html' %}
+{% load crispy_forms_tags %}
+{% block title %}الملف الشخصي - {{ profile_user.get_full_name|default:profile_user.username }}{% endblock %}
+{% block content %}
+<style>
+     .badge-info {
+     background-color: #0056b3 !important;
+     color: white !important;
+     font-weight: bold !important;
+   }
+   
+   .badge-secondary {
+     background-color: #495057 !important;
+     color: white !important;
+     font-weight: bold !important;
+   }
+  
+  .btn-group .btn {
+    margin-right: 2px;
+  }
+  
+     .table th {
+     background-color: #e9ecef !important;
+     border-color: #dee2e6 !important;
+     color: #495057 !important;
+     font-weight: bold !important;
+   }
+  
+  .table td {
+    vertical-align: middle;
+  }
+  
+     .btn-info {
+     background-color: #0056b3 !important;
+     border-color: #0056b3 !important;
+     color: white !important;
+     font-weight: 500 !important;
+   }
+   
+   .btn-info:hover {
+     background-color: #004085 !important;
+     border-color: #004085 !important;
+     color: white !important;
+   }
+  
+  .actions-column {
+    min-width: 400px;
+    width: 400px;
+  }
+  
+  .btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+  }
+  
+     .btn-group .btn {
+     flex: 0 0 auto;
+     white-space: nowrap;
+   }
+   
+       .profile-card {
+      min-width: 350px;
+      width: 100%;
+      text-align: right;
+    }
+    
+    .public-profile-header {
+        background: linear-gradient(135deg, #0d4a2a 0%, #146c43 50%, #0d4a2a 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 10px;
+        margin-bottom: 30px;
+        text-align: center;
+        box-shadow: 0 4px 15px rgba(13, 74, 42, 0.4);
+    }
+    
+    .public-profile-header h1 {
+        font-size: 2.5em;
+        margin-bottom: 15px;
+        font-weight: bold;
+    }
+    
+    .public-profile-header p {
+        font-size: 1.2em;
+        margin-bottom: 8px;
+        opacity: 0.9;
+        color: white !important;
+    }
+    
+    .badge-success {
+        background-color: #28a745 !important;
+        color: white !important;
+        font-weight: bold !important;
+    }
+    
+    .badge-danger {
+        background-color: #dc3545 !important;
+        color: white !important;
+        font-weight: bold !important;
+    }
+    
+    .badge-warning {
+        background-color: #ffc107 !important;
+        color: #212529 !important;
+        font-weight: bold !important;
+    }
+    
+    .badge-primary {
+        background-color: #007bff !important;
+        color: white !important;
+        font-weight: bold !important;
+    }
+    
+    .who-am-i-section {
+        background-color: #f8f9fa;
+        padding: 25px;
+        border-radius: 10px;
+        margin-bottom: 30px;
+        border-left: 5px solid #28a745;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .who-am-i-section h3 {
+        color: #28a745;
+        margin-bottom: 15px;
+        font-weight: bold;
+    }
+    
+    .who-am-i-content {
+        line-height: 1.8;
+        color: #495057;
+        font-size: 1.1em;
+    }
+    
+    .who-am-i-content .text-muted {
+        font-style: italic;
+        color: #6c757d;
+    }
+</style>
+
+<div class="container">
+    <!-- Public Profile Header -->
+    <div class="public-profile-header">
+        <h1>{{ profile_user.get_full_name|default:profile_user.username }}</h1>
+        {% if profile_user.userprofile.affiliation %}
+            <p><strong>الانتماء:</strong> {{ profile_user.userprofile.affiliation }}</p>
+        {% endif %}
+        {% if profile_user.userprofile.country %}
+            <p><strong>الدولة:</strong> {{ profile_user.userprofile.country }}</p>
+        {% endif %}
+        {% if profile_user.userprofile.career %}
+            <p><strong>المهنة:</strong> {{ profile_user.userprofile.career }}</p>
+        {% endif %}
+        {% if profile_user.userprofile.main_category %}
+            <p><strong>التصنيف الرئيسي:</strong> {{ profile_user.userprofile.main_category }}</p>
+        {% endif %}
+        {% if is_own_profile %}
+            <a href="{% url 'user_profile' %}" class="btn btn-light mt-3">
+                <i class="fas fa-edit"></i> تعديل الملف الشخصي
+            </a>
+        {% endif %}
+    </div>
+
+    <!-- Who am I Section -->
+    {% if profile_user.userprofile.who_am_i %}
+    <div class="who-am-i-section">
+        <h3><i class="fas fa-user-circle"></i> من أنا</h3>
+        <div class="who-am-i-content">
+            {{ profile_user.userprofile.who_am_i|linebreaks }}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Submitted Posts Card -->
+    <div class="card mt-4">
+                <div class="card-body">
+                    <h2 class="card-title">المشاركات المقدمة</h2>
+                    {% if posts %}
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>العنوان</th>
+                                    <th>النوع</th>
+                                    <th>تاريخ التقديم</th>
+                                    <th>الحالة</th>
+                                    <th>المشاهدات</th>
+                                    <th>التعليقات</th>
+                                    <th class="actions-column">الإجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for post in posts %}
+                                    <tr>
+                                        <td><strong>{{ post.title }}</strong></td>
+                                        <td>
+                                            {% if post.is_translation %}
+                                                <span class="badge badge-warning">مترجم</span>
+                                            {% else %}
+                                                <span class="badge badge-primary">أصلي</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ post.created_at|date:"F j, Y" }} {{ post.created_at|time:"g:i A" }}</td>
+                                        <td>
+                                            {% if post.status == "Approved" %}
+                                                <span class="badge badge-success">تم الموافقة</span>
+                                            {% elif post.status == "Rejected" %}
+                                                <span class="badge badge-danger">لم يتم الموافقة</span>
+                                            {% else %}
+                                                <span class="badge badge-warning">قيد الإنتظار</span>
+                                            {% endif %}
+                                        </td>
+                                        <td><span class="badge badge-info">{{ post.get_view_count }}</span></td>
+                                        <td><span class="badge badge-secondary">{{ post.get_comment_count }}</span></td>
+                                        <td class="actions-column">
+                                            <div class="btn-group" role="group">
+                                                <a href="{% url 'post_detail' post.id %}" class="btn btn-info btn-sm">
+                                                    <i class="fas fa-info-circle"></i> المزيد من المعلومات
+                                                </a>
+                                                {% if is_own_profile %}
+                                                    <a href="{% url 'edit_post' post.id %}" class="btn btn-warning btn-sm">
+                                                        <i class="fas fa-edit"></i> تعديل
+                                                    </a>
+                                                    <a href="{% url 'delete_post' post.id %}" class="btn btn-danger btn-sm" 
+                                                       onclick="return confirm('هل أنت متأكد من حذف هذا المنشور؟')">
+                                                        <i class="fas fa-trash"></i> حذف
+                                                    </a>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <p class="text-muted">لا توجد مشاركات مقدمة بعد.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+    <!-- Reviewed Posts Card -->
+    {% if reviewed_posts %}
+    <div class="card mt-4">
+        <div class="card-body">
+            <h2 class="card-title">المشاركات التي تمت مراجعتها</h2>
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>العنوان</th>
+                        <th>المؤلف</th>
+                        <th>النوع</th>
+                        <th>تاريخ المراجعة</th>
+                        <th>الحالة</th>
+                        <th>المشاهدات</th>
+                        <th>التعليقات</th>
+                        <th class="actions-column">الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for post in reviewed_posts %}
+                        <tr>
+                            <td><strong>{{ post.title }}</strong></td>
+                            <td>{{ post.author.username }}</td>
+                            <td>
+                                {% if post.is_translation %}
+                                    <span class="badge badge-warning">مترجم</span>
+                                {% else %}
+                                    <span class="badge badge-primary">أصلي</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ post.updated_at|date:"F j, Y" }} {{ post.updated_at|time:"g:i A" }}</td>
+                            <td>
+                                {% if post.status == "Approved" %}
+                                    <span class="badge badge-success">تم الموافقة</span>
+                                {% elif post.status == "Rejected" %}
+                                    <span class="badge badge-danger">لم يتم الموافقة</span>
+                                {% else %}
+                                    <span class="badge badge-warning">قيد الإنتظار</span>
+                                {% endif %}
+                            </td>
+                            <td><span class="badge badge-info">{{ post.get_view_count }}</span></td>
+                            <td><span class="badge badge-secondary">{{ post.get_comment_count }}</span></td>
+                            <td class="actions-column">
+                                <div class="btn-group" role="group">
+                                    <a href="{% url 'post_detail' post.id %}" class="btn btn-info btn-sm">
+                                        <i class="fas fa-info-circle"></i> المزيد من المعلومات
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %} 

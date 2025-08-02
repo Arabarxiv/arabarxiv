@@ -1,0 +1,283 @@
+{% extends 'main/base.html' %}
+{% load my_filters %}
+
+{% block title %}مراجعة المشاركة - {{ post.title }}{% endblock %}
+
+{% block content %}
+<style>
+    .review-container {
+        background-color: #f8f9fa;
+        padding: 30px;
+        border-radius: 10px;
+        margin: 20px 0;
+        overflow: hidden;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+    }
+    
+    .post-info {
+        background-color: white;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        border-left: 4px solid #007bff;
+        overflow: hidden;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+    }
+    
+    .post-type-badge {
+        padding: 6px 12px;
+        border-radius: 15px;
+        font-size: 14px;
+        font-weight: bold;
+        text-align: center;
+        display: inline-block;
+        min-width: 100px;
+    }
+    
+    .post-type-original {
+        background-color: #007bff;
+        color: white;
+    }
+    
+    .post-type-translation {
+        background-color: #dc3545;
+        color: white;
+    }
+    
+    .form-group {
+        margin-bottom: 20px;
+    }
+    
+    .form-control {
+        border-radius: 8px;
+        border: 1px solid #ced4da;
+        padding: 12px;
+    }
+    
+    .form-control:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+    
+    .btn-review {
+        background-color: #28a745;
+        border: none;
+        padding: 12px 30px;
+        border-radius: 8px;
+        font-weight: bold;
+        margin-right: 10px;
+    }
+    
+    .btn-review:hover {
+        background-color: #218838;
+    }
+    
+    .btn-back {
+        background-color: #6c757d;
+        border: none;
+        padding: 12px 30px;
+        border-radius: 8px;
+        font-weight: bold;
+    }
+    
+    .btn-back:hover {
+        background-color: #5a6268;
+    }
+    
+    .pdf-link {
+        color: #007bff;
+        text-decoration: none;
+        font-weight: bold;
+        padding: 8px 16px;
+        border: 2px solid #007bff;
+        border-radius: 6px;
+        display: inline-block;
+        margin: 10px 0;
+        transition: all 0.3s ease;
+    }
+    
+    .pdf-link:hover {
+        background-color: #007bff;
+        color: white;
+        text-decoration: none;
+    }
+    
+    .form-check {
+        margin: 15px 0;
+        padding: 15px;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        border: 1px solid #e9ecef;
+    }
+    
+    .form-check-input {
+        width: 20px;
+        height: 20px;
+        margin-right: 10px;
+    }
+    
+    .form-check-label {
+        font-size: 16px;
+        color: #495057;
+        cursor: pointer;
+    }
+    
+    .form-check-input:checked {
+        background-color: #28a745;
+        border-color: #28a745;
+    }
+    
+    .badge-success {
+        background-color: #28a745;
+        color: white;
+        font-size: 12px;
+        padding: 6px 12px;
+        border-radius: 15px;
+        display: inline-block;
+    }
+</style>
+
+{# Show Django messages #}
+{% if messages %}
+  {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} text-center" role="alert" style="margin-bottom: 0;">
+      {{ message }}
+    </div>
+  {% endfor %}
+{% endif %}
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="review-container">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h1>مراجعة المشاركة</h1>
+                    <a href="{% url 'review' %}" class="btn btn-back text-white">العودة إلى قائمة المراجعات</a>
+                </div>
+                
+                <!-- معلومات المشاركة -->
+                <div class="post-info">
+                    <h3 style="word-wrap: break-word; overflow-wrap: break-word; max-width: 100%; overflow: hidden;">{{ post.title }}</h3>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>المؤلفون:</strong> {{ post.authors }}</p>
+                            <p><strong>التصنيف:</strong> {{ post.category.name }}</p>
+                            <p><strong>الكلمات المفتاحية:</strong> {{ post.keywords }}</p>
+                            {% if post.external_doi %}
+                                <p><strong>DOI:</strong> {{ post.external_doi }}</p>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>نوع المشاركة:</strong> 
+                                {% if post|class_name == 'TranslationPost' %}
+                                    <span class="post-type-badge post-type-translation">ترجمة</span>
+                                    {% if post.translator %}
+                                        <br><small>المترجم: {{ post.translator }}</small>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="post-type-badge post-type-original">أصلي</span>
+                                {% endif %}
+                            </p>
+                            <p><strong>تاريخ التقديم:</strong> {{ post.created_at|date:"Y-m-d" }}</p>
+                            <p><strong>الوصف:</strong></p>
+                            <p class="text-muted" style="word-wrap: break-word; overflow-wrap: break-word; max-width: 100%; overflow: hidden;">{{ post.description|truncatewords:30 }}</p>
+                        </div>
+                    </div>
+                    
+                    <!-- رابط PDF -->
+                    <div class="mt-3">
+                        <a href="{{ post.pdf.url }}" target="_blank" class="pdf-link">
+                            <i class="fas fa-file-pdf"></i> عرض الـ PDF
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- تعليقات المراجع السابق -->
+                {% if post.previous_reviewers.all %}
+                <div class="card mb-4">
+                    <div class="card-header bg-info text-white">
+                        <h5><i class="fas fa-history"></i> تعليقات المراجع السابق</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="border-bottom pb-3 mb-3">
+                            <h6><strong>المراجع السابق:</strong> 
+                                {% for prev_reviewer in post.previous_reviewers.all %}
+                                    {% if prev_reviewer != user %}
+                                        {{ prev_reviewer.username }}{% if not forloop.last %}, {% endif %}
+                                    {% endif %}
+                                {% endfor %}
+                            </h6>
+                            {% if post.reviewer_comments %}
+                                <p><strong>التعليق للمؤلف:</strong></p>
+                                <div class="bg-light p-3 rounded">
+                                    {{ post.reviewer_comments|linebreaks }}
+                                </div>
+                            {% endif %}
+                            {% if post.recommended_for_best_article %}
+                                <div class="mt-2">
+                                    <span class="badge badge-success">موصى بها كأفضل مقالة</span>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- نموذج المراجعة -->
+                <div class="card">
+                    <div class="card-header">
+                        <h4>نموذج المراجعة</h4>
+                    </div>
+                    <div class="card-body">
+                        <form method="post">
+                            {% csrf_token %}
+                            
+                            <div class="form-group">
+                                <label for="public_comment"><strong>التعليق المرسل للمؤلف (إجباري)</strong></label>
+                                <textarea class="form-control" id="public_comment" name="public_comment" rows="6" required 
+                                    placeholder="اكتب تعليقك للمؤلف هنا. سيتم إرسال هذا التعليق للمؤلف عبر البريد الإلكتروني."></textarea>
+                                <small class="form-text text-muted">هذا التعليق سيتم إرساله للمؤلف عبر البريد الإلكتروني</small>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="admin_comment"><strong>التعليق الخاص بالإدارة (اختياري)</strong></label>
+                                <textarea class="form-control" id="admin_comment" name="admin_comment" rows="4" 
+                                    placeholder="اكتب تعليقك الخاص هنا. هذا التعليق مرئي للإدارة فقط."></textarea>
+                                <small class="form-text text-muted">هذا التعليق مرئي للإدارة فقط</small>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="status"><strong>حالة المراجعة</strong></label>
+                                <select class="form-control" id="status" name="review_status" required>
+                                    <option value="">اختر حالة المراجعة</option>
+                                    <option value="approved">تمت الموافقة عليها</option>
+                                    <option value="rejected">تم رفضها</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="best_article_month" name="best_article_month">
+                                    <label class="form-check-label" for="best_article_month">
+                                        <strong>أوصي بهذه المقالة كأفضل مقالة في الشهر</strong>
+                                    </label>
+                                </div>
+                                <small class="form-text text-muted">يمكن للمراجع التوصية بالمقالة كأفضل مقالة في الشهر إذا كانت تستحق ذلك</small>
+                            </div>
+                            
+                            <div class="form-group">
+                                <button type="submit" class="btn btn-review text-white">
+                                    <i class="fas fa-paper-plane"></i> إرسال المراجعة
+                                </button>
+                                <a href="{% url 'review' %}" class="btn btn-back text-white">إلغاء</a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %} 

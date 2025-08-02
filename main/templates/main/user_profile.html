@@ -2,57 +2,410 @@
 {% load crispy_forms_tags %}
 {% block title %}الملف الشخصي{% endblock %}
 {% block content %}
-<div class="container">
-  <div class="row">
-    <div class="col-md-4">
-      <div class="card mt-4">
-        <div class="card-body">
-          <h2 class="card-title">{{ user.username }}</h2>
-          
-          <!-- Name -->
-          <div class="profile-attribute">
-            <p><strong>الاسم الكامل:</strong> {{ user.first_name }} {{ user.last_name }} <button class="btn btn-link" data-toggle="modal" data-target="#nameModal"><i class="fas fa-edit"></i></button></p>
+<style>
+     .badge-info {
+     background-color: #0056b3 !important;
+     color: white !important;
+     font-weight: bold !important;
+   }
+   
+   .badge-secondary {
+     background-color: #495057 !important;
+     color: white !important;
+     font-weight: bold !important;
+   }
+  
+  .btn-group .btn {
+    margin-right: 2px;
+  }
+  
+     .table th {
+     background-color: #e9ecef !important;
+     border-color: #dee2e6 !important;
+     color: #495057 !important;
+     font-weight: bold !important;
+   }
+  
+  .table td {
+    vertical-align: middle;
+  }
+  
+     .btn-info {
+     background-color: #0056b3 !important;
+     border-color: #0056b3 !important;
+     color: white !important;
+     font-weight: 500 !important;
+   }
+   
+   .btn-info:hover {
+     background-color: #004085 !important;
+     border-color: #004085 !important;
+     color: white !important;
+   }
+  
+  .actions-column {
+    min-width: 400px;
+    width: 400px;
+  }
+  
+  .btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+  }
+  
+     .btn-group .btn {
+     flex: 0 0 auto;
+     white-space: nowrap;
+   }
+   
+       .profile-card {
+      min-width: 350px;
+      width: 100%;
+      text-align: right;
+    }
+    
+    .badge-warning {
+      background-color: #ffc107 !important;
+      color: #212529 !important;
+      font-weight: bold !important;
+    }
+    
+    .badge-primary {
+      background-color: #007bff !important;
+      color: white !important;
+      font-weight: bold !important;
+    }
+    
+    .who-am-i-content {
+      background-color: #f8f9fa;
+      padding: 15px;
+      border-radius: 8px;
+      border-left: 4px solid #28a745;
+      margin-bottom: 15px;
+    }
+    
+    .who-am-i-content p {
+      margin-bottom: 0;
+      line-height: 1.6;
+      color: #495057;
+    }
+    
+    .who-am-i-content .text-muted {
+      font-style: italic;
+    }
+    
+    /* Modal styling for Who am I */
+    #whoAmIModal .modal-dialog {
+      max-width: 800px;
+    }
+    
+    #whoAmIModal .modal-body {
+      max-height: 70vh;
+      overflow-y: auto;
+    }
+    
+    #whoAmIModal textarea {
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+</style>
+ <div class="container">
+   <div class="row">
+     <div class="col-md-8">
+          <!-- User Info Card -->
+          <div class="card mt-4">
+            <div class="card-body">
+              <h2 class="card-title">{{ user.username }}</h2>
+              
+              <!-- Name -->
+              <div class="profile-attribute">
+                <p><strong>الاسم الكامل:</strong> {{ user.first_name }} {{ user.last_name }} <button class="btn btn-link" data-toggle="modal" data-target="#nameModal"><i class="fas fa-edit"></i></button></p>
+              </div>
+              
+              <!-- Email -->
+              <div class="profile-attribute">
+                <p><strong>البريد الإلكتروني:</strong> {{ user.email }} <button class="btn btn-link" data-toggle="modal" data-target="#emailModal"><i class="fas fa-edit"></i></button></p>
+                {% if not user.is_superuser and not user.userprofile.email_confirmed %}
+                  <small class="text-warning">البريد الإلكتروني غير مؤكد</small>
+                {% else %}
+                  <small class="text-success">البريد الإلكتروني مؤكد</small>
+                {% endif %}
+              </div>
+              
+              <!-- Password Reset -->
+              <div class="profile-attribute">
+                <p><strong>كلمة المرور:</strong> <button class="btn btn-link" data-toggle="modal" data-target="#passwordModal"><i class="fas fa-key"></i> تغيير كلمة المرور</button></p>
+              </div>
+              
+              <!-- Affiliation -->
+              <div class="profile-attribute">
+                <p><strong>الانتماء:</strong> {{ user.userprofile.affiliation }} <button class="btn btn-link" data-toggle="modal" data-target="#affiliationModal"><i class="fas fa-edit"></i></button></p>
+              </div>
+              
+              <!-- Country -->
+              <div class="profile-attribute">
+                <p><strong>الدولة:</strong> {{ user.userprofile.get_country_display }} <button class="btn btn-link" data-toggle="modal" data-target="#countryModal"><i class="fas fa-edit"></i></button></p>
+              </div>
+              
+              <!-- Website -->
+              <div class="profile-attribute">
+                <p><strong>الموقع الإلكتروني:</strong> {{ user.userprofile.website }} <button class="btn btn-link" data-toggle="modal" data-target="#websiteModal"><i class="fas fa-edit"></i></button></p>
+              </div>
+              
+              <!-- Career -->
+              <div class="profile-attribute">
+                <p><strong>المهنة:</strong> {{ user.userprofile.career }} <button class="btn btn-link" data-toggle="modal" data-target="#careerModal"><i class="fas fa-edit"></i></button></p>
+              </div>
+              
+              <!-- Main Category -->
+              <div class="profile-attribute">
+                <p><strong>التصنيف الرئيسي:</strong> {{ user.userprofile.main_category }} <button class="btn btn-link" data-toggle="modal" data-target="#mainCategoryModal"><i class="fas fa-edit"></i></button></p>
+              </div>
+            </div>
           </div>
-          
-          <!-- Email -->
-          <div class="profile-attribute">
-            <p><strong>البريد الإلكتروني:</strong> {{ user.email }} <button class="btn btn-link" data-toggle="modal" data-target="#emailModal"><i class="fas fa-edit"></i></button></p>
-            {% if not user.is_superuser and not user.userprofile.email_confirmed %}
-              <small class="text-warning">البريد الإلكتروني غير مؤكد</small>
-            {% else %}
-              <small class="text-success">البريد الإلكتروني مؤكد</small>
-            {% endif %}
-          </div>
-          
-          <!-- Password Reset -->
-          <div class="profile-attribute">
-            <p><strong>كلمة المرور:</strong> <button class="btn btn-link" data-toggle="modal" data-target="#passwordModal"><i class="fas fa-key"></i> تغيير كلمة المرور</button></p>
-          </div>
-          
-          <!-- Affiliation -->
-          <div class="profile-attribute">
-            <p><strong>الانتماء:</strong> {{ user.userprofile.affiliation }} <button class="btn btn-link" data-toggle="modal" data-target="#affiliationModal"><i class="fas fa-edit"></i></button></p>
-          </div>
-          
-          <!-- Country -->
-          <div class="profile-attribute">
-            <p><strong>الدولة:</strong> {{ user.userprofile.get_country_display }} <button class="btn btn-link" data-toggle="modal" data-target="#countryModal"><i class="fas fa-edit"></i></button></p>
-          </div>
-          
-          <!-- Website -->
-          <div class="profile-attribute">
-            <p><strong>الموقع الإلكتروني:</strong> {{ user.userprofile.website }} <button class="btn btn-link" data-toggle="modal" data-target="#websiteModal"><i class="fas fa-edit"></i></button></p>
-          </div>
-          
-          <!-- Career -->
-          <div class="profile-attribute">
-            <p><strong>المهنة:</strong> {{ user.userprofile.career }} <button class="btn btn-link" data-toggle="modal" data-target="#careerModal"><i class="fas fa-edit"></i></button></p>
-          </div>
-          
-          <!-- Main Category -->
-          <div class="profile-attribute">
-            <p><strong>التصنيف الرئيسي:</strong> {{ user.userprofile.main_category }} <button class="btn btn-link" data-toggle="modal" data-target="#mainCategoryModal"><i class="fas fa-edit"></i></button></p>
-          </div>
+     </div>
+     
+     <!-- Who am I Section -->
+     <div class="col-md-4">
+       <div class="card mt-4">
+         <div class="card-body">
+           <h3 class="card-title">من أنا</h3>
+           <div class="who-am-i-content">
+             {% if user.userprofile.who_am_i %}
+               <p>{{ user.userprofile.who_am_i|linebreaks }}</p>
+             {% else %}
+               <p class="text-muted">لم يتم إضافة ملخص بعد.</p>
+             {% endif %}
+           </div>
+           <button class="btn btn-primary btn-sm mt-2" data-toggle="modal" data-target="#whoAmIModal">
+             <i class="fas fa-edit"></i> تعديل
+           </button>
+         </div>
+       </div>
+     </div>
+   </div>
+   
+   <div class="row">
+     <div class="col-md-12">
+          <!-- Submitted Posts Card -->
+          <div class="card mt-4">
+           <div class="card-body">
+               <h2 class="card-title">قائمة المشاركات</h2>
+               <table class="table table-bordered">
+                   <thead>
+                                              <tr>
+                            <th>العنوان</th>
+                            <th>النوع</th>
+                            <th>تاريخ التقديم</th>
+                            <th>الحالة</th>
+                            <th>المشاهدات</th>
+                            <th>التعليقات</th>
+                            <th class="actions-column">الإجراءات</th>
+                        </tr>
+                   </thead>
+                   <tbody>
+                       {% for post in posts %}
+                           {% if post.author == user %}
+                               <tr>
+                                   <td><strong>{{ post.title }}</strong></td>
+                                   <td>
+                                       {% if post.is_translation %}
+                                           <span class="badge badge-warning">مترجم</span>
+                                       {% else %}
+                                           <span class="badge badge-primary">أصلي</span>
+                                       {% endif %}
+                                   </td>
+                                   <td>{{ post.created_at|date:"F j, Y" }} {{ post.created_at|time:"g:i A" }}</td>
+                                   <td>
+                                     {% if post.status == "Approved" %}
+                                     تم الموافقة
+                                     {% elif post.status == "Rejected" %}
+                                     لم يتم الموافقة
+                                 {% else %}
+                                     قيد الإنتظار
+                                 {% endif %}
+                                   </td>
+                                   <td>
+                                     <span class="badge badge-info">{{ post.get_view_count }}</span>
+                                   </td>
+                                   <td>
+                                     <span class="badge badge-secondary">{{ post.get_comment_count }}</span>
+                                   </td>
+                                                                      <td class="actions-column">
+                                      <div class="btn-group" role="group">
+                                        <!-- More Info Button -->
+                                        <a href="{% url 'post_detail' post.id %}" class="btn btn-info btn-sm">
+                                          <i class="fas fa-info-circle"></i> المزيد من المعلومات
+                                        </a>
+                                        <!-- Edit Button - Show for all posts -->
+                                        <a href="{% url 'edit_post' post.id %}" class="btn btn-primary btn-sm"
+                                           {% if post.status == "Approved" %}
+                                           onclick="return confirm('هذا المنشور تمت الموافقة عليه. عند التعديل سيتم إعادة إرساله للمراجعة. هل تريد المتابعة؟')"
+                                           {% endif %}>
+                                          {% if post.status == "Approved" %}
+                                            تعديل (إعادة مراجعة)
+                                          {% else %}
+                                            تعديل
+                                          {% endif %}
+                                        </a>
+                                        <!-- Request Re-review Button - Show for rejected posts -->
+                                        {% if post.status == "Rejected" %}
+                                        <form action="{% url 'request_re_review' post.id %}" method="post" style="display: inline;">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-warning btn-sm" onclick="return confirm('هل تريد طلب إعادة مراجعة لهذا المقال؟')">
+                                              <i class="fas fa-redo"></i> طلب إعادة مراجعة
+                                            </button>
+                                        </form>
+                                        {% endif %}
+                                        <!-- Delete Button -->
+                                        <form action="{% url 'delete_post' post.id %}" method="post" style="display: inline;">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('هل أنت متأكد من حذف هذا المنشور؟')">حذف</button>
+                                        </form>
+                                      </div>
+                                    </td>
+                               </tr>
+                           {% endif %}
+                       {% endfor %}
+                   </tbody>
+               </table>
+           </div>
+       </div>
+
+          <!-- Reviewed Posts Card -->
+          {% if reviewed_posts %}
+          <div class="card mt-4">
+           <div class="card-body">
+               <h2 class="card-title">المشاركات التي تمت مراجعتها</h2>
+               <table class="table table-bordered">
+                   <thead>
+                       <tr>
+                           <th>العنوان</th>
+                           <th>المؤلف</th>
+                           <th>النوع</th>
+                           <th>تاريخ المراجعة</th>
+                           <th>الحالة</th>
+                           <th>المشاهدات</th>
+                           <th>التعليقات</th>
+                           <th class="actions-column">الإجراءات</th>
+                       </tr>
+                   </thead>
+                   <tbody>
+                       {% for post in reviewed_posts %}
+                           <tr>
+                               <td><strong>{{ post.title }}</strong></td>
+                               <td>{{ post.author.username }}</td>
+                               <td>
+                                   {% if post.is_translation %}
+                                       <span class="badge badge-warning">مترجم</span>
+                                   {% else %}
+                                       <span class="badge badge-primary">أصلي</span>
+                                   {% endif %}
+                               </td>
+                               <td>{{ post.updated_at|date:"F j, Y" }} {{ post.updated_at|time:"g:i A" }}</td>
+                               <td>
+                                 {% if post.status == "Approved" %}
+                                 <span style="color: #28a745;">تم الموافقة</span>
+                                 {% elif post.status == "Rejected" %}
+                                 <span style="color: #dc3545;">لم يتم الموافقة</span>
+                                 {% else %}
+                                 <span style="color: #ffc107;">قيد الإنتظار</span>
+                                 {% endif %}
+                               </td>
+                               <td>
+                                 <span class="badge badge-info">{{ post.get_view_count }}</span>
+                               </td>
+                               <td>
+                                 <span class="badge badge-secondary">{{ post.get_comment_count }}</span>
+                               </td>
+                               <td class="actions-column">
+                                 <div class="btn-group" role="group">
+                                   <a href="{% url 'post_detail' post.id %}" class="btn btn-info btn-sm">
+                                     <i class="fas fa-info-circle"></i> المزيد من المعلومات
+                                   </a>
+                                 </div>
+                               </td>
+                           </tr>
+                       {% endfor %}
+                   </tbody>
+               </table>
+           </div>
+       </div>
+       {% endif %}
+
+          <!-- Drafts Card -->
+          <div class="card mt-4">
+           <div class="card-body">
+               <h2 class="card-title">المسودات</h2>
+               {% if drafts %}
+               <table class="table table-bordered">
+                   <thead>
+                                              <tr>
+                            <th>العنوان</th>
+                            <th>النوع</th>
+                            <th>تاريخ الإنشاء</th>
+                            <th>آخر تحديث</th>
+                            <th class="actions-column">الإجراءات</th>
+                        </tr>
+                   </thead>
+                   <tbody>
+                       {% for draft in drafts %}
+                               <tr>
+                                   <td><strong>{{ draft.title }}</strong></td>
+                                   <td>
+                                       {% if draft.is_translation %}
+                                           <span class="badge badge-warning">مترجم</span>
+                                       {% else %}
+                                           <span class="badge badge-primary">أصلي</span>
+                                       {% endif %}
+                                   </td>
+                                   <td>{{ draft.created_at|date:"F j, Y" }} {{ draft.created_at|time:"g:i A" }}</td>
+                                   <td>{{ draft.updated_at|date:"F j, Y" }} {{ draft.updated_at|time:"g:i A" }}</td>
+                                   <td class="actions-column">
+                                      <div class="btn-group" role="group">
+                                        <!-- Submit Article/Translation Button -->
+                                        {% if draft.is_translation %}
+                                            <form action="{% url 'submit_translation_draft' draft.id %}" method="post" style="display: inline;">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-success btn-sm" onclick="return confirm('هل تريد تقديم هذه المسودة كترجمة؟')">
+                                                  <i class="fas fa-paper-plane"></i> تقديم الترجمة
+                                                </button>
+                                            </form>
+                                        {% else %}
+                                            <form action="{% url 'submit_draft' draft.id %}" method="post" style="display: inline;">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-success btn-sm" onclick="return confirm('هل تريد تقديم هذه المسودة كمقال؟')">
+                                                  <i class="fas fa-paper-plane"></i> تقديم المقال
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                        <!-- Edit Button -->
+                                        <a href="{% url 'edit_post' draft.id %}" class="btn btn-primary btn-sm">
+                                          <i class="fas fa-edit"></i> تعديل
+                                        </a>
+                                        <!-- Delete Button -->
+                                        <form action="{% url 'delete_post' draft.id %}" method="post" style="display: inline;">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('هل أنت متأكد من حذف هذه المسودة؟')">حذف</button>
+                                        </form>
+                                      </div>
+                                    </td>
+                               </tr>
+                       {% endfor %}
+                   </tbody>
+               </table>
+               {% else %}
+               <p class="text-muted">لا توجد مسودات حالياً.</p>
+               {% endif %}
+           </div>
+       </div>
+       <div class="mt-4">
+         <p>إذا كان لديك أي استفسار أو مشكلة، يُرجى التواصل معنا عبر البريد الإلكتروني:</p>
+         <p><strong>submission_arabarxiv@gmail.com</strong></p>
+     </div>
+   </div>
 
           <!-- Name Edit Modal -->
           <div class="modal fade" id="nameModal" tabindex="-1" role="dialog" aria-labelledby="nameModalLabel" aria-hidden="true">
@@ -222,69 +575,30 @@
               </div>
             </div>
           </div>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-8">
-      <!-- Submitted Posts Card -->
-      <div class="card mt-4">
-          <div class="card-body">
-              <h2 class="card-title">المشاركات المقدمة</h2>
-              <table class="table table-bordered">
-                  <thead>
-                      <tr>
-                          <th>العنوان</th>
-                          <th>تاريخ التقديم</th>
-                          <th>الحالة</th>
-                      </tr>
-                  </thead>
-                  <tbody>
-                      {% for post in posts %}
-                          {% if post.author == user %}
-                              <tr>
-                                  <td><strong>{{ post.title }}</strong></td>
-                                  <td>{{ post.created_at }}</td>
-                                  <td>
-                                    {% if post.status == "Approved" %}
-                                    تم الموافقة
-                                    {% elif post.status == "Rejected" %}
-                                    لم يتم الموافقة
-                                {% else %}
-                                    قيد الإنتظار
-                                {% endif %}
-                                  </td>
-                                  <td>
-                                    <div class="btn-group" role="group">
-                                      <!-- Edit Button - Show for all posts -->
-                                      <a href="{% url 'edit_post' post.id %}" class="btn btn-primary btn-sm"
-                                         {% if post.status == "Approved" %}
-                                         onclick="return confirm('هذا المنشور تمت الموافقة عليه. عند التعديل سيتم إعادة إرساله للمراجعة. هل تريد المتابعة؟')"
-                                         {% endif %}>
-                                        {% if post.status == "Approved" %}
-                                          تعديل (إعادة مراجعة)
-                                        {% else %}
-                                          تعديل
-                                        {% endif %}
-                                      </a>
-                                      <!-- Delete Button -->
-                                      <form action="{% url 'delete_post' post.id %}" method="post" style="display: inline;">
-                                          {% csrf_token %}
-                                          <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('هل أنت متأكد من حذف هذا المنشور؟')">حذف</button>
-                                      </form>
-                                    </div>
-                                </td>
-                              </tr>
-                          {% endif %}
-                      {% endfor %}
-                  </tbody>
-              </table>
+
+          <!-- Who am I Edit Modal -->
+          <div class="modal fade" id="whoAmIModal" tabindex="-1" role="dialog" aria-labelledby="whoAmIModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg" role="document">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="whoAmIModalLabel">تعديل "من أنا"</h5>
+                  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                  </button>
+                </div>
+                <div class="modal-body">
+                  <form method="post" action="/user_profile">
+                    {% csrf_token %}
+                    {{ who_am_i_form.as_p }}
+                    <button type="submit" class="btn btn-primary">حفظ التغييرات</button>
+                  </form>
+                </div>
+              </div>
+            </div>
           </div>
-      </div>
-      <div class="mt-4">
-        <p>إذا كان لديك أي استفسار أو مشكلة، يُرجى التواصل معنا عبر البريد الإلكتروني:</p>
-        <p><strong>submission_arabarxiv@gmail.com</strong></p>
-    </div>
-  </div>
+                 </div>
+       </div>
+     </div>
 </div>
 </div>
 

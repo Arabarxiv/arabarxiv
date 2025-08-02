@@ -1,0 +1,458 @@
+{% extends 'main/base.html' %}
+{% load my_filters %}
+{% load static %}
+
+{% block title %}{{ post.title }}{% endblock %}
+
+{% block content %}
+<style>
+    .post-detail-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        overflow-x: hidden;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+    }
+    
+    .post-header {
+        background: linear-gradient(135deg, #0d4a2a 0%, #146c43 50%, #0d4a2a 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 10px;
+        margin-bottom: 30px;
+        text-align: center;
+        box-shadow: 0 4px 15px rgba(13, 74, 42, 0.4);
+        overflow: hidden;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+    }
+    
+    .post-title {
+        font-size: 2.5em;
+        margin-bottom: 15px;
+        font-weight: bold;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        max-width: 100%;
+        overflow-x: hidden;
+    }
+    
+    .post-meta {
+        font-size: 1.1em;
+        opacity: 1;
+        font-weight: bold;
+        color: white;
+    }
+    
+    .post-meta p {
+        color: white;
+        margin-bottom: 8px;
+    }
+    
+    .post-content {
+        background: white;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-bottom: 30px;
+        overflow-x: hidden;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+    }
+    
+    .post-description {
+        font-size: 1.2em;
+        line-height: 1.8;
+        margin-bottom: 25px;
+        text-align: justify;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        hyphens: auto;
+        max-width: 100%;
+        overflow-x: hidden;
+    }
+    
+    .post-info {
+        background: #e9ecef;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        border: 1px solid #dee2e6;
+        overflow-x: hidden;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+    }
+    
+    .post-info h5 {
+        color: #212529;
+        margin-bottom: 15px;
+        border-bottom: 2px solid #495057;
+        padding-bottom: 8px;
+        font-weight: bold;
+    }
+    
+    .post-info p {
+        margin-bottom: 10px;
+        color: #495057;
+        font-weight: 500;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        max-width: 100%;
+        overflow-x: hidden;
+    }
+    
+    .author-link {
+        color: #0056b3;
+        cursor: pointer;
+        text-decoration: underline;
+        font-weight: bold;
+    }
+    
+    .author-link:hover {
+        color: #004085;
+        text-decoration: none;
+    }
+    
+    .author-name, .translator-name {
+        color: #6c757d;
+        font-style: italic;
+        font-weight: 400;
+    }
+    
+    .translator-link {
+        color: #dc3545 !important;
+        background: rgba(220, 53, 69, 0.1) !important;
+    }
+    
+    .translator-link:hover {
+        color: #c82333 !important;
+        background: rgba(220, 53, 69, 0.2) !important;
+    }
+    
+    .pdf-link {
+        display: inline-block;
+        background: #b02a37;
+        color: white;
+        padding: 10px 20px;
+        text-decoration: none;
+        border-radius: 5px;
+        margin-top: 10px;
+        transition: background-color 0.3s;
+        font-weight: bold;
+    }
+    
+    .pdf-link:hover {
+        background: #8b1e29;
+        color: white;
+        text-decoration: none;
+    }
+    
+    .comments-section {
+        background: white;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .comments-section h3 {
+        color: #212529;
+        margin-bottom: 25px;
+        border-bottom: 2px solid #495057;
+        padding-bottom: 10px;
+        font-weight: bold;
+    }
+    
+    .comment-form {
+        margin-bottom: 30px;
+    }
+    
+    .comment {
+        background: #e9ecef;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        border-left: 4px solid #0056b3;
+        border: 1px solid #dee2e6;
+        overflow-x: hidden;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+    }
+    
+         .comment-header {
+         display: flex;
+         justify-content: space-between;
+         align-items: center;
+         margin-bottom: 10px;
+     }
+     
+     .comment-author-info {
+         display: flex;
+         align-items: center;
+         gap: 10px;
+     }
+     
+     .author-badge {
+         background-color: #28a745;
+         color: white;
+         padding: 2px 8px;
+         border-radius: 12px;
+         font-size: 0.7em;
+         font-weight: bold;
+         text-transform: uppercase;
+     }
+     
+     .reviewer-badge {
+         background-color: #ffc107;
+         color: #212529;
+         padding: 2px 8px;
+         border-radius: 12px;
+         font-size: 0.7em;
+         font-weight: bold;
+         text-transform: uppercase;
+     }
+    
+    .comment-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .comment-actions .btn-group {
+        display: flex;
+        gap: 5px;
+    }
+    
+    .comment-actions .btn {
+        font-size: 0.8em;
+        padding: 2px 8px;
+    }
+    
+    .comment-date small {
+        font-size: 0.75em;
+        color: #6c757d;
+        font-style: italic;
+    }
+    
+    .comment-author {
+        font-weight: bold;
+        color: #212529;
+    }
+    
+    .comment-date {
+        color: #495057;
+        font-size: 0.9em;
+        font-weight: 500;
+    }
+    
+    .comment-content {
+        color: #212529;
+        line-height: 1.6;
+        font-weight: 500;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        hyphens: auto;
+        max-width: 100%;
+        overflow-x: hidden;
+    }
+    
+    .no-comments {
+        text-align: center;
+        color: #6c757d;
+        font-style: italic;
+        padding: 20px;
+    }
+    
+    .back-button {
+        background: #495057;
+        color: white;
+        padding: 10px 20px;
+        text-decoration: none;
+        border-radius: 5px;
+        display: inline-block;
+        margin-bottom: 20px;
+        transition: background-color 0.3s;
+        font-weight: bold;
+    }
+    
+    .back-button:hover {
+        background: #343a40;
+        color: white;
+        text-decoration: none;
+    }
+</style>
+
+<div class="post-detail-container">
+    <a href="{% url 'posts' %}" class="back-button">
+        <i class="fas fa-arrow-right"></i> العودة للمشاركات
+    </a>
+    
+    <div class="post-header">
+        <h1 class="post-title">{{ post.title }}</h1>
+        <div class="post-meta">
+            <p>تاريخ النشر: {{ post.created_at|date:"d/m/Y" }}</p>
+            {% if post.is_translation %}
+                <p>نوع المشاركة: مترجمة</p>
+            {% else %}
+                <p>نوع المشاركة: أصلية</p>
+            {% endif %}
+            <p>الحالة: 
+                {% if post.status == "Approved" %}
+                    <span style="color: #28a745;">تمت الموافقة</span>
+                {% elif post.status == "Pending" %}
+                    <span style="color: #ffc107;">قيد المراجعة</span>
+                {% else %}
+                    <span style="color: #dc3545;">مرفوض</span>
+                {% endif %}
+            </p>
+        </div>
+    </div>
+    
+    <div class="post-content">
+        <div class="post-description">
+            {{ post.description }}
+        </div>
+        
+        <div class="post-info">
+            <h5>معلومات المشاركة</h5>
+            {% if post.translator %}
+                <p><strong>المؤلفون الأصليون:</strong>
+                    {% with authors_list=post.authors|split:"," %}
+                        {% for author in authors_list %}
+                            {% with author_name=author|strip %}
+                                {% if author_name|user_exists %}
+                                    <a href="{% url 'find_user_by_name' author_name=author_name %}" class="author-link">{{ author_name }}</a>{% if not forloop.last %}, {% endif %}
+                                {% else %}
+                                    <span class="author-name">{{ author_name }}</span>{% if not forloop.last %}, {% endif %}
+                                {% endif %}
+                            {% endwith %}
+                        {% endfor %}
+                    {% endwith %}
+                </p>
+                
+                <p><strong>المترجم:</strong> 
+                    {% with translators_list=post.translator|split:"," %}
+                        {% for translator in translators_list %}
+                            {% with translator_name=translator|strip %}
+                                {% if translator_name|user_exists %}
+                                    <a href="{% url 'find_user_by_name' author_name=translator_name %}" class="author-link translator-link">{{ translator_name }}</a>{% if not forloop.last %}, {% endif %}
+                                {% else %}
+                                    <span class="translator-name">{{ translator_name }}</span>{% if not forloop.last %}, {% endif %}
+                                {% endif %}
+                            {% endwith %}
+                        {% endfor %}
+                    {% endwith %}
+                </p>
+            {% else %}
+                <p><strong>المؤلفون:</strong>
+                    {% with authors_list=post.authors|split:"," %}
+                        {% for author in authors_list %}
+                            {% with author_name=author|strip %}
+                                {% if author_name|user_exists %}
+                                    <a href="{% url 'find_user_by_name' author_name=author_name %}" class="author-link">{{ author_name }}</a>{% if not forloop.last %}, {% endif %}
+                                {% else %}
+                                    <span class="author-name">{{ author_name }}</span>{% if not forloop.last %}, {% endif %}
+                                {% endif %}
+                            {% endwith %}
+                        {% endfor %}
+                    {% endwith %}
+                </p>
+            {% endif %}
+            
+            <p><strong>التصنيف:</strong> {{ post.category }}</p>
+            <p><strong>الكلمات المفتاحية:</strong> {{ post.keywords }}</p>
+            <p><strong>المشاهدات:</strong> 
+                <img src="{% static 'assets/images/view.png' %}" alt="مشاهدات" style="width: 16px; height: 16px; margin-left: 5px; vertical-align: middle;">
+                {{ post.get_view_count }} مشاهدة
+                &nbsp;&nbsp;&nbsp;
+                <strong>التعليقات:</strong> 
+                <i class="fas fa-comments" style="color: #28a745; margin-left: 5px;"></i>
+                {{ comments.count }} تعليق
+            </p>
+            
+            {% if post.external_doi %}
+                <p><strong>DOI:</strong> {{ post.external_doi }}</p>
+            {% endif %}
+            
+            {% if post.final_reviewer %}
+                <p><strong>المراجع:</strong> 
+                    <a href="{% url 'find_user_by_name' author_name=post.final_reviewer.username %}" class="author-link">{{ post.final_reviewer.username }}</a>
+                </p>
+            {% endif %}
+            
+            {% if post.pdf %}
+                <a href="{{ post.pdf.url }}" target="_blank" class="pdf-link">
+                    <i class="fas fa-file-pdf"></i> تصفح الملف PDF
+                </a>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="comments-section">
+        <h3>التعليقات ({{ comments.count }})</h3>
+        
+        {% if user.is_authenticated %}
+            <div class="comment-form">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        {{ comment_form.content.label_tag }}
+                        {{ comment_form.content }}
+                    </div>
+                    <button type="submit" class="btn btn-primary">إضافة تعليق</button>
+                </form>
+            </div>
+        {% else %}
+            <div class="alert alert-info">
+                <a href="{% url 'login' %}">سجل دخولك</a> لإضافة تعليق.
+            </div>
+        {% endif %}
+        
+        {% if comments %}
+            {% for comment in comments %}
+                <div class="comment">
+                                         <div class="comment-header">
+                         <div class="comment-author-info">
+                             <span class="comment-author">{{ comment.author.get_full_name|default:comment.author.username }}</span>
+                                                           {% if comment.author == post.author %}
+                                  <span class="author-badge">AUTHOR</span>
+                              {% elif comment.author == post.reviewer %}
+                                  <span class="reviewer-badge">REVIEWER</span>
+                              {% endif %}
+                         </div>
+                         <div class="comment-actions">
+                            <span class="comment-date">
+                                {{ comment.created_at|date:"d/m/Y H:i" }}
+                                {% if comment.is_edited %}
+                                    <small class="text-muted">(تم التعديل)</small>
+                                {% endif %}
+                            </span>
+                            {% if user|can_manage_comment:comment %}
+                                <div class="btn-group ml-2" role="group">
+                                    {% if user|can_edit_comment:comment %}
+                                        <a href="{% url 'edit_comment' comment.id %}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-edit"></i> تعديل
+                                        </a>
+                                    {% endif %}
+                                    <a href="{% url 'delete_comment' comment.id %}" class="btn btn-sm btn-outline-danger">
+                                        <i class="fas fa-trash"></i> حذف
+                                    </a>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="comment-content">
+                        {{ comment.content }}
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="no-comments">
+                لا توجد تعليقات بعد. كن أول من يعلق!
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+
+{% endblock %} 

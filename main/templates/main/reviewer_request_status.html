@@ -11,61 +11,101 @@
                 <div class="section-heading text-center">
                     <h2 style="color: #005109; margin-bottom: 2rem;">حالة طلب المراجع</h2>
                     
-                    <div class="card">
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <h5 style="color: #005109;">معلومات الطلب</h5>
-                                    <p><strong>المستخدم:</strong> {{ reviewer_request.user.username }}</p>
-                                    <p><strong>الاسم:</strong> {{ reviewer_request.user.first_name }} {{ reviewer_request.user.last_name }}</p>
-                                    <p><strong>البريد الإلكتروني:</strong> {{ reviewer_request.user.email }}</p>
-                                    <p><strong>تاريخ الطلب:</strong> {{ reviewer_request.request_date|date:"Y-m-d H:i" }}</p>
+                    {% if no_requests %}
+                        <!-- No Requests Section -->
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <div class="mb-4">
+                                    <i class="fas fa-inbox" style="font-size: 4rem; color: #6c757d; margin-bottom: 1rem;"></i>
+                                    <h4 style="color: #6c757d; margin-bottom: 1rem;">لا توجد طلبات مراجع</h4>
+                                    <p class="text-muted">لم تقم بتقديم أي طلب لتصبح مراجعًا بعد.</p>
                                 </div>
-                                <div class="col-md-6">
-                                    <h5 style="color: #005109;">حالة الطلب</h5>
-                                    {% if reviewer_request.status == 'pending' %}
-                                        <div class="alert alert-warning">
-                                            <i class="fas fa-clock"></i> قيد الانتظار
-                                        </div>
-                                        <p>طلبك قيد المراجعة من قبل الإدارة. سيتم إعلامك بالنتيجة عبر البريد الإلكتروني.</p>
-                                    {% elif reviewer_request.status == 'approved' %}
-                                        <div class="alert alert-success">
-                                            <i class="fas fa-check-circle"></i> تمت الموافقة
-                                        </div>
-                                        <p>تمت الموافقة على طلبك! يمكنك الآن الوصول إلى صفحة المراجعة.</p>
-                                        {% if reviewer_request.processed_date %}
-                                            <p><strong>تاريخ المعالجة:</strong> {{ reviewer_request.processed_date|date:"Y-m-d H:i" }}</p>
-                                        {% endif %}
-                                    {% elif reviewer_request.status == 'rejected' %}
-                                        <div class="alert alert-danger">
-                                            <i class="fas fa-times-circle"></i> مرفوض
-                                        </div>
-                                        <p>نعتذر، لم يتم قبول طلبك. يمكنك إعادة تقديم الطلب لاحقًا.</p>
-                                        {% if reviewer_request.processed_date %}
-                                            <p><strong>تاريخ المعالجة:</strong> {{ reviewer_request.processed_date|date:"Y-m-d H:i" }}</p>
-                                        {% endif %}
-                                    {% endif %}
-                                    
-                                    {% if reviewer_request.admin_notes %}
-                                        <h6 style="color: #005109; margin-top: 1rem;">ملاحظات الإدارة:</h6>
-                                        <p>{{ reviewer_request.admin_notes }}</p>
-                                    {% endif %}
-                                </div>
-                            </div>
-                            
-                            <div class="text-center mt-4">
-                                <a href="/home" class="main-button">
-                                    <i class="fas fa-home" style="margin-left: 8px;"></i>العودة للصفحة الرئيسية
-                                </a>
                                 
-                                {% if reviewer_request.status == 'pending' %}
-                                    <a href="/become_reviewer" class="main-button" style="background-color: #f8f9fa; color: #005109; border: 2px solid #005109; margin-right: 10px;">
-                                        <i class="fas fa-edit" style="margin-left: 8px;"></i>إلغاء الطلب
+                                <div class="row justify-content-center">
+                                    <div class="col-md-8">
+                                        <div class="alert alert-info">
+                                            <h6 style="color: #005109;">
+                                                <i class="fas fa-info-circle me-2"></i>
+                                                كيف تصبح مراجعًا؟
+                                            </h6>
+                                            <ul class="list-unstyled text-start">
+                                                <li><i class="fas fa-check text-success me-2"></i>تأكد من تأكيد بريدك الإلكتروني</li>
+                                                <li><i class="fas fa-check text-success me-2"></i>أكمل ملفك الشخصي</li>
+                                                <li><i class="fas fa-check text-success me-2"></i>احصل على مقال مقبول للنشر</li>
+                                                <li><i class="fas fa-check text-success me-2"></i>قدم طلبك من صفحة "طلب أن تصبح مراجعًا"</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="text-center mt-4">
+                                    <a href="/become_reviewer" class="main-button">
+                                        <i class="fas fa-user-plus" style="margin-left: 8px;"></i>طلب أن تصبح مراجعًا
                                     </a>
-                                {% endif %}
+                                    <a href="/home" class="main-button" style="background-color: #f8f9fa; color: #005109; border: 2px solid #005109; margin-right: 10px;">
+                                        <i class="fas fa-home" style="margin-left: 8px;"></i>العودة للصفحة الرئيسية
+                                    </a>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    {% else %}
+                        <!-- Existing Request Section -->
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h5 style="color: #005109;">معلومات الطلب</h5>
+                                        <p><strong>المستخدم:</strong> {{ reviewer_request.user.username }}</p>
+                                        <p><strong>الاسم:</strong> {{ reviewer_request.user.first_name }} {{ reviewer_request.user.last_name }}</p>
+                                        <p><strong>البريد الإلكتروني:</strong> {{ reviewer_request.user.email }}</p>
+                                        <p><strong>تاريخ الطلب:</strong> {{ reviewer_request.request_date|date:"Y-m-d H:i" }}</p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h5 style="color: #005109;">حالة الطلب</h5>
+                                        {% if reviewer_request.status == 'pending' %}
+                                            <div class="alert alert-warning">
+                                                <i class="fas fa-clock"></i> قيد الانتظار
+                                            </div>
+                                            <p>طلبك قيد المراجعة من قبل الإدارة. سيتم إعلامك بالنتيجة عبر البريد الإلكتروني.</p>
+                                        {% elif reviewer_request.status == 'approved' %}
+                                            <div class="alert alert-success">
+                                                <i class="fas fa-check-circle"></i> تمت الموافقة
+                                            </div>
+                                            <p>تمت الموافقة على طلبك! يمكنك الآن الوصول إلى صفحة المراجعة.</p>
+                                            {% if reviewer_request.processed_date %}
+                                                <p><strong>تاريخ المعالجة:</strong> {{ reviewer_request.processed_date|date:"Y-m-d H:i" }}</p>
+                                            {% endif %}
+                                        {% elif reviewer_request.status == 'rejected' %}
+                                            <div class="alert alert-danger">
+                                                <i class="fas fa-times-circle"></i> مرفوض
+                                            </div>
+                                            <p>نعتذر، لم يتم قبول طلبك. يمكنك إعادة تقديم الطلب لاحقًا.</p>
+                                            {% if reviewer_request.processed_date %}
+                                                <p><strong>تاريخ المعالجة:</strong> {{ reviewer_request.processed_date|date:"Y-m-d H:i" }}</p>
+                                            {% endif %}
+                                        {% endif %}
+                                        
+                                        {% if reviewer_request.admin_notes %}
+                                            <h6 style="color: #005109; margin-top: 1rem;">ملاحظات الإدارة:</h6>
+                                            <p>{{ reviewer_request.admin_notes }}</p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <div class="text-center mt-4">
+                                    <a href="/home" class="main-button">
+                                        <i class="fas fa-home" style="margin-left: 8px;"></i>العودة للصفحة الرئيسية
+                                    </a>
+                                    
+                                    {% if reviewer_request.status == 'pending' %}
+                                        <a href="/become_reviewer" class="main-button" style="background-color: #f8f9fa; color: #005109; border: 2px solid #005109; margin-right: 10px;">
+                                            <i class="fas fa-edit" style="margin-left: 8px;"></i>إلغاء الطلب
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
                 </div>
             </div>
         </div>

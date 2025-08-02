@@ -1,4 +1,5 @@
 {% extends 'main/base.html' %}
+{% load my_filters %}
 
 {% block title %}مراجعة المشاركات{% endblock %}
 
@@ -48,6 +49,79 @@
         color: #c82333;
         text-decoration: underline;
     }
+    
+    .post-type-badge {
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: bold;
+        text-align: center;
+        display: inline-block;
+        min-width: 80px;
+    }
+    
+    .post-type-original {
+        background-color: #007bff;
+        color: white;
+    }
+    
+    .post-type-translation {
+        background-color: #dc3545;
+        color: white;
+    }
+    
+    .badge-success {
+        background-color: #28a745;
+        color: white;
+        font-size: 11px;
+        padding: 4px 8px;
+        border-radius: 12px;
+        margin-top: 5px;
+        display: inline-block;
+    }
+    
+    .badge-warning {
+        background-color: #ffc107;
+        color: #212529;
+        font-size: 11px;
+        padding: 4px 8px;
+        border-radius: 12px;
+        margin-top: 5px;
+        display: inline-block;
+    }
+    
+    /* Text containment for table cells */
+    .table td {
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        max-width: 200px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    
+    .table td:hover {
+        white-space: normal;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        max-width: 300px;
+    }
+    
+    .table th {
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        max-width: 150px;
+    }
+    
+    /* Specific styling for content that should wrap */
+    .table td .reviewer-comments,
+    .table td .admin-comments {
+        white-space: normal;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        max-width: 250px;
+        overflow: hidden;
+    }
     </style>
 
 {# Show Django messages #}
@@ -87,7 +161,6 @@
 </div>
 {% else %}
 
-
 <div class="container">
     <div class="row justify-content-center">
         <div class="col-md-10">
@@ -99,49 +172,45 @@
         <tr>
             <th>العنوان</th>
             <th>المؤلفين</th>
+            <th>نوع المشاركة</th>
             <th>رابط الـ PDF</th>
-            <th>مراجعة</th>
-            <th>التعليق</th>
+            <th>الإجراءات</th>
         </tr>
     </thead>
     <tbody>
         {% for post in posts %}
-            {% if post.reviewer == user or user.is_superuser %}
+            {% if post.reviewer == user and post.status == "Pending" and not post.review_started %}
                 <tr>
-                    <td>{{ post.title }}</td>
-                    <td>{{ post.authors }}</td>
-                    <td>
-                        {% if post.translator %}
-                          <a href="{{ post.pdf.url }}" target="_blank" class="translated-file-link">عرض الـ PDF</a>
-                        {% else %}
-                          <a href="{{ post.pdf.url }}" target="_blank" class="original-file-link">عرض الـ PDF</a>
-                        {% endif %}
-                    </td>
-                    
-                        {% if post.status == "Pending" %}
-                        <td>
-                        <button class="btn btn-primary review-button" data-toggle="modal" data-target="#reviewModal{{ post.id }}">
-                            مراجعة
-                        </button>
-                    </td>
-                    
-                        {% else %}
-                        <td>
-                            {% if post.status == "Approved"%}
-                            تمت الموافقة عليها         
-                            {% else%}
-                            تم رفضها    
-
-                             {% endif%}</td>
-                        
-                        
-                        {%endif%}
-                        <td>{{post.reviewer_comments}}</td>
+                                         <td title="{{ post.title }}">{{ post.title }}</td>
+                     <td title="{{ post.authors }}">{{ post.authors }}</td>
+                     <td>
+                         {% if post|class_name == 'TranslationPost' %}
+                             <span class="post-type-badge post-type-translation">ترجمة</span>
+                         {% else %}
+                             <span class="post-type-badge post-type-original">أصلي</span>
+                         {% endif %}
+                     </td>
+                     <td>
+                         {% if post|class_name == 'TranslationPost' %}
+                           <a href="{{ post.pdf.url }}" target="_blank" class="translated-file-link">عرض الـ PDF</a>
+                         {% else %}
+                           <a href="{{ post.pdf.url }}" target="_blank" class="original-file-link">عرض الـ PDF</a>
+                         {% endif %}
+                     </td>
+                                           <td>
+                          <form method="post" action="{% url 'start_reviewing' post.id %}" style="display: inline;">
+                              {% csrf_token %}
+                              <button type="submit" class="btn btn-success">بدء المراجعة</button>
+                          </form>
+                          {% if post.is_edited_after_approval %}
+                              <span class="badge badge-warning" style="margin-left: 10px;">تم التعديل</span>
+                          {% endif %}
+                      </td>
                 </tr>
             {% endif %}
         {% empty %}
             <tr>
-                <td colspan="4">
+                <td colspan="5">
                     <p>لا توجد مشاركات معينة للمراجعة.</p>
                 </td>
             </tr>
@@ -152,45 +221,68 @@
 <p>لا توجد مشاركات معينة للمراجعة.</p>
 {% endif %}
 
-
-            <!-- نافذة المراجعة -->
-            {% for post in posts %}
-            {% if post.reviewer == user or user.is_superuser %}
-                <div class="modal fade" id="reviewModal{{ post.id }}" tabindex="-1" role="dialog" aria-labelledby="reviewModalLabel{{ post.id }}" aria-hidden="true">
-                    <div class="modal-dialog" role="document">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title" id="reviewModalLabel{{ post.id }}">مراجعة المشاركة: {{ post.title }}</h5>
-                                <button type="button" class="close" data-dismiss="modal" aria-label="إغلاق">
-                                    <span aria-hidden="true">&times;</span>
-                                </button>
-                            </div>
-                            <div class="modal-body">
-                                <form method="post" action="/review" id="review">
-                                    {% csrf_token %}
-                                    <div class="form-group">
-                                        <label for="review">تعليق المراجعة</label>
-                                        <textarea class="form-control" id="review" name="review_comment" rows="4" required></textarea>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="status">حالة المراجعة</label>
-                                        <select class="form-control" id="status" name="review_status" required>
-                                            <option value="approved">تمت الموافقة عليها</option>
-                                            <option value="rejected">تم رفضها</option>
-                                        </select>
-                                    </div>
-                                    <input type="hidden" name="post_id" value="{{ post.id }}">
-                                    <button type="submit" class="btn btn-primary">إرسال المراجعة</button>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            {% endif%}
-            {% endfor %}
+            <!-- قائمة المشاركات التي بدأت مراجعتها -->
+            <h2 style="margin-top: 40px;">المشاركات التي بدأت مراجعتها</h2>
+{% if posts %}
+<table class="table">
+    <thead>
+        <tr>
+            <th>العنوان</th>
+            <th>المؤلفين</th>
+            <th>نوع المشاركة</th>
+            <th>رابط الـ PDF</th>
+                                      <th>مراجعة</th>
+             {% if user.is_staff or user.is_superuser %}
+                 <th>التعليق الخاص</th>
+             {% endif %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for post in posts %}
+            {% if post.reviewer == user and post.status == "Pending" and post.review_started %}
+                <tr>
+                                         <td title="{{ post.title }}">{{ post.title }}</td>
+                     <td title="{{ post.authors }}">{{ post.authors }}</td>
+                     <td>
+                         {% if post|class_name == 'TranslationPost' %}
+                             <span class="post-type-badge post-type-translation">ترجمة</span>
+                         {% else %}
+                             <span class="post-type-badge post-type-original">أصلي</span>
+                         {% endif %}
+                     </td>
+                     <td>
+                         {% if post|class_name == 'TranslationPost' %}
+                           <a href="{{ post.pdf.url }}" target="_blank" class="translated-file-link">عرض الـ PDF</a>
+                         {% else %}
+                           <a href="{{ post.pdf.url }}" target="_blank" class="original-file-link">عرض الـ PDF</a>
+                         {% endif %}
+                     </td>
+                                           <td>
+                          <a href="{% url 'detailed_review' post.id %}" class="btn btn-primary">مراجعة</a>
+                          {% if post.is_edited_after_approval %}
+                              <span class="badge badge-warning" style="margin-left: 10px;">تم التعديل</span>
+                          {% endif %}
+                      </td>
+                                         {% if user.is_staff or user.is_superuser %}
+                         <td class="admin-comments">{{post.admin_comments}}</td>
+                     {% endif %}
+                </tr>
+            {% endif %}
+        {% empty %}
+                         <tr>
+                 <td colspan="{% if user.is_staff or user.is_superuser %}6{% else %}5{% endif %}">
+                     <p>لا توجد مشاركات قيد المراجعة.</p>
+                 </td>
+             </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>لا توجد مشاركات قيد المراجعة.</p>
+{% endif %}
 
             {% if user.is_staff or user.is_superuser %}
-            <h2>المشاركات في انتظار المراجعة</h2>
+            <h2 style="margin-top: 40px;">المشاركات في انتظار المراجعة</h2>
                 <table class="table">
                     <thead>
                         <tr>
@@ -200,40 +292,43 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for post in posts %}
-                            {% if post.status == 'Pending' and post.reviewer == None %}
-                                <tr>
+                        {% for post in unassigned_posts %}
+                            <tr>
                                     <form method="post" action="review/assign_mod" id="reviwer_assign">
                                         {% csrf_token %}
                                     <td>{{ post.title }}</td>
+                                                                         <td>
+                                         <div class="form-group">
+                                             <select class="form-control" name="moderator_{{ post.id }}" required>
+                                                 <option value="">اختر مشرفًا</option>
+                                                 {% for moderator in moderators %}
+                                                     {% if moderator not in post.previous_reviewers.all %}
+                                                         <option value="{{ moderator.id }}" {% if post.reviewer == moderator %}selected{% endif %}>{{ moderator.username }}</option>
+                                                     {% else %}
+                                                         <option value="{{ moderator.id }}" disabled>{{ moderator.username }} (مراجع سابق)</option>
+                                                     {% endif %}
+                                                 {% endfor %}
+                                             </select>
+                                             <input type="hidden" name="post_id" value="{{ post.id }}">
+                                             {% if post.previous_reviewers.all %}
+                                                 <small class="text-muted">المراجعون السابقون: 
+                                                     {% for prev_reviewer in post.previous_reviewers.all %}
+                                                         {{ prev_reviewer.username }}{% if not forloop.last %}, {% endif %}
+                                                     {% endfor %}
+                                                 </small>
+                                             {% endif %}
+                                         </div>
+                                     </td>
                                     <td>
-                                        <div class="form-group">
-                                            <select class="form-control" name="moderator_{{ post.id }}" required>
-                                                <option value="">اختر مشرفًا</option>
-                                                {% for moderator in moderators %}
-                                                    <option value="{{ moderator.id }}">{{ moderator.username }}</option>
-                                                {% endfor %}
-                                            </select>
-                                            <input type="hidden" name="post_id" value="{{ post.id }}">
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <button type="submit" class="btn btn-primary">تعيين مشرف</button>
+                                        {% if post.previous_reviewers.all %}
+                                            <button type="submit" class="btn btn-warning">إعادة تعيين مشرف</button>
+                                            <small class="text-muted d-block">طلب إعادة مراجعة</small>
+                                        {% else %}
+                                            <button type="submit" class="btn btn-primary">تعيين مشرف</button>
+                                        {% endif %}
                                     </td>
                                 </form>
                                 </tr>
-                            {% elif post.status == "Pending" %}
-                            <tr>
-                                
-                                <td>{{ post.title }}</td>
-                                <td>
-                                   {{post.reviewer.username}}
-                                </td>
-                                <td>
-                                    في قيد المراجعة من  {{post.created_at}}
-                                 </td>
-                            </tr>
-                        {% endif%}
                         {% empty %}
                             <tr>
                                 <td colspan="3">

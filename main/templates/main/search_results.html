@@ -1,7 +1,23 @@
 {% extends 'main/base.html' %}  <!-- Replace with your base template -->
+{% load static %}
+{% load my_filters %}
 
 {% block content %}
 <style>
+.author-link {
+    color: #005109;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline; /* Ensures authors are displayed inline */
+    font-weight: 500;
+    transition: color 0.3s ease;
+}
+
+.author-link:hover {
+    color: #003d07;
+    text-decoration: underline;
+}
+
 /* File link styling for original vs translated posts */
 .original-file-link {
     color: #007bff; /* Blue for original posts */
@@ -24,6 +40,22 @@
     color: #c82333;
     text-decoration: underline;
 }
+
+.translator-link {
+    color: #dc3545 !important;
+    background: rgba(220, 53, 69, 0.1) !important;
+}
+
+.translator-link:hover {
+    color: #c82333 !important;
+    background: rgba(220, 53, 69, 0.2) !important;
+}
+
+.author-name, .translator-name {
+    color:rgb(48, 105, 21);
+    font-style: italic;
+    font-weight: 400;
+}
 </style>
 <div class="container">
     <h2>نتائج البحث</h2>
@@ -32,7 +64,7 @@
             <div class="card mt-2">
               <div class="card-header d-flex justify-content-between align-items-center">
                 <h5>
-                  {{ post.title }}
+                  <a href="{% url 'post_detail' post.id %}" style="color: inherit; text-decoration: none;">{{ post.title }}</a>
                   {% if post.pdf %}
                   <p>
                     <a href="{{ post.pdf.url }}" target="_blank"><i class="fas fa-file-pdf"></i></a>
@@ -42,22 +74,65 @@
               </div>
                 
               <div class="card-body">
-                <h6 class="post-author">المؤلف: {{post.authors}}</h6>
-                
-
                 {% if post.translator %}
-                <p class="post-translator">المترجم: {{ post.translator }}</p>
+                <h6 class="post-author">المؤلف الأصلي: 
+                    {% with authors_list=post.authors|split:"," %}
+                        {% for author in authors_list %}
+                            {% with author_name=author|strip %}
+                                {% if author_name|user_exists %}
+                                    <a href="{% url 'find_user_by_name' author_name=author_name %}" class="author-link">{{ author_name }}</a>{% if not forloop.last %}, {% endif %}
+                                {% else %}
+                                    <span class="author-name">{{ author_name }}</span>{% if not forloop.last %}, {% endif %}
+                                {% endif %}
+                            {% endwith %}
+                        {% endfor %}
+                    {% endwith %}
+                </h6>
+                
+                <p class="post-translator">المترجم: 
+                    {% with translators_list=post.translator|split:"," %}
+                        {% for translator in translators_list %}
+                            {% with translator_name=translator|strip %}
+                                {% if translator_name|user_exists %}
+                                    <a href="{% url 'find_user_by_name' author_name=translator_name %}" class="author-link translator-link">{{ translator_name }}</a>{% if not forloop.last %}, {% endif %}
+                                {% else %}
+                                    <span class="translator-name">{{ translator_name }}</span>{% if not forloop.last %}, {% endif %}
+                                {% endif %}
+                            {% endwith %}
+                        {% endfor %}
+                    {% endwith %}
+                </p>
+                {% else %}
+                <h6 class="post-author">المؤلف: 
+                    {% with authors_list=post.authors|split:"," %}
+                        {% for author in authors_list %}
+                            {% with author_name=author|strip %}
+                                {% if author_name|user_exists %}
+                                    <a href="{% url 'find_user_by_name' author_name=author_name %}" class="author-link">{{ author_name }}</a>{% if not forloop.last %}, {% endif %}
+                                {% else %}
+                                    <span class="author-name">{{ author_name }}</span>{% if not forloop.last %}, {% endif %}
+                                {% endif %}
+                            {% endwith %}
+                        {% endfor %}
+                    {% endwith %}
+                </h6>
                 {% endif %}
                 <p class="post-keywords">التصنيف: {{ post.category }}</p>
                 <p class="post-description" id="description-{{ post.id }}">
                   {{ post.description|truncatechars:200 }}
                   {% if post.description|length > 200 %}
-                      <span class="more-text" style="display:none;">{{ post.description|slice:"200:" }}</span>
-                      <button onclick="toggleDescription('description-{{ post.id }}')" class="see-more-btn">اقرأ المزيد</button>
+                      <a href="{% url 'post_detail' post.id %}" class="see-more-btn">اقرأ المزيد</a>
                   {% endif %}
                 </p>
                 
                 <p class="post-keywords">الكلمات المفتاحية: {{ post.keywords }}</p>
+                <p class="post-views">
+                  <img src="{% static 'assets/images/view.png' %}" alt="مشاهدات" style="width: 16px; height: 16px; margin-left: 5px;">
+                  {{ post.get_view_count }} مشاهدة
+                  &nbsp;&nbsp;&nbsp;
+                  <i class="fas fa-comments" style="color: #28a745; margin-left: 5px;"></i>
+                  {{ post.comments.count }} تعليق
+                </p>
                 {% if post.pdf %}
                   <p>
                     {% if post.translator %}
@@ -78,17 +153,5 @@
         <p>لم يتم العثور على نتائج</p>
     {% endif %}
 </div>
-<script>
-  function toggleDescription(descriptionId) {
-    var description = document.getElementById(descriptionId);
-    var moreText = description.getElementsByClassName('more-text')[0];
-  
-    if (moreText.style.display === "none") {
-        moreText.style.display = "inline";
-    } else {
-        moreText.style.display = "none";
-    }
-  }
-  
-  </script>
+
 {% endblock %}

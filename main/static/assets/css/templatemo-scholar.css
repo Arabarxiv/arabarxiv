@@ -57,6 +57,48 @@ figure, header, nav, section, article, aside, footer, figcaption {
   border-radius: 50%;
 }
 
+/* Posts highlight styling for the most important navigation item */
+.posts-highlight {
+  background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%) !important;
+  color: #000 !important;
+  font-weight: 700 !important;
+  padding: 12px 20px !important;
+  border-radius: 25px !important;
+  box-shadow: 0 4px 15px rgba(0, 255, 136, 0.4) !important;
+  transition: all 0.3s ease !important;
+  text-shadow: none !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+.posts-highlight::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.5s ease;
+}
+
+.posts-highlight:hover {
+  background: linear-gradient(135deg, #00ff99 0%, #00dd77 100%) !important;
+  color: #000 !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 6px 20px rgba(0, 255, 136, 0.6) !important;
+  text-decoration: none !important;
+}
+
+.posts-highlight:hover::before {
+  left: 100%;
+}
+
+.posts-highlight:active {
+  transform: translateY(0) !important;
+  box-shadow: 0 2px 10px rgba(0, 255, 136, 0.4) !important;
+}
+
 .clearfix:after {
   content: ".";
   display: block;
@@ -442,6 +484,15 @@ Header Style
   left: 20px;
   top: 15px;
   font-size: 16px;
+}
+
+.header-area .main-nav .empty-rectangle {
+  background-color: rgba(255, 255, 255, 0.10);
+  height: 44px;
+  width: 250px;
+  border-radius: 23px;
+  border: none;
+  margin-top: 18px;
 }
 
 .header-area .main-nav ul.nav {
@@ -1764,6 +1815,11 @@ Footer Style
   align-items: center;
 }
 
+.card-header h5 a:hover {
+  text-decoration: underline !important;
+  opacity: 0.8;
+}
+
 .card-header i {
   margin-right: 10px; /* Space between icon and title */
 }
@@ -1794,10 +1850,32 @@ Footer Style
   cursor: pointer;
   font-size: 0.9em;
   margin-top: 10px; /* Spacing above the button */
+  text-decoration: none;
+  display: inline-block;
 }
 
 .see-more-btn:hover {
   background-color: #218838;
+  color: white;
+  text-decoration: none;
+}
+
+.post-views {
+  margin: 8px 0;
+  font-size: 0.9em;
+  color: #666;
+  display: flex;
+  align-items: center;
+}
+
+.post-views img {
+  margin-left: 5px;
+  vertical-align: middle;
+}
+
+.post-views i {
+  margin-left: 5px;
+  vertical-align: middle;
 }
 
 .pdf-link {

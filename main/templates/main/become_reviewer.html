@@ -92,7 +92,7 @@
                     {% if not has_pending_request and not is_moderator %}
                         <div class="text-center mt-4">
                             {% if not email_confirmed %}
-                                <a href="/user_profile" class="btn btn-outline-warning">
+                                <a href="/resend-confirmation-email/{{ request.user.id }}/" class="btn btn-outline-warning">
                                     <i class="fa fa-envelope"></i> تأكيد البريد الإلكتروني
                                 </a>
                             {% endif %}

@@ -262,12 +262,15 @@ class MainCategory(models.Model):
     
 class Category(models.Model):
     main_category = models.ForeignKey(MainCategory, on_delete=models.CASCADE, related_name='categories')
+    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='children', help_text='Parent category for hierarchical structure')
     name = models.CharField(max_length=100, unique=True)
+    
     class Meta:
         verbose_name = 'تصنيف فرعي'
         verbose_name_plural = 'التصنيفات الفرعية'
+    
     def __str__(self):
-        return f"{self.name}"
+        return self.name
 
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -280,6 +283,7 @@ class UserProfile(models.Model):
 
     completed = models.BooleanField(default=False)
     email_confirmed = models.BooleanField(default=False)
+    who_am_i = models.TextField(blank=True, null=True, verbose_name='من أنا', help_text='ملخص مختصر عن الباحث')
     class Meta:
         verbose_name = 'ملف المستخدم'
         verbose_name_plural = 'ملفات المستخدمين'
@@ -300,7 +304,6 @@ class Post(models.Model):
 
 
     keywords = models.CharField(max_length=200)  # Keywords for the post
-    comments = models.CharField(max_length=200, blank=True)  # Comments related to the post (can be blank)
     external_doi = models.CharField(max_length=100, blank=True)  # External DOI (can be blank)
     
 
@@ -308,13 +311,27 @@ class Post(models.Model):
     # New fields
     status = models.CharField(max_length=20, default='Pending')
     is_approved = models.BooleanField(default=False)
-    reviewer_comments = models.TextField(blank=True)
+    reviewer_comments = models.TextField(blank=True)  # Comments sent to author via email
+    admin_comments = models.TextField(blank=True)     # Private comments only visible to admins
     reviewer = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='reviewed_posts')
+    previous_reviewers = models.ManyToManyField(User, blank=True, related_name='previously_reviewed_posts', help_text='Reviewers who have already reviewed this post')
+    final_reviewer = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='finally_reviewed_posts', help_text='The reviewer who made the final decision (approved/rejected)')
+    review_started = models.BooleanField(default=False, help_text='Indicates if the reviewer has started reviewing this post')
+    recommended_for_best_article = models.BooleanField(default=False, help_text='Indicates if the reviewer recommended this post for best article of the month')
+    is_edited_after_approval = models.BooleanField(default=False, help_text='Indicates if the post was edited after being approved')
     class Meta:
         verbose_name = 'مشاركة'
         verbose_name_plural = 'المشاركات'
     def __str__(self):
-        return self.title + "\n" + self.description
+        return self.title
+    
+    def get_view_count(self):
+        """Return the number of unique views for this post"""
+        return self.views.count()
+
+    def get_comment_count(self):
+        """Return the number of comments for this post"""
+        return self.comments.count()
 
     def save(self, *args, **kwargs):
         if not self.category:
@@ -358,4 +375,55 @@ class ReviewerRequest(models.Model):
         return f"طلب مراجع من {self.user.username} - {self.get_status_display()}"
     
     ordering = ['-request_date']
+
+class Comment(models.Model):
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='comments')
+    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='comments')
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    is_modified = models.BooleanField(default=False)
+    
+    class Meta:
+        verbose_name = 'تعليق'
+        verbose_name_plural = 'التعليقات'
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f'تعليق من {self.author.username} على {self.post.title}'
+    
+    def is_edited(self):
+        """Check if the comment has been edited"""
+        return self.is_modified
+
+
+class PostView(models.Model):
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='views')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='post_views')
+    viewed_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        verbose_name = 'مشاهدة مشاركة'
+        verbose_name_plural = 'مشاهدات المشاركات'
+        unique_together = ['post', 'user']  # Ensures one view per user per post
+        ordering = ['-viewed_at']
+    
+    def __str__(self):
+        return f'مشاهدة من {self.user.username} لـ {self.post.title}'
+
+class NewsletterSubscriber(models.Model):
+    email = models.EmailField(unique=True, verbose_name='البريد الإلكتروني')
+    name = models.CharField(max_length=100, blank=True, verbose_name='الاسم')
+    subscribed_at = models.DateTimeField(auto_now_add=True, verbose_name='تاريخ الاشتراك')
+    is_active = models.BooleanField(default=True, verbose_name='نشط')
+    confirmation_token = models.CharField(max_length=100, blank=True, null=True)
+    is_confirmed = models.BooleanField(default=False, verbose_name='مؤكد')
+    
+    class Meta:
+        verbose_name = 'مشترك في النشرة الإخبارية'
+        verbose_name_plural = 'المشتركون في النشرة الإخبارية'
+        ordering = ['-subscribed_at']
+    
+    def __str__(self):
+        return f'{self.email} ({self.name if self.name else "بدون اسم"})'
 

@@ -6,7 +6,7 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.utils.translation import gettext_lazy as _
 from django_countries.widgets import CountrySelectWidget
 
-from .models import Post, TranslationPost, COUNTRY_CHOICES
+from .models import Post, TranslationPost, COUNTRY_CHOICES, Comment, NewsletterSubscriber
 
 from django import forms
 from django.core.validators import EmailValidator
@@ -64,42 +64,73 @@ class BibTexForm(forms.Form):
 class PostForm(forms.ModelForm):
     class Meta:
         model = Post
-        fields = ['title',  "authors", 'description',  "keywords",'category', "comments", "external_doi",  "pdf"]  # Add 'category' here
+        fields = ['title', 'description', 'keywords', 'category', 'external_doi', 'pdf']
         labels = {
             'title': 'عنوان المقال',
-            "authors": "مؤلف المقال",
             'description': 'ملخص',
-            "keywords":"الكلمات الدالة",
-            'category': 'التصنيف',  # Add a label for 'category'
-            "comments": "تعليق", 
-            "external_doi": "DOI", 
-            "pdf": "الملف PDF", 
+            'keywords': 'الكلمات الدالة',
+            'category': 'التصنيف',
+            'external_doi': 'DOI',
+            'pdf': 'الملف PDF',
         }
         help_texts = {
-            'comments': 'إذا لم يكن التصنيف موجود، يرجى ذكره هنا.',
-            'authors': '',
             'pdf': 'يجب رفع ملف PDF للمقال (إجباري)',
         }
+    
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
+        super(PostForm, self).__init__(*args, **kwargs)
+    
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        if self.user:
+            # Set the current user as the author
+            instance.author = self.user
+        
+        if commit:
+            instance.save()
+        return instance
 
 class TranslationPostForm(forms.ModelForm):
+    original_author = forms.CharField(
+        label='المؤلف الأصلي',
+        max_length=400,
+        required=True,
+        help_text='أدخل اسم المؤلف الأصلي للمقال'
+    )
+    
     class Meta:
         model = TranslationPost
-        fields = ['title', "authors", "translator", 'description', "keywords", 'category', "comments", "external_doi", "pdf"]
+        fields = ['title', 'description', 'keywords', 'category', 'external_doi', 'pdf']
         labels = {
             'title': 'عنوان المقال',
-            "authors": "مؤلف المقال",
             'description': 'ملخص',
-            "keywords": "الكلمات الدالة",
+            'keywords': 'الكلمات الدالة',
             'category': 'التصنيف',
-            "comments": "تعليق",
-            "external_doi": "DOI",
-            "pdf": "الملف PDF",
-            'translator': 'مترجم المقال',  # Label for the translator field
+            'external_doi': 'DOI',
+            'pdf': 'الملف PDF',
         }
         help_texts = {
-            'comments': 'إذا لم يكن التصنيف موجود، يرجى ذكره هنا.',
             'pdf': 'يجب رفع ملف PDF للمقال (إجباري)',
         }
+    
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
+        super(TranslationPostForm, self).__init__(*args, **kwargs)
+    
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        if self.user:
+            # Set the current user as the author (translator)
+            instance.author = self.user
+            # Set the original author in the authors field
+            instance.authors = self.cleaned_data.get('original_author', '')
+            # Set the current user as the translator
+            instance.translator = f"{self.user.first_name} {self.user.last_name}".strip() or self.user.username
+        
+        if commit:
+            instance.save()
+        return instance
 
 class CustomLoginForm(AuthenticationForm):
     def __init__(self, request=None, *args, **kwargs):
@@ -136,6 +167,19 @@ class ModifyCareerForm(forms.Form):
 class ModifyWebsiteForm(forms.Form):
     website = forms.CharField(label='الموقع الإلكتروني', max_length=255)
 
+class ModifyWhoAmIForm(forms.Form):
+    who_am_i = forms.CharField(
+        label='من أنا',
+        widget=forms.Textarea(attrs={
+            'rows': 8, 
+            'cols': 60,
+            'placeholder': 'اكتب ملخصاً مختصراً عن نفسك كباحث...',
+            'style': 'max-width: 100%; resize: vertical;'
+        }),
+        required=False,
+        help_text='اكتب ملخصاً مختصراً عن خلفيتك العلمية ومجالات اهتمامك البحثية'
+    )
+
 
 from .models import KeywordTranslation
 class KeywordTranslationForm(forms.ModelForm):
@@ -149,5 +193,36 @@ class KeywordTranslationForm(forms.ModelForm):
             "arabic_translation": "بالعربية", 
         }
 
-    
+class CommentForm(forms.ModelForm):
+    class Meta:
+        model = Comment
+        fields = ['content']
+        labels = {
+            'content': 'التعليق',
+        }
+        widgets = {
+            'content': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': 'اكتب تعليقك هنا...'
+            })
+        }
 
+class NewsletterSignupForm(forms.ModelForm):
+    class Meta:
+        model = NewsletterSubscriber
+        fields = ['email', 'name']
+        labels = {
+            'email': 'البريد الإلكتروني',
+            'name': 'الاسم (اختياري)',
+        }
+        widgets = {
+            'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'أدخل بريدك الإلكتروني'}),
+            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'أدخل اسمك (اختياري)'}),
+        }
+    
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        if NewsletterSubscriber.objects.filter(email=email, is_active=True).exists():
+            raise ValidationError("هذا البريد الإلكتروني مشترك بالفعل في النشرة الإخبارية.")
+        return email

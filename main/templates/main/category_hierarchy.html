@@ -1,0 +1,600 @@
+{% extends 'main/base.html' %}
+{% load static %}
+{% load my_filters %}
+{% load category_tags %}
+
+{% block title %}التصنيفات - أراب أركسيف{% endblock %}
+
+{% block content %}
+<style>
+    .category-hierarchy-container {
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        border-radius: 15px;
+        padding: 30px;
+        margin: 20px 0;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    }
+
+    .main-category-card {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        margin-bottom: 25px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        border-left: 5px solid #005109;
+        transition: all 0.3s ease;
+    }
+
+    .main-category-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .main-category-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #e9ecef;
+    }
+
+    .main-category-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #2c3e50;
+        margin: 0;
+    }
+
+    .main-category-count {
+        background: linear-gradient(135deg, #005109 0%, #003d07 100%);
+        color: white;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+
+    .sub-categories {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 15px;
+    }
+
+    .sub-category-item {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 15px;
+        border: 1px solid #e9ecef;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        color: inherit;
+        display: block;
+    }
+
+    .sub-category-item:hover {
+        background: #e9ecef;
+        transform: translateY(-1px);
+        text-decoration: none;
+        color: inherit;
+    }
+
+    .sub-category-name {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 5px;
+    }
+
+    .sub-category-count {
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+
+    .page-header {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+
+    .page-header h1 {
+        color: #2c3e50;
+        font-weight: 700;
+        margin-bottom: 10px;
+    }
+
+    .page-header p {
+        color: #6c757d;
+        font-size: 1.1rem;
+    }
+
+    .back-button {
+        background: linear-gradient(135deg, #005109 0%, #003d07 100%);
+        color: white;
+        border: none;
+        padding: 12px 25px;
+        border-radius: 25px;
+        text-decoration: none;
+        display: inline-block;
+        margin-bottom: 20px;
+        transition: all 0.3s ease;
+    }
+
+    .back-button:hover {
+        background: linear-gradient(135deg, #003d07 0%, #002a05 100%);
+        color: white;
+        text-decoration: none;
+        transform: translateY(-1px);
+    }
+
+    .empty-category {
+        text-align: center;
+        padding: 40px;
+        color: #6c757d;
+        font-style: italic;
+    }
+
+         .category-icon {
+         width: 40px;
+         height: 40px;
+         background: linear-gradient(135deg, #005109 0%, #003d07 100%);
+         border-radius: 10px;
+         display: flex;
+         align-items: center;
+         justify-content: center;
+         color: white;
+         margin-right: 15px;
+     }
+
+    /* View Toggle Buttons */
+    .view-toggle-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+        margin-top: 20px;
+    }
+
+    .view-btn {
+        background: #f8f9fa;
+        border: 2px solid #e9ecef;
+        padding: 10px 20px;
+        border-radius: 25px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-weight: 500;
+        color: #6c757d;
+    }
+
+    .view-btn:hover {
+        background: #e9ecef;
+        border-color: #005109;
+        color: #005109;
+    }
+
+    .view-btn.active {
+        background: linear-gradient(135deg, #005109 0%, #003d07 100%);
+        border-color: #005109;
+        color: white;
+    }
+
+    /* Tree View Styles */
+    .tree-view-container {
+        display: none;
+        background: white;
+        border-radius: 15px;
+        padding: 30px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        max-height: 70vh;
+        overflow: auto;
+    }
+
+    .tree-view-container.active {
+        display: block;
+    }
+
+    .rectangular-view-container {
+        display: block;
+    }
+
+    .rectangular-view-container.hidden {
+        display: none;
+    }
+
+    /* Main Category Header in Tree View */
+    .tree-main-category-header {
+        background: linear-gradient(135deg, #005109 0%, #003d07 100%);
+        color: white;
+        padding: 15px 20px;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 1.1rem;
+        margin-bottom: 15px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .tree-main-category-content {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .main-category-icon {
+        font-size: 1.2rem;
+    }
+
+    .main-category-name {
+        font-weight: 700;
+    }
+
+         .main-category-stats .post-count {
+         background: rgba(255, 255, 255, 0.2);
+         padding: 4px 12px;
+         border-radius: 15px;
+         font-size: 0.9rem;
+     }
+
+     .tree-main-toggle {
+         color: white;
+         font-size: 0.8rem;
+         transition: transform 0.3s ease;
+         margin-right: 8px;
+     }
+
+     .tree-main-toggle.expanded {
+         transform: rotate(90deg);
+     }
+
+    .tree-root-categories {
+        margin-bottom: 30px;
+    }
+
+    /* Recursive Tree Node Styles */
+    .tree-node {
+        position: relative;
+        margin-bottom: 4px;
+    }
+
+    .tree-node[data-level="0"] {
+        margin-left: 0;
+    }
+
+    .tree-node[data-level="1"] {
+        margin-left: 30px;
+    }
+
+    .tree-node[data-level="2"] {
+        margin-left: 60px;
+    }
+
+    .tree-node[data-level="3"] {
+        margin-left: 90px;
+    }
+
+    .tree-node[data-level="4"] {
+        margin-left: 120px;
+    }
+
+    .tree-node[data-level="5"] {
+        margin-left: 150px;
+    }
+
+    .tree-category-header {
+        background: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        padding: 12px 15px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: relative;
+    }
+
+    .tree-category-header:hover {
+        background: #e9ecef;
+        border-color: #005109;
+        transform: translateX(3px);
+    }
+
+    /* Tree connector lines */
+    .tree-node[data-level="1"] .tree-category-header::before,
+    .tree-node[data-level="2"] .tree-category-header::before,
+    .tree-node[data-level="3"] .tree-category-header::before,
+    .tree-node[data-level="4"] .tree-category-header::before,
+    .tree-node[data-level="5"] .tree-category-header::before {
+        content: '';
+        position: absolute;
+        left: -15px;
+        top: 50%;
+        width: 15px;
+        height: 2px;
+        background: #e9ecef;
+        transform: translateY(-50%);
+    }
+
+    /* Vertical connector lines */
+    .tree-children {
+        position: relative;
+        margin-left: 30px;
+        padding-left: 15px;
+        margin-top: 4px;
+    }
+
+    .tree-children::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 2px;
+        height: 100%;
+        background: #e9ecef;
+    }
+
+    .tree-children.expanded {
+        display: block !important;
+    }
+
+    .tree-category-content {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .tree-toggle {
+        transition: transform 0.3s ease;
+        color: #005109;
+        font-size: 0.8rem;
+        width: 16px;
+        text-align: center;
+    }
+
+    .tree-toggle.expanded {
+        transform: rotate(90deg);
+    }
+
+    .tree-leaf {
+        color: #6c757d;
+        font-size: 0.6rem;
+        width: 16px;
+        text-align: center;
+    }
+
+    .category-name {
+        font-weight: 600;
+        color: #495057;
+    }
+
+    .category-stats {
+        display: flex;
+        gap: 8px;
+    }
+
+    .post-count {
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+
+    .post-count.direct {
+        background: #005109;
+        color: white;
+    }
+
+    .post-count.total {
+        background: #17a2b8;
+        color: white;
+    }
+
+    .post-count.zero {
+        background: #6c757d;
+        color: white;
+    }
+
+    /* Tree folder icons */
+    .tree-folder-icon {
+        color: #005109;
+        font-size: 0.9rem;
+        margin-right: 8px;
+    }
+
+    .tree-folder-icon.has-children {
+        color: #005109;
+    }
+
+    .tree-folder-icon.leaf {
+        color: #6c757d;
+    }
+</style>
+
+<div class="container">
+    <div class="category-hierarchy-container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <a href="{% url 'posts' %}" class="back-button">
+                <i class="fas fa-arrow-right me-2"></i>العودة للمشاركات
+            </a>
+            <h1><i class="fas fa-folder me-3"></i>التصنيفات</h1>
+            <p>استكشف التصنيفات المختلفة والمشاركات في كل تصنيف</p>
+            
+            <!-- View Toggle Buttons -->
+            <div class="view-toggle-buttons">
+                <button class="view-btn active" id="rectangularView" onclick="switchView('rectangular')">
+                    <i class="fas fa-th-large me-2"></i>عرض المستطيلات
+                </button>
+                <button class="view-btn" id="treeView" onclick="switchView('tree')">
+                    <i class="fas fa-sitemap me-2"></i>عرض الشجرة
+                </button>
+            </div>
+        </div>
+
+                 <!-- Rectangular View Container -->
+         <div class="rectangular-view-container" id="rectangularViewContainer">
+             {% if main_categories %}
+                 {% for main_category in main_categories %}
+                     <div class="main-category-card">
+                         <div class="main-category-header">
+                             <div class="d-flex align-items-center">
+                                 <div class="category-icon">
+                                     <i class="fas fa-folder"></i>
+                                 </div>
+                                 <h3 class="main-category-title">{{ main_category.name }}</h3>
+                             </div>
+                             <div class="main-category-count">
+                                 {{ main_category.total_posts }} مشاركة
+                             </div>
+                         </div>
+                         
+                         {% if categories_by_main|get_item:main_category %}
+                             <div class="sub-categories">
+                                 {% for cat_data in categories_by_main|get_item:main_category %}
+                                     <a href="{% url 'posts' %}?category={{ cat_data.category.id }}" class="sub-category-item">
+                                         <div class="sub-category-name">{{ cat_data.category.name }}</div>
+                                         <div class="sub-category-count">{{ cat_data.post_count }} مشاركة</div>
+                                     </a>
+                                 {% endfor %}
+                             </div>
+                         {% else %}
+                             <div class="empty-category">
+                                 <i class="fas fa-folder-open me-2"></i>
+                                 لا توجد تصنيفات فرعية في هذا التصنيف الرئيسي
+                             </div>
+                         {% endif %}
+                     </div>
+                 {% endfor %}
+             {% else %}
+                 <div class="empty-category">
+                     <i class="fas fa-folder-open me-2"></i>
+                     لا توجد تصنيفات متاحة حالياً
+                 </div>
+             {% endif %}
+         </div>
+
+                 <!-- Tree View Container -->
+         <div class="tree-view-container" id="treeViewContainer">
+             {% if main_categories %}
+                 {% for main_category in main_categories %}
+                     <div class="tree-main-category-header" onclick="toggleMainCategoryTree({{ main_category.id }})" style="cursor: pointer;">
+                         <div class="tree-main-category-content">
+                             <i class="fas fa-chevron-right tree-main-toggle" id="toggle-tree-main-{{ main_category.id }}"></i>
+                             <i class="fas fa-folder-open main-category-icon"></i>
+                             <span class="main-category-name">{{ main_category.name }}</span>
+                         </div>
+                         <div class="main-category-stats">
+                             <span class="post-count total">{{ main_category.total_posts }} مشاركة</span>
+                         </div>
+                     </div>
+                     
+                     {% if categories_by_main|get_item:main_category %}
+                         <div class="tree-root-categories" id="tree-subcategories-{{ main_category.id }}" style="display: none;">
+                             {% for cat_data in categories_by_main|get_item:main_category %}
+                                 <div class="tree-node" data-level="0" data-category-id="{{ cat_data.category.id }}">
+                                     <div class="tree-category-header">
+                                         <div class="tree-category-content">
+                                             <i class="fas fa-folder-open tree-folder-icon leaf"></i>
+                                             <span class="category-name">{{ cat_data.category.name }}</span>
+                                         </div>
+                                         <div class="category-stats">
+                                             {% if cat_data.post_count > 0 %}
+                                                 <span class="post-count direct">{{ cat_data.post_count }} مشاركة</span>
+                                             {% endif %}
+                                         </div>
+                                     </div>
+                                 </div>
+                             {% endfor %}
+                         </div>
+                     {% endif %}
+                 {% endfor %}
+             {% else %}
+                 <div class="empty-category">
+                     <i class="fas fa-folder-open me-2"></i>
+                     لا توجد تصنيفات متاحة حالياً
+                 </div>
+             {% endif %}
+         </div>
+    </div>
+</div>
+
+<script>
+function switchView(viewType) {
+    const rectangularContainer = document.getElementById('rectangularViewContainer');
+    const treeContainer = document.getElementById('treeViewContainer');
+    const rectangularBtn = document.getElementById('rectangularView');
+    const treeBtn = document.getElementById('treeView');
+    
+    if (viewType === 'rectangular') {
+        // Show rectangular view
+        rectangularContainer.classList.remove('hidden');
+        treeContainer.classList.remove('active');
+        
+        // Update button states
+        rectangularBtn.classList.add('active');
+        treeBtn.classList.remove('active');
+    } else if (viewType === 'tree') {
+        // Show tree view
+        rectangularContainer.classList.add('hidden');
+        treeContainer.classList.add('active');
+        
+        // Update button states
+        rectangularBtn.classList.remove('active');
+        treeBtn.classList.add('active');
+    }
+}
+
+
+
+ function toggleMainCategoryTree(mainCategoryId) {
+     const subcategoriesContainer = document.getElementById(`tree-subcategories-${mainCategoryId}`);
+     const toggleIcon = document.getElementById(`toggle-tree-main-${mainCategoryId}`);
+     
+     if (subcategoriesContainer) {
+         const isExpanded = subcategoriesContainer.style.display !== 'none';
+         
+         if (isExpanded) {
+             // Collapse
+             subcategoriesContainer.style.display = 'none';
+             if (toggleIcon) {
+                 toggleIcon.classList.remove('expanded');
+             }
+         } else {
+             // Expand
+             subcategoriesContainer.style.display = 'block';
+             if (toggleIcon) {
+                 toggleIcon.classList.add('expanded');
+             }
+         }
+     }
+ }
+
+ function toggleCategory(categoryId) {
+     const childrenContainer = document.getElementById(`children-${categoryId}`);
+     const toggleIcon = document.getElementById(`toggle-${categoryId}`);
+     
+     if (childrenContainer) {
+         const isExpanded = childrenContainer.classList.contains('expanded');
+         
+         if (isExpanded) {
+             // Collapse
+             childrenContainer.classList.remove('expanded');
+             childrenContainer.style.display = 'none';
+             if (toggleIcon) {
+                 toggleIcon.classList.remove('expanded');
+             }
+         } else {
+             // Expand
+             childrenContainer.classList.add('expanded');
+             childrenContainer.style.display = 'block';
+             if (toggleIcon) {
+                 toggleIcon.classList.add('expanded');
+             }
+         }
+     }
+ }
+
+// Initialize with rectangular view
+document.addEventListener('DOMContentLoaded', function() {
+    switchView('rectangular');
+});
+</script>
+{% endblock %} 

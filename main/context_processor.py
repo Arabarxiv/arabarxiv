@@ -16,8 +16,20 @@ def review_count_processor(request):
             status='pending'
         ).exists()
         
+        # Determine active submission type based on current URL
+        active_submission_type = None
+        if request.path == '/create-post':
+            active_submission_type = 'original_post'
+        elif request.path == '/create-translation-post':
+            active_submission_type = 'translation_post'
+        
         return {
             'reviews_count': count,
-            'has_pending_reviewer_request': has_pending_reviewer_request
+            'has_pending_reviewer_request': has_pending_reviewer_request,
+            'active_submission_type': active_submission_type
         }
-    return {'reviews_count': 0, 'has_pending_reviewer_request': False}
+    return {
+        'reviews_count': 0, 
+        'has_pending_reviewer_request': False,
+        'active_submission_type': None
+    }
