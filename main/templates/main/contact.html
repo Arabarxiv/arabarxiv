@@ -13,6 +13,41 @@
     .error {
         color: red;
     }
+    
+    /* Contact background circle with suitable color */
+    .contact-us:before {
+        position: absolute !important;
+        top: 0 !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        z-index: -1 !important;
+        width: 65% !important;
+        height: 100% !important;
+        background-color: #e8f5e8 !important;
+        content: '' !important;
+        border-top-right-radius: 500px !important;
+        border-bottom-right-radius: 500px !important;
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+    
+    .contact-us::before {
+        position: absolute !important;
+        top: 0 !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        z-index: -1 !important;
+        width: 65% !important;
+        height: 100% !important;
+        background-color: #e8f5e8 !important;
+        content: '' !important;
+        border-top-right-radius: 500px !important;
+        border-bottom-right-radius: 500px !important;
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
 </style>
 
 
@@ -34,7 +69,7 @@
                         <div class="row">
                             <div class="col-lg-12">
                                 <fieldset>
-                                    <input type="name" name="name" id="name" placeholder="اسمك..." autocomplete="on" required>
+                                    <input type="name" name="name" id="name" placeholder="الاسم الكامل..." autocomplete="on" required>
                                 </fieldset>
                             </div>
                             <div class="col-lg-12">

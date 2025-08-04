@@ -3,7 +3,7 @@ from .forms import RegisterForm, PostForm, ModifyNameForm, ModifyEmailForm, Cust
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.models import User, Group
-from .models import Post, KeywordTranslation, MainCategory, Category, TranslationPost, Comment, PostView, NewsletterSubscriber
+from .models import Post, KeywordTranslation, MainCategory, Category, TranslationPost, Comment, PostView, PostPdfView, NewsletterSubscriber
 from .forms import CustomLoginForm
 from django.contrib import messages
 from googleapiclient.discovery import build
@@ -509,38 +509,43 @@ def create_post(request):
                     # Only current user as author
                     post.authors = f"{request.user.first_name} {request.user.last_name}".strip() or request.user.username
                 
-                post.save()
+                # Save the post with categories using the form's save method
+                post = form.save()
+                
                 messages.success(request, 'تم حفظ المسودة بنجاح.')
                 return redirect("/user_profile")
             else:
                 # Create new post
                 post = form.save(commit=False)
                 post.status = 'Pending'  # Set status to Pending for new submissions
-            
-            # Handle custom author selection
-            authors_input = request.POST.get('authors', '')
-            if authors_input:
-                author_ids = [int(id.strip()) for id in authors_input.split(',') if id.strip()]
-                additional_authors = User.objects.filter(id__in=author_ids, is_superuser=False)
                 
-                # Build the authors string: current user + selected additional authors
-                authors_list = [f"{request.user.first_name} {request.user.last_name}".strip() or request.user.username]
+                # Handle custom author selection
+                authors_input = request.POST.get('authors', '')
+                if authors_input:
+                    author_ids = [int(id.strip()) for id in authors_input.split(',') if id.strip()]
+                    additional_authors = User.objects.filter(id__in=author_ids, is_superuser=False)
+                    
+                    # Build the authors string: current user + selected additional authors
+                    authors_list = [f"{request.user.first_name} {request.user.last_name}".strip() or request.user.username]
+                    
+                    # Add selected additional authors
+                    for author in additional_authors:
+                        author_name = f"{author.first_name} {author.last_name}".strip() or author.username
+                        if author_name not in authors_list:
+                            authors_list.append(author_name)
+                    
+                    post.authors = ', '.join(authors_list)
+                else:
+                    # Only current user as author
+                    post.authors = f"{request.user.first_name} {request.user.last_name}".strip() or request.user.username
                 
-                # Add selected additional authors
-                for author in additional_authors:
-                    author_name = f"{author.first_name} {author.last_name}".strip() or author.username
-                    if author_name not in authors_list:
-                        authors_list.append(author_name)
+                post.author = request.user
                 
-                post.authors = ', '.join(authors_list)
-            else:
-                # Only current user as author
-                post.authors = f"{request.user.first_name} {request.user.last_name}".strip() or request.user.username
-            
-            post.author = request.user
-            post.save()
-            send_thank_you_email(request.user, post)
-            return redirect("/user_profile")
+                # Save the post with categories using the form's save method
+                post = form.save()
+                
+                send_thank_you_email(request.user, post)
+                return redirect("/user_profile")
     else:
         if draft:
             # Pre-fill form with draft data
@@ -578,6 +583,24 @@ def get_users(request):
             'username': user.username
         })
     return JsonResponse({'users': users_data})
+
+def get_moderators(request):
+    # Get all moderators and staff users, ordered by username
+    # Use the same logic as is_mod_or_staff function
+    moderators = User.objects.filter(
+        Q(is_superuser=True) | Q(is_staff=True) | Q(groups__name='mod')
+    ).distinct().order_by('username')
+    
+    # Convert to list of dictionaries
+    moderators_list = []
+    for moderator in moderators:
+        moderators_list.append({
+            'id': moderator.id,
+            'username': moderator.username
+        })
+    
+    from django.http import JsonResponse
+    return JsonResponse({'moderators': moderators_list})
 
 
 
@@ -629,7 +652,10 @@ def create_translation_post(request):
                 
                 # Set the original author from the form
                 translation_post.authors = form.cleaned_data.get('original_author', '')
-                translation_post.save()
+                
+                # Save the post with categories using the form's save method
+                translation_post = form.save()
+                
                 messages.success(request, 'تم حفظ مسودة الترجمة بنجاح.')
                 return redirect("/user_profile")
             else:
@@ -660,7 +686,10 @@ def create_translation_post(request):
             # Set the original author from the form
             translation_post.authors = form.cleaned_data.get('original_author', '')
             translation_post.author = request.user
-            translation_post.save()
+            
+            # Save the post with categories using the form's save method
+            translation_post = form.save()
+            
             send_thank_you_email(request.user, translation_post)  # Send a thank you email
             return redirect("/user_profile")  # Redirect to a relevant page after saving
     else:
@@ -1063,9 +1092,9 @@ def term_list(request):
 
     if selected_category_id:
         selected_category = MainCategory.objects.get(id=selected_category_id)
-        keyword_list = KeywordTranslation.objects.filter(category=selected_category)
+        keyword_list = KeywordTranslation.objects.filter(category=selected_category, status='approved')
     else:
-        keyword_list = KeywordTranslation.objects.all()
+        keyword_list = KeywordTranslation.objects.filter(status='approved')
 
     if request.method == 'POST':
         if not request.user.is_authenticated:
@@ -1079,28 +1108,37 @@ def term_list(request):
                 'back_url': '/home'
             })
         
-        if is_mod_or_staff(request.user):
-            # User is in "mod" group or is_staff, add the keyword directly
-            form = KeywordTranslationForm(request.POST)
-            if form.is_valid():
-                form.save()
-                # Redirect to the same page or another appropriate page
-                return redirect('terms')
-        else:
-            # User is not in "mod" group or is_staff, send email to admin and notify the user
-            form = KeywordTranslationForm(request.POST)
-            if form.is_valid():
-                keyword = form.save(commit=False)
-                send_mail(
-                    'اقتراح مصطلح جديد',
-                    f'المستخدم {request.user.username} اقترح مصطلحًا جديدًا: {keyword.english_keyword} - {keyword.arabic_translation}',
-                    'arabarxiv@gmail.com',  # Replace with your admin's email address
-                    ['arabarxiv@gmail.com'],  # Replace with your admin's email address
-                    fail_silently=False,
-                )
-                messages.warning(request, 'تم إرسال اقتراح المصطلح إلى الإدارة. سيتم مراجعته وإضافته إذا كان مناسبًا.')
-                # Redirect to the same page or another appropriate page
-                return redirect('terms')
+        form = KeywordTranslationForm(request.POST)
+        if form.is_valid():
+            keyword = form.save(commit=False)
+            
+            if is_mod_or_staff(request.user):
+                # User is in "mod" group or is_staff, add the keyword directly as approved
+                keyword.status = 'approved'
+                keyword.submitted_by = request.user
+                keyword.save()
+                messages.success(request, 'تم إضافة المصطلح بنجاح!')
+            else:
+                # User is not in "mod" group or is_staff, save as pending
+                keyword.status = 'pending'
+                keyword.submitted_by = request.user
+                keyword.save()
+                
+                # Send email to admin
+                try:
+                    send_mail(
+                        'اقتراح مصطلح جديد',
+                        f'المستخدم {request.user.username} اقترح مصطلحًا جديدًا:\n\nالمصطلح بالإنجليزية: {keyword.english_keyword}\nالترجمة بالعربية: {keyword.arabic_translation}\nالتصنيف: {keyword.category.name}\n\nيمكنك مراجعة المصطلح في لوحة الإدارة.',
+                        'arabarxiv@gmail.com',
+                        ['arabarxiv@gmail.com'],
+                        fail_silently=True,
+                    )
+                except Exception as e:
+                    print(f"Failed to send email: {e}")
+                
+                messages.success(request, 'تم إرسال اقتراح المصطلح بنجاح! سيتم مراجعته وإضافته إذا كان مناسبًا.')
+            
+            return redirect('terms')
     else:
         form = KeywordTranslationForm()
     
@@ -1127,7 +1165,7 @@ def category_hierarchy(request):
     for main_cat in main_categories:
         # Get ALL categories under this main category (not just root ones)
         categories = Category.objects.filter(main_category=main_cat).annotate(
-            post_count=Count('posts', filter=Q(posts__status='Approved'))
+            post_count=Count('posts', filter=Q(posts__status="Approved"))
         )
         
         # Convert to simple list format for display
@@ -1162,17 +1200,20 @@ def review_post(request):
     
     # Superusers see all pending posts, others see only assigned posts
     if request.user.is_superuser:
-        assigned_posts = Post.objects.filter(status='Pending')
+        assigned_posts = Post.objects.filter(status__in=['Pending', 'Rejected_For_Reassignment'])
         logger.debug(f"Superuser {request.user.username} seeing {assigned_posts.count()} pending posts")
     else:
         assigned_posts = Post.objects.filter(
             Q(reviewer=request.user) | Q(reviewer__isnull=True),
-            status='Pending'
+            status__in=['Pending', 'Rejected_For_Reassignment']
         )
         logger.debug(f"Regular user {request.user.username} seeing {assigned_posts.count()} assigned posts")
     
     # Separate queryset for unassigned posts (المشاركات في انتظار المراجعة)
-    unassigned_posts = Post.objects.filter(status='Pending', reviewer__isnull=True)
+    unassigned_posts = Post.objects.filter(
+        Q(status='Pending', reviewer__isnull=True) | 
+        Q(status='Rejected_For_Reassignment')
+    )
 
     if request.method == 'POST':
         post_id = request.POST.get('post_id')  # Extract post_id from the form post
@@ -1197,14 +1238,24 @@ def review_post(request):
             post.status = "Approved"
             post.is_edited_after_approval = False  # Reset edited flag when approved
             post.final_reviewer = request.user  # Set the final reviewer
+            # Add the reviewer to previous_reviewers when they complete a review
+            post.previous_reviewers.add(request.user)
         elif review_status == 'rejected':
             post.is_approved = False
             post.status = "Rejected"
             post.is_edited_after_approval = False  # Reset edited flag when rejected
             post.final_reviewer = request.user  # Set the final reviewer
-        
-        # Add the reviewer to previous_reviewers when they complete a review
-        post.previous_reviewers.add(request.user)
+            # Add the reviewer to previous_reviewers when they complete a review
+            post.previous_reviewers.add(request.user)
+        elif review_status == 'rejected_for_reassignment':
+            post.is_approved = False
+            post.status = "Rejected_For_Reassignment"
+            post.is_edited_after_approval = False  # Reset edited flag when rejected
+            # Don't set final_reviewer as this post will be reassigned
+            # Add current reviewer to previous_reviewers and clear current reviewer
+            post.previous_reviewers.add(request.user)
+            post.reviewer = None
+            post.review_started = False
         
         # Save the post with all changes
         post.save()
@@ -1236,9 +1287,9 @@ def start_reviewing(request, post_id):
     if request.method == 'POST':
         # Get the post to be reviewed
         if request.user.is_superuser:
-            post = get_object_or_404(Post, pk=post_id, status='Pending')
+            post = get_object_or_404(Post, pk=post_id, status__in=['Pending', 'Rejected_For_Reassignment'])
         else:
-            post = get_object_or_404(Post, pk=post_id, reviewer=request.user, status='Pending')
+            post = get_object_or_404(Post, pk=post_id, reviewer=request.user, status__in=['Pending', 'Rejected_For_Reassignment'])
         
         # Mark the post as being reviewed by this user
         post.reviewer = request.user
@@ -1256,9 +1307,9 @@ def detailed_review(request, post_id):
     """Detailed review page for a specific post"""
     # Get the post to be reviewed
     if request.user.is_superuser:
-        post = get_object_or_404(Post, pk=post_id, status='Pending')
+        post = get_object_or_404(Post, pk=post_id, status__in=['Pending', 'Rejected_For_Reassignment'])
     else:
-        post = get_object_or_404(Post, pk=post_id, reviewer=request.user, status='Pending')
+        post = get_object_or_404(Post, pk=post_id, reviewer=request.user, status__in=['Pending', 'Rejected_For_Reassignment'])
     
     if request.method == 'POST':
         review_status = request.POST.get('review_status')
@@ -1279,14 +1330,24 @@ def detailed_review(request, post_id):
             post.status = "Approved"
             post.is_edited_after_approval = False  # Reset edited flag when approved
             post.final_reviewer = request.user  # Set the final reviewer
+            # Add the reviewer to previous_reviewers when they complete a review
+            post.previous_reviewers.add(request.user)
         elif review_status == 'rejected':
             post.is_approved = False
             post.status = "Rejected"
             post.is_edited_after_approval = False  # Reset edited flag when rejected
             post.final_reviewer = request.user  # Set the final reviewer
-        
-        # Add the reviewer to previous_reviewers when they complete a review
-        post.previous_reviewers.add(request.user)
+            # Add the reviewer to previous_reviewers when they complete a review
+            post.previous_reviewers.add(request.user)
+        elif review_status == 'rejected_for_reassignment':
+            post.is_approved = False
+            post.status = "Rejected_For_Reassignment"
+            post.is_edited_after_approval = False  # Reset edited flag when rejected
+            # Don't set final_reviewer as this post will be reassigned
+            # Add current reviewer to previous_reviewers and clear current reviewer
+            post.previous_reviewers.add(request.user)
+            post.reviewer = None
+            post.review_started = False
         
         # Save the post with all changes
         post.save()
@@ -1414,15 +1475,34 @@ def assign_mod(request):
     logger.debug(f"Assign mod view called by {request.user.username} - superuser: {request.user.is_superuser}")
     if request.method == 'POST':
         post_id = request.POST.get('post_id')  # Extract post_id from the form post
+        logger.debug(f"POST data: {request.POST}")
+        logger.debug(f"post_id: {post_id}")
+        
+        if not post_id:
+            messages.error(request, "لم يتم تحديد المقال.")
+            return redirect("/review")
 
         # Get the selected moderator's ID
         moderator_id = request.POST.get(f'moderator_{post_id}')
+        logger.debug(f"moderator_id for post {post_id}: {moderator_id}")
+        
+        if not moderator_id:
+            messages.error(request, "لم يتم تحديد المراجع.")
+            return redirect("/review")
 
-        # Get the post to be assigned based on the post_id
-        post = Post.objects.get(pk=post_id)
+        try:
+            # Get the post to be assigned based on the post_id
+            post = Post.objects.get(pk=post_id)
+        except Post.DoesNotExist:
+            messages.error(request, "المقال غير موجود.")
+            return redirect("/review")
 
-        # Get the selected moderator based on the moderator_id
-        moderator = User.objects.get(pk=moderator_id)
+        try:
+            # Get the selected moderator based on the moderator_id
+            moderator = User.objects.get(pk=moderator_id)
+        except User.DoesNotExist:
+            messages.error(request, "المراجع غير موجود.")
+            return redirect("/review")
 
         # Check if this moderator has already reviewed this post
         if post.previous_reviewers.filter(id=moderator.id).exists():
@@ -1435,7 +1515,7 @@ def assign_mod(request):
 
         # Assign the selected moderator to the post
         post.reviewer = moderator
-        post.status = "Pending"
+        post.status = "Pending"  # Reset to Pending when reassigned
         post.review_started = False  # Reset review started flag
         post.save()
 
@@ -1444,10 +1524,10 @@ def assign_mod(request):
 
     # Superusers can assign any post, others only their assigned posts
     if request.user.is_superuser:
-        assigned_posts = Post.objects.filter(status='Pending')
+        assigned_posts = Post.objects.filter(status__in=['Pending', 'Rejected_For_Reassignment'])
         logger.debug(f"Superuser {request.user.username} seeing {assigned_posts.count()} posts for assignment")
     else:
-        assigned_posts = Post.objects.filter(reviewer=request.user, status='Pending')
+        assigned_posts = Post.objects.filter(reviewer=request.user, status__in=['Pending', 'Rejected_For_Reassignment'])
         logger.debug(f"Regular user {request.user.username} seeing {assigned_posts.count()} posts for assignment")
         
     mod_group = Group.objects.get(name='mod')
@@ -1550,7 +1630,7 @@ def post_detail(request, post_id):
             comment.post = post
             comment.author = request.user
             comment.save()
-            return redirect('post_detail', post_id=post.id)
+            return redirect('post_detail_by_meaningful_id', meaningful_id=post.meaningful_id)
     else:
         comment_form = CommentForm()
     
@@ -1561,6 +1641,57 @@ def post_detail(request, post_id):
     }
     return render(request, 'main/post_detail.html', context)
 
+def post_detail_by_meaningful_id(request, meaningful_id):
+    """View post by meaningful ID (e.g., '2.9.15')"""
+    try:
+        # Parse the meaningful ID to extract main_category, sub_category, and sequence
+        parts = meaningful_id.split('.')
+        if len(parts) != 3:
+            raise Http404("Invalid meaningful ID format")
+        
+        main_category_id, sub_category_id, sequence = parts
+        
+        # Find the post by matching the meaningful ID
+        post = get_object_or_404(Post, meaningful_id=meaningful_id)
+        
+        comments = post.comments.all()
+        
+        # Get translation post IDs for comparison
+        translation_post_ids = TranslationPost.objects.values_list('post_ptr_id', flat=True)
+        
+        # Mark if this post is a translation and add translator field
+        post.is_translation = post.id in translation_post_ids
+        if post.is_translation:
+            try:
+                post.translator = post.translationpost.translator
+            except:
+                post.translator = ""
+        
+        # Record view if user is authenticated
+        if request.user.is_authenticated:
+            PostView.objects.get_or_create(post=post, user=request.user)
+        
+        if request.method == 'POST' and request.user.is_authenticated:
+            comment_form = CommentForm(request.POST)
+            if comment_form.is_valid():
+                comment = comment_form.save(commit=False)
+                comment.post = post
+                comment.author = request.user
+                comment.save()
+                return redirect('post_detail_by_meaningful_id', meaningful_id=meaningful_id)
+        else:
+            comment_form = CommentForm()
+        
+        context = {
+            'post': post,
+            'comments': comments,
+            'comment_form': comment_form,
+        }
+        return render(request, 'main/post_detail.html', context)
+        
+    except (ValueError, IndexError):
+        raise Http404("Invalid meaningful ID format")
+
 @login_required
 def edit_comment(request, comment_id):
     """Edit a comment - only the author can edit their own comments"""
@@ -1569,7 +1700,7 @@ def edit_comment(request, comment_id):
     # Check if user is the author of the comment
     if comment.author != request.user:
         messages.error(request, 'لا يمكنك تعديل تعليق شخص آخر.')
-        return redirect('post_detail', post_id=comment.post.id)
+        return redirect('post_detail_by_meaningful_id', meaningful_id=comment.post.meaningful_id)
     
     if request.method == 'POST':
         form = CommentForm(request.POST, instance=comment)
@@ -1578,7 +1709,7 @@ def edit_comment(request, comment_id):
             comment.is_modified = True
             comment.save()
             messages.success(request, 'تم تعديل التعليق بنجاح.')
-            return redirect('post_detail', post_id=comment.post.id)
+            return redirect('post_detail_by_meaningful_id', meaningful_id=comment.post.meaningful_id)
     else:
         form = CommentForm(instance=comment)
     
@@ -1603,13 +1734,13 @@ def delete_comment(request, comment_id):
     
     if not can_delete:
         messages.error(request, 'لا يمكنك حذف هذا التعليق.')
-        return redirect('post_detail', post_id=comment.post.id)
+        return redirect('post_detail_by_meaningful_id', meaningful_id=comment.post.meaningful_id)
     
     if request.method == 'POST':
         post_id = comment.post.id
         comment.delete()
         messages.success(request, 'تم حذف التعليق بنجاح.')
-        return redirect('post_detail', post_id=post_id)
+        return redirect('post_detail_by_meaningful_id', meaningful_id=comment.post.meaningful_id)
     
     context = {
         'comment': comment,
@@ -1715,3 +1846,18 @@ def unsubscribe_newsletter(request, token):
 def newsletter_test(request):
     """Test page for newsletter signup"""
     return render(request, 'main/newsletter_test.html')
+
+
+def download_pdf(request, post_id):
+    """Handle PDF downloads and increment view counter"""
+    post = get_object_or_404(Post, id=post_id)
+    
+    # Increment PDF view counter
+    if request.user.is_authenticated:
+        post.add_pdf_view(request.user)
+    
+    # Redirect to the actual PDF file
+    if post.pdf:
+        return redirect(post.pdf.url)
+    else:
+        raise Http404("PDF not found")

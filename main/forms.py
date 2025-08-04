@@ -5,12 +5,90 @@ from django.contrib.auth.models import User
 from django.contrib.auth.forms import AuthenticationForm
 from django.utils.translation import gettext_lazy as _
 from django_countries.widgets import CountrySelectWidget
+from django.utils.safestring import mark_safe
 
-from .models import Post, TranslationPost, COUNTRY_CHOICES, Comment, NewsletterSubscriber
+from .models import Post, TranslationPost, COUNTRY_CHOICES, Comment, NewsletterSubscriber, Category, MainCategory
 
 from django import forms
 from django.core.validators import EmailValidator
 from django.core.exceptions import ValidationError
+
+class GroupedCategoryWidget(forms.Select):
+    def __init__(self, attrs=None):
+        super().__init__(attrs)
+    
+    def render(self, name, value, attrs=None, renderer=None):
+        if attrs is None:
+            attrs = {}
+        
+        
+        css_class = attrs.get("class", "")
+        if "form-control" not in css_class:
+            css_class = f"form-control {css_class}".strip()
+        
+       
+        main_categories = MainCategory.objects.prefetch_related('categories').all()
+        
+        
+        output = [f'<select name="{name}" id="{attrs.get("id", name)}" class="{css_class}">']   
+        output.append('<option value="">---------</option>')
+        
+        for main_cat in main_categories:
+            
+            output.append(f'<option disabled style="font-weight: bold; background-color: #f8f9fa; color: #495057;">{main_cat.name}</option>')
+            
+           
+            subcategories = main_cat.categories.all()
+            if subcategories.exists():
+                for sub_cat in subcategories:
+                    selected = 'selected' if str(sub_cat.id) == str(value) else ''
+                    output.append(f'<option value="{sub_cat.id}" {selected} style="padding-left: 20px;">{sub_cat.name}</option>')
+            else:
+                # If no subcategories, add a placeholder
+                output.append('<option disabled style="padding-left: 20px; color: #6c757d; font-style: italic;">لا توجد تصنيفات فرعية</option>')
+        
+        output.append('</select>')
+        return mark_safe('\n'.join(output))
+
+
+class MultipleCategoryWidget(forms.SelectMultiple):
+    def __init__(self, attrs=None):
+        super().__init__(attrs)
+    
+    def render(self, name, value, attrs=None, renderer=None):
+        if attrs is None:
+            attrs = {}
+        
+        css_class = attrs.get("class", "")
+        if "form-control" not in css_class:
+            css_class = f"form-control {css_class}".strip()
+        
+        # Convert value to list if it's not already
+        if value is None:
+            value = []
+        elif not isinstance(value, (list, tuple)):
+            value = [value]
+        
+        # Convert to strings for comparison
+        value = [str(v) for v in value]
+        
+        main_categories = MainCategory.objects.prefetch_related('categories').all()
+        
+        output = [f'<select name="{name}" id="{attrs.get("id", name)}" class="{css_class}" multiple>']   
+        
+        for main_cat in main_categories:
+            output.append(f'<option disabled style="font-weight: bold; background-color: #f8f9fa; color: #495057;">{main_cat.name}</option>')
+            
+            subcategories = main_cat.categories.all()
+            if subcategories.exists():
+                for sub_cat in subcategories:
+                    selected = 'selected' if str(sub_cat.id) in value else ''
+                    output.append(f'<option value="{sub_cat.id}" {selected} style="padding-left: 20px;">{sub_cat.name}</option>')
+            else:
+                output.append('<option disabled style="padding-left: 20px; color: #6c757d; font-style: italic;">لا توجد تصنيفات فرعية</option>')
+        
+        output.append('</select>')
+        return mark_safe('\n'.join(output))
 
 class RegisterForm(UserCreationForm):
     email = forms.EmailField(required=True, label='البريد الإلكتروني')
@@ -62,14 +140,29 @@ class BibTexForm(forms.Form):
 
 
 class PostForm(forms.ModelForm):
+    category = forms.ModelChoiceField(
+        queryset=Category.objects.all(),
+        label='اختر التصنيف',
+        help_text='التصنيف إجباري',
+        widget=GroupedCategoryWidget(),
+        required=True
+    )
+    
+    second_category = forms.ModelChoiceField(
+        queryset=Category.objects.all(),
+        label='إضافة تصنيف',
+        help_text='تصنيف إضافي (اختياري)',
+        widget=GroupedCategoryWidget(),
+        required=False
+    )
+    
     class Meta:
         model = Post
-        fields = ['title', 'description', 'keywords', 'category', 'external_doi', 'pdf']
+        fields = ['title', 'description', 'keywords', 'external_doi', 'pdf']
         labels = {
             'title': 'عنوان المقال',
             'description': 'ملخص',
             'keywords': 'الكلمات الدالة',
-            'category': 'التصنيف',
             'external_doi': 'DOI',
             'pdf': 'الملف PDF',
         }
@@ -81,6 +174,16 @@ class PostForm(forms.ModelForm):
         self.user = kwargs.pop('user', None)
         super(PostForm, self).__init__(*args, **kwargs)
     
+    def clean(self):
+        cleaned_data = super().clean()
+        category = cleaned_data.get('category')
+        second_category = cleaned_data.get('second_category')
+        
+        if category and second_category and category == second_category:
+            raise forms.ValidationError("لا يمكن اختيار نفس التصنيف مرتين.")
+        
+        return cleaned_data
+    
     def save(self, commit=True):
         instance = super().save(commit=False)
         if self.user:
@@ -88,7 +191,29 @@ class PostForm(forms.ModelForm):
             instance.author = self.user
         
         if commit:
+            # Save the instance first to get an ID
             instance.save()
+            self.save_m2m()  # This will save the many-to-many relationships
+            
+            # Now add categories after the instance has been saved
+            category = self.cleaned_data.get('category')
+            second_category = self.cleaned_data.get('second_category')
+            
+            # Clear existing categories first
+            instance.categories.clear()
+            
+            if category:
+                instance.categories.add(category)
+            if second_category and second_category != category:
+                instance.categories.add(second_category)
+            
+            # Generate meaningful ID after categories are added
+            if not instance.meaningful_id and instance.categories.exists():
+                meaningful_id = instance.generate_meaningful_id()
+                if meaningful_id:
+                    instance.meaningful_id = meaningful_id
+                    instance.save(update_fields=['meaningful_id'])
+        
         return instance
 
 class TranslationPostForm(forms.ModelForm):
@@ -99,14 +224,29 @@ class TranslationPostForm(forms.ModelForm):
         help_text='أدخل اسم المؤلف الأصلي للمقال'
     )
     
+    category = forms.ModelChoiceField(
+        queryset=Category.objects.all(),
+        label='اختر التصنيف',
+        help_text='التصنيف إجباري',
+        widget=GroupedCategoryWidget(),
+        required=True
+    )
+    
+    second_category = forms.ModelChoiceField(
+        queryset=Category.objects.all(),
+        label='إضافة تصنيف',
+        help_text='تصنيف إضافي (اختياري)',
+        widget=GroupedCategoryWidget(),
+        required=False
+    )
+    
     class Meta:
         model = TranslationPost
-        fields = ['title', 'description', 'keywords', 'category', 'external_doi', 'pdf']
+        fields = ['title', 'description', 'keywords', 'external_doi', 'pdf']
         labels = {
             'title': 'عنوان المقال',
             'description': 'ملخص',
             'keywords': 'الكلمات الدالة',
-            'category': 'التصنيف',
             'external_doi': 'DOI',
             'pdf': 'الملف PDF',
         }
@@ -117,6 +257,16 @@ class TranslationPostForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)
         super(TranslationPostForm, self).__init__(*args, **kwargs)
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        category = cleaned_data.get('category')
+        second_category = cleaned_data.get('second_category')
+        
+        if category and second_category and category == second_category:
+            raise forms.ValidationError("لا يمكن اختيار نفس التصنيف مرتين.")
+        
+        return cleaned_data
     
     def save(self, commit=True):
         instance = super().save(commit=False)
@@ -129,7 +279,29 @@ class TranslationPostForm(forms.ModelForm):
             instance.translator = f"{self.user.first_name} {self.user.last_name}".strip() or self.user.username
         
         if commit:
+            # Save the instance first to get an ID
             instance.save()
+            self.save_m2m()  # This will save the many-to-many relationships
+            
+            # Now add categories after the instance has been saved
+            category = self.cleaned_data.get('category')
+            second_category = self.cleaned_data.get('second_category')
+            
+            # Clear existing categories first
+            instance.categories.clear()
+            
+            if category:
+                instance.categories.add(category)
+            if second_category and second_category != category:
+                instance.categories.add(second_category)
+            
+            # Generate meaningful ID after categories are added
+            if not instance.meaningful_id and instance.categories.exists():
+                meaningful_id = instance.generate_meaningful_id()
+                if meaningful_id:
+                    instance.meaningful_id = meaningful_id
+                    instance.save(update_fields=['meaningful_id'])
+        
         return instance
 
 class CustomLoginForm(AuthenticationForm):
@@ -157,7 +329,7 @@ class ModifyMainCategoryForm(forms.Form):
     main_category = forms.ModelChoiceField(
         queryset=Category.objects.all(),
         label='اختر تصنيفًا رئيسيًا',
-        widget=forms.Select(attrs={'class': 'form-control'})
+        widget=GroupedCategoryWidget(attrs={'class': 'form-control'})
     )
     
 
@@ -188,9 +360,23 @@ class KeywordTranslationForm(forms.ModelForm):
         fields = ['category', 'english_keyword', 'arabic_translation']
 
         labels = {
-            'category': 'التصنيف',  # Add a label for 'category'
+            'category': 'التصنيف',
             "english_keyword": "بالإنجليزية", 
             "arabic_translation": "بالعربية", 
+        }
+        widgets = {
+            'category': forms.Select(attrs={
+                'class': 'form-control',
+                'placeholder': 'اختر التصنيف'
+            }),
+            'english_keyword': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'أدخل المصطلح بالإنجليزية'
+            }),
+            'arabic_translation': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'أدخل الترجمة بالعربية'
+            }),
         }
 
 class CommentForm(forms.ModelForm):

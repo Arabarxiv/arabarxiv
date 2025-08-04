@@ -79,6 +79,7 @@
         font-size: 2.5em;
         margin-bottom: 15px;
         font-weight: bold;
+        color: #e8f5e8;
     }
     
     .public-profile-header p {
@@ -210,11 +211,11 @@
                                                 <span class="badge badge-warning">قيد الإنتظار</span>
                                             {% endif %}
                                         </td>
-                                        <td><span class="badge badge-info">{{ post.get_view_count }}</span></td>
+                                        <td><span class="badge badge-info">{{ post.get_total_view_count }}</span></td>
                                         <td><span class="badge badge-secondary">{{ post.get_comment_count }}</span></td>
                                         <td class="actions-column">
                                             <div class="btn-group" role="group">
-                                                <a href="{% url 'post_detail' post.id %}" class="btn btn-info btn-sm">
+                                                <a href="{% url 'post_detail_by_meaningful_id' post.meaningful_id %}" class="btn btn-info btn-sm">
                                                     <i class="fas fa-info-circle"></i> المزيد من المعلومات
                                                 </a>
                                                 {% if is_own_profile %}
@@ -240,61 +241,6 @@
                 </div>
             </div>
 
-    <!-- Reviewed Posts Card -->
-    {% if reviewed_posts %}
-    <div class="card mt-4">
-        <div class="card-body">
-            <h2 class="card-title">المشاركات التي تمت مراجعتها</h2>
-            <table class="table table-bordered">
-                <thead>
-                    <tr>
-                        <th>العنوان</th>
-                        <th>المؤلف</th>
-                        <th>النوع</th>
-                        <th>تاريخ المراجعة</th>
-                        <th>الحالة</th>
-                        <th>المشاهدات</th>
-                        <th>التعليقات</th>
-                        <th class="actions-column">الإجراءات</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for post in reviewed_posts %}
-                        <tr>
-                            <td><strong>{{ post.title }}</strong></td>
-                            <td>{{ post.author.username }}</td>
-                            <td>
-                                {% if post.is_translation %}
-                                    <span class="badge badge-warning">مترجم</span>
-                                {% else %}
-                                    <span class="badge badge-primary">أصلي</span>
-                                {% endif %}
-                            </td>
-                            <td>{{ post.updated_at|date:"F j, Y" }} {{ post.updated_at|time:"g:i A" }}</td>
-                            <td>
-                                {% if post.status == "Approved" %}
-                                    <span class="badge badge-success">تم الموافقة</span>
-                                {% elif post.status == "Rejected" %}
-                                    <span class="badge badge-danger">لم يتم الموافقة</span>
-                                {% else %}
-                                    <span class="badge badge-warning">قيد الإنتظار</span>
-                                {% endif %}
-                            </td>
-                            <td><span class="badge badge-info">{{ post.get_view_count }}</span></td>
-                            <td><span class="badge badge-secondary">{{ post.get_comment_count }}</span></td>
-                            <td class="actions-column">
-                                <div class="btn-group" role="group">
-                                    <a href="{% url 'post_detail' post.id %}" class="btn btn-info btn-sm">
-                                        <i class="fas fa-info-circle"></i> المزيد من المعلومات
-                                    </a>
-                                </div>
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-    {% endif %}
+
 </div>
 {% endblock %} 

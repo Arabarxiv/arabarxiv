@@ -19,7 +19,7 @@
                     <div class="card mb-3">
                         <div class="card-body">
                             <h6>المشاركة:</h6>
-                            <p><a href="{% url 'post_detail' post.id %}">{{ post.title }}</a></p>
+                            <p><a href="{% url 'post_detail_by_meaningful_id' post.meaningful_id %}">{{ post.title }}</a></p>
                             
                             <h6>التعليق:</h6>
                             <p class="text-muted">{{ comment.content }}</p>
@@ -36,7 +36,7 @@
                         {% csrf_token %}
                         <div class="text-center">
                             <button type="submit" class="btn btn-danger">تأكيد الحذف</button>
-                            <a href="{% url 'post_detail' post.id %}" class="btn btn-secondary">إلغاء</a>
+                            <a href="{% url 'post_detail_by_meaningful_id' post.meaningful_id %}" class="btn btn-secondary">إلغاء</a>
                         </div>
                     </form>
                 </div>

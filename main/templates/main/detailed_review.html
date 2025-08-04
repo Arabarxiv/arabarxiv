@@ -160,10 +160,17 @@
                 <!-- معلومات المشاركة -->
                 <div class="post-info">
                     <h3 style="word-wrap: break-word; overflow-wrap: break-word; max-width: 100%; overflow: hidden;">{{ post.title }}</h3>
+                    <p><strong>الرقم المعرفي:</strong> {{ post.get_meaningful_id_display }}</p>
                     <div class="row">
                         <div class="col-md-6">
                             <p><strong>المؤلفون:</strong> {{ post.authors }}</p>
-                            <p><strong>التصنيف:</strong> {{ post.category.name }}</p>
+                            <p><strong>التصنيف:</strong> 
+                    {% for category in post.categories.all %}
+                        {{ category.name }}{% if not forloop.last %}, {% endif %}
+                    {% empty %}
+                        غير محدد
+                    {% endfor %}
+                </p>
                             <p><strong>الكلمات المفتاحية:</strong> {{ post.keywords }}</p>
                             {% if post.external_doi %}
                                 <p><strong>DOI:</strong> {{ post.external_doi }}</p>
@@ -253,8 +260,11 @@
                                 <select class="form-control" id="status" name="review_status" required>
                                     <option value="">اختر حالة المراجعة</option>
                                     <option value="approved">تمت الموافقة عليها</option>
-                                    <option value="rejected">تم رفضها</option>
+                                    <option value="rejected">تم رفضها نهائياً</option>
                                 </select>
+                                <small class="form-text text-muted">
+                                    <strong>ملاحظة:</strong> يمكنك رفض المقال لإعادة تعيينه من صفحة قائمة المراجعات
+                                </small>
                             </div>
                             
                             <div class="form-group">
@@ -274,6 +284,8 @@
                                 <a href="{% url 'review' %}" class="btn btn-back text-white">إلغاء</a>
                             </div>
                         </form>
+                    </div>
+                </div>
                     </div>
                 </div>
             </div>

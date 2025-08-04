@@ -60,7 +60,7 @@ figure, header, nav, section, article, aside, footer, figcaption {
 /* Posts highlight styling for the most important navigation item */
 .posts-highlight {
   background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%) !important;
-  color: #000 !important;
+  color: white !important;
   font-weight: 700 !important;
   padding: 12px 20px !important;
   border-radius: 25px !important;
@@ -84,7 +84,7 @@ figure, header, nav, section, article, aside, footer, figcaption {
 
 .posts-highlight:hover {
   background: linear-gradient(135deg, #00ff99 0%, #00dd77 100%) !important;
-  color: #000 !important;
+  color: white !important;
   transform: translateY(-2px) !important;
   box-shadow: 0 6px 20px rgba(0, 255, 136, 0.6) !important;
   text-decoration: none !important;
@@ -1574,17 +1574,14 @@ Contact Style
 }
 
 .contact-us:before {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  z-index: -1;
-  width: 65%;
-  height: 100%;
-  background-color: #f1f0fe;
-  content: '';
-  border-top-right-radius: 500px;
-  border-bottom-right-radius: 500px;
+  display: none !important;
+  background: none !important;
+  content: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  width: 0 !important;
+  height: 0 !important;
+  position: static !important;
 }
 
 
@@ -2143,7 +2140,7 @@ body {
     margin-right: 0px;
   }
   .contact-us .special-offer {
-    background-color: #f1f0fe;
+    background-color: transparent;
     margin-bottom: 60px;
     padding: 34px 30px 34px 100px;
     width: 100%;

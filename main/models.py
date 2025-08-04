@@ -298,18 +298,26 @@ class Post(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
-    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='posts', null=True, blank=True)
+    categories = models.ManyToManyField(Category, related_name='posts', blank=True, verbose_name='التصنيفات')
     pdf = models.FileField(upload_to='pdfs')
     #pdf = models.FileField(upload_to='pdfs', storage=gd_storage, null=True, blank=True)
-
 
     keywords = models.CharField(max_length=200)  # Keywords for the post
     external_doi = models.CharField(max_length=100, blank=True)  # External DOI (can be blank)
     
+    # Custom meaningful ID
+    meaningful_id = models.CharField(max_length=50, unique=True, blank=True, null=True, verbose_name='الرقم المعرفي')
+    
 
     # Moderation
     # New fields
-    status = models.CharField(max_length=20, default='Pending')
+    STATUS_CHOICES = [
+        ('Pending', 'قيد الانتظار'),
+        ('Approved', 'تمت الموافقة'),
+        ('Rejected', 'مرفوض'),
+        ('Rejected_For_Reassignment', 'مرفوض لإعادة التعيين'),
+    ]
+    status = models.CharField(max_length=30, choices=STATUS_CHOICES, default='Pending')
     is_approved = models.BooleanField(default=False)
     reviewer_comments = models.TextField(blank=True)  # Comments sent to author via email
     admin_comments = models.TextField(blank=True)     # Private comments only visible to admins
@@ -332,11 +340,76 @@ class Post(models.Model):
     def get_comment_count(self):
         """Return the number of comments for this post"""
         return self.comments.count()
+    
+    def get_pdf_view_count(self):
+        """Return the number of unique PDF views for this post"""
+        return self.pdf_views.count()
+    
+    def get_total_view_count(self):
+        """Return the total view count including both post views and PDF views"""
+        return self.views.count() + self.pdf_views.count()
+    
+    def add_pdf_view(self, user):
+        """Add a PDF view for this post by a user, but only if they haven't viewed the post details"""
+        if user.is_authenticated:
+            # Check if user has already viewed the post details
+            has_viewed_post = self.views.filter(user=user).exists()
+            # Check if user has already viewed the PDF
+            has_viewed_pdf = self.pdf_views.filter(user=user).exists()
+            
+            # Only add PDF view if user hasn't viewed the PDF before
+            if not has_viewed_pdf:
+                PostPdfView.objects.get_or_create(post=self, user=user)
+                return True
+        return False
 
+    def generate_meaningful_id(self):
+        """Generate a meaningful ID based on the primary category"""
+        if self.categories.exists():
+            # Get the first category (primary category)
+            primary_category = self.categories.first()
+            main_category = primary_category.main_category
+            
+            # Count posts in this category to get the sequence number
+            category_posts_count = Post.objects.filter(
+                categories=primary_category
+            ).count()
+            
+            # Format: main_category_id.sub_category_id.sequence_number
+            meaningful_id = f"{main_category.id}.{primary_category.id}.{category_posts_count + 1}"
+            return meaningful_id
+        return None
+    
+    def regenerate_meaningful_id(self):
+        """Regenerate meaningful ID based on current categories"""
+        if self.categories.exists():
+            meaningful_id = self.generate_meaningful_id()
+            if meaningful_id:
+                self.meaningful_id = meaningful_id
+                self.save(update_fields=['meaningful_id'])
+                return meaningful_id
+        else:
+            # Clear meaningful ID if no categories
+            self.meaningful_id = None
+            self.save(update_fields=['meaningful_id'])
+        return None
+    
+    def get_meaningful_id_display(self):
+        """Get a human-readable version of the meaningful ID"""
+        if self.meaningful_id:
+            parts = self.meaningful_id.split('.')
+            if len(parts) == 3:
+                main_cat_id, sub_cat_id, seq_num = parts
+                try:
+                    main_category = MainCategory.objects.get(id=main_cat_id)
+                    sub_category = Category.objects.get(id=sub_cat_id)
+                    return f"{main_category.name} - {sub_category.name} - {seq_num}"
+                except (MainCategory.DoesNotExist, Category.DoesNotExist):
+                    return self.meaningful_id
+        return self.meaningful_id or f"ID-{self.id}"
+    
     def save(self, *args, **kwargs):
-        if not self.category:
-            category, created = Category.objects.get_or_create(name='الذكاء الاصطناعي')
-            self.category = category
+        # Save the post normally - meaningful ID generation is handled in forms
         super(Post, self).save(*args, **kwargs)
 
 class TranslationPost(Post):
@@ -346,14 +419,32 @@ class TranslationPost(Post):
         verbose_name_plural = 'المشاركات المترجمة'
 
 class KeywordTranslation(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'قيد المراجعة'),
+        ('approved', 'تمت الموافقة'),
+        ('rejected', 'مرفوض'),
+    ]
+    
     english_keyword = models.CharField(max_length=200)
     arabic_translation = models.CharField(max_length=200)
     category = models.ForeignKey(MainCategory, on_delete=models.CASCADE)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='approved', verbose_name='الحالة')
+    submitted_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, verbose_name='تم الإرسال بواسطة')
+    submitted_at = models.DateTimeField(auto_now_add=True, verbose_name='تاريخ الإرسال')
+    
     class Meta:
         verbose_name = 'ترجمة مصطلح'
         verbose_name_plural = 'ترجمات المصطلحات'
+        ordering = ['-submitted_at']
+    
     def __str__(self):
-        return self.english_keyword
+        return f'{self.english_keyword} - {self.arabic_translation}'
+    
+    def save(self, *args, **kwargs):
+        # Set default status for existing records
+        if not self.pk and not self.status:
+            self.status = 'approved'
+        super().save(*args, **kwargs)
 
 class ReviewerRequest(models.Model):
     STATUS_CHOICES = [
@@ -410,6 +501,21 @@ class PostView(models.Model):
     
     def __str__(self):
         return f'مشاهدة من {self.user.username} لـ {self.post.title}'
+
+
+class PostPdfView(models.Model):
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='pdf_views')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='post_pdf_views')
+    viewed_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        verbose_name = 'مشاهدة PDF مشاركة'
+        verbose_name_plural = 'مشاهدات PDF المشاركات'
+        unique_together = ['post', 'user']  # Ensures one PDF view per user per post
+        ordering = ['-viewed_at']
+    
+    def __str__(self):
+        return f'مشاهدة PDF من {self.user.username} لـ {self.post.title}'
 
 class NewsletterSubscriber(models.Model):
     email = models.EmailField(unique=True, verbose_name='البريد الإلكتروني')

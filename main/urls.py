@@ -37,9 +37,12 @@ urlpatterns = [
     path('post/request-re-review/<int:post_id>/', views.request_re_review, name='request_re_review'),
     path('get-categories/', views.get_categories, name='get_categories'),
     path('get-users/', views.get_users, name='get_users'),
+    path('get-moderators/', views.get_moderators, name='get_moderators'),
 
     path('reviewer-request-status/', views.check_reviewer_request_status, name='reviewer_request_status'),
+    path('post/<str:meaningful_id>/', views.post_detail_by_meaningful_id, name='post_detail_by_meaningful_id'),
     path('post/<int:post_id>/', views.post_detail, name='post_detail'),
+    path('post/<int:post_id>/download-pdf/', views.download_pdf, name='download_pdf'),
     path('comment/edit/<int:comment_id>/', views.edit_comment, name='edit_comment'),
     path('comment/delete/<int:comment_id>/', views.delete_comment, name='delete_comment'),
     path('author/<str:author_name>/', views.find_user_by_name, name='find_user_by_name'),

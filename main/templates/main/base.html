@@ -19,6 +19,255 @@
     <link rel="stylesheet" href="{% static 'assets/css/animate.css' %}">
     <link rel="stylesheet"href="https://unpkg.com/swiper@7/swiper-bundle.min.css"/>
         <!-- Include Bootstrap CSS and JavaScript -->
+    
+    <style>
+                                   /* Custom styles for the new navigation layout */
+          .header-area {
+              position: relative;
+          }
+          
+          .main-nav {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              width: 100%;
+              position: relative;
+          }
+        
+        .nav-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .username {
+            color: white;
+            font-weight: 600;
+            font-size: 1.1rem;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px 16px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+            text-decoration: none;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: fit-content;
+            line-height: 1;
+        }
+        
+        .username:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-1px);
+            color: white;
+            text-decoration: none;
+        }
+        
+                 .main-nav .nav {
+             display: flex;
+             align-items: center;
+             margin: 0;
+             padding: 0;
+             list-style: none;
+             position: absolute;
+             left: 50%;
+             transform: translateX(-50%);
+             gap: 30px;
+         }
+        
+        .user-section {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .user-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 16px;
+            border-radius: 12px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            min-width: 80px;
+            position: relative;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .user-btn i {
+            font-size: 1.2rem;
+            margin-bottom: 4px;
+        }
+        
+        .user-btn span {
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-align: center;
+            line-height: 1.2;
+        }
+        
+        .user-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+
+        
+        /* Reviewer request button - blue theme */
+        .reviewer-btn {
+            background: linear-gradient(135deg, rgba(23, 162, 184, 0.8) 0%, rgba(17, 122, 139, 0.8) 100%);
+            color: white;
+        }
+        
+        .reviewer-btn:hover {
+            background: linear-gradient(135deg, rgba(23, 162, 184, 1) 0%, rgba(17, 122, 139, 1) 100%);
+            color: white;
+        }
+        
+                 /* Logout button - same glass-morphism style as username */
+         .logout-btn {
+             background: rgba(255, 255, 255, 0.1);
+             color: white;
+             backdrop-filter: blur(10px);
+             border: 1px solid rgba(255, 255, 255, 0.2);
+         }
+         
+         .logout-btn:hover {
+             background: rgba(255, 255, 255, 0.2);
+             color: white;
+         }
+        
+        /* Login button - elegant theme */
+        .login-btn {
+            background: linear-gradient(135deg, rgba(0, 81, 9, 0.8) 0%, rgba(0, 61, 7, 0.8) 100%);
+            color: white;
+        }
+        
+        .login-btn:hover {
+            background: linear-gradient(135deg, rgba(0, 81, 9, 1) 0%, rgba(0, 61, 7, 1) 100%);
+            color: white;
+        }
+        
+                                                                                                                                               /* Logout button positioned on the far left */
+            .logout-left {
+                position: absolute;
+                left: 20px;
+                top: 50%;
+                transform: translateY(-50%);
+                z-index: 1000;
+            }
+            
+            /* Username positioned next to logout button */
+            .username-left {
+                position: absolute;
+                left: 140px;
+                top: 50%;
+                transform: translateY(-50%);
+                z-index: 1000;
+            }
+        
+        .notification-indicator {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 8px;
+            height: 8px;
+            background-color: #ff4444;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.2);
+                opacity: 0.7;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+        
+                 @media (max-width: 768px) {
+             .nav-left {
+                 gap: 10px;
+             }
+             
+             .main-nav .nav {
+                 position: static;
+                 transform: none;
+                 gap: 15px;
+                 flex-wrap: wrap;
+                 justify-content: center;
+             }
+            
+            .username {
+                font-size: 0.9rem;
+                padding: 6px 12px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                line-height: 1;
+            }
+            
+            .user-section {
+                gap: 8px;
+            }
+            
+            .user-btn {
+                padding: 8px 12px;
+                min-width: 60px;
+            }
+            
+            .user-btn i {
+                font-size: 1rem;
+            }
+            
+            .user-btn span {
+                font-size: 0.7rem;
+            }
+            
+                                                   .logout-left {
+                  left: 0;
+                  padding: 6px 10px;
+                  min-width: 50px;
+              }
+              
+              .logout-left i {
+                  font-size: 0.9rem;
+              }
+              
+              .logout-left span {
+                  font-size: 0.6rem;
+              }
+              
+                             .username-left {
+                   left: 85px;
+                   font-size: 0.9rem;
+                   padding: 6px 12px;
+               }
+        }
+        
+        @media (max-width: 480px) {
+            .user-section {
+                flex-direction: column;
+                gap: 6px;
+            }
+            
+            .user-btn {
+                min-width: 70px;
+            }
+        }
+    </style>
  
 </head>
 <body>
@@ -33,67 +282,84 @@
     </div>
   </div>
   <!-- ***** Header Area Start ***** -->
-  <header class="header-area header-sticky background-header">
-    <div class="container">
-        <div class="row">
-            <div class="col-12">
-                
-    <nav class="main-nav">
-      <a href="/home" class="logo">
-        <h1>أرشيف العرب </h1>
-    </a>
-    
-    <ul class="nav">
-      <li class="nav-item"><a class="nav-link posts-highlight" href="/posts">قائمة المشاركات</a></li>
-      <li class="nav-item"><a class="nav-link" href="/newsletter/signup">اشتراك في النشرة</a></li>
-      <li class="nav-item"><a class="nav-link" href="/terms">قاموس المصطلحات</a></li>
-      <li class="nav-item dropdown">
-        <a class="nav-link dropdown-toggle" href="#" id="submitPostDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-            حول المشاركة
-        </a>
-        <div class="dropdown-menu" aria-labelledby="submitPostDropdown" style="background-color:black;text-align:right;color:white">
-          <a class="dropdown-item" href="/author_guidelines">دليل المؤلف</a>
-          <a class="dropdown-item" href="/bibtex">تحويل BibTeX</a>
-            <a class="dropdown-item" href="/create-post">تقديم منشور أصلي</a>
-            <a class="dropdown-item" href="/create-translation-post">تقديم ترجمة</a>
+     <header class="header-area header-sticky background-header">
+     <div class="container">
+         <div class="row">
+             <div class="col-12">
+                 
+                 <!-- Logout button and username positioned outside navigation -->
+                 {% if user.is_authenticated %}
+                 <a href="/logout" class="user-btn logout-btn logout-left">
+                   <i class="fas fa-sign-out-alt"></i>
+                   <span>تسجيل الخروج</span>
+                 </a>
+                 
+                 <a href="/user_profile" class="username username-left">
+                   {{ user.username }}
+                   {% if not user.is_superuser and not user.userprofile.completed %}
+                     <span class="notification-indicator"></span>
+                   {% endif %}
+                 </a>
+                 {% endif %}
+                 
+          <nav class="main-nav">
+       <div class="nav-left">
+          <a href="/home" class="logo">
+            <h1>أرشيف العرب </h1>
+          </a>
         </div>
-      </li>
       
-      {% if user.is_authenticated %}
-      <li class="nav-item dropdown">
-        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-            تم تسجيل الدخول كـ  <b>{{ user.username }}</b>
-            {% if not user.is_superuser and not user.userprofile.completed or has_reviews %}
-                <span class="notification-indicator"></span>
-            {% endif %}
-        </a>
-        <div class="dropdown-menu" aria-labelledby="userDropdown" style="background-color:black;text-align:right;">
-            <a class="dropdown-item" href="/user_profile">صفحة الملف الشخصي 
-              {% if not user.is_superuser and not user.userprofile.completed %}
-              <span class="notification-indicator"></span>
-              {% endif %}
-           </a>
-            <a class="dropdown-item" href="/review">صفحة مراجعة المهام 
-              {% if has_reviews %}
-                <span class="notification-indicator"></span>
-            {% endif %}
+             <ul class="nav">
+         <li class="nav-item"><a class="nav-link" href="/posts">قائمة المشاركات</a></li>
+         <li class="nav-item"><a class="nav-link" href="/newsletter/signup">اشتراك في النشرة</a></li>
+         <li class="nav-item"><a class="nav-link" href="/terms">قاموس المصطلحات</a></li>
+                   <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="submitPostDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                تقديم منشور
             </a>
-            {% if not user.is_staff and not user.is_superuser and not user.groups.all %}
-            <a class="dropdown-item" href="/become_reviewer">طلب أن تصبح مراجعًا</a>
-            {% endif %}
-            <div class="dropdown-divider"></div>
-            <a class="dropdown-item" href="logout">تسجيل الخروج</a>
-        </div>
-      </li>
-    {% else %}
-    <li class="nav-item">
-        <a class="nav-link" href="/login">تسجيل الدخول</a>
-    </li>
-      {% endif %}
-  </ul> 
-  <a class='menu-trigger'>
-    <span>قائمة</span>
-</a>  
+           <div class="dropdown-menu" aria-labelledby="submitPostDropdown" style="background-color:black;text-align:right;color:white">
+             <a class="dropdown-item" href="/author_guidelines">دليل المؤلف</a>
+             <a class="dropdown-item" href="/bibtex">تحويل BibTeX</a>
+               <a class="dropdown-item" href="/create-post">تقديم منشور أصلي</a>
+               <a class="dropdown-item" href="/create-translation-post">تقديم ترجمة</a>
+           </div>
+         </li>
+         {% if user.is_authenticated %}
+         <li class="nav-item">
+           <a class="nav-link" href="/review">
+             مراجعة المهام
+             {% if has_reviews %}
+               <span class="notification-indicator"></span>
+             {% endif %}
+           </a>
+         </li>
+         {% endif %}
+       </ul> 
+      
+             <!-- User section on the right -->
+       <div class="user-section">
+         {% if user.is_authenticated %}
+           {% if not user.is_staff and not user.is_superuser and not user.groups.all %}
+           <a href="/become_reviewer" class="user-btn reviewer-btn">
+             <i class="fas fa-user-plus"></i>
+             <span>طلب مراجع</span>
+           </a>
+           {% endif %}
+           
+           
+           
+           
+         {% else %}
+           <a href="/login" class="user-btn login-btn">
+             <i class="fas fa-sign-in-alt"></i>
+             <span>تسجيل الدخول</span>
+           </a>
+         {% endif %}
+       </div>
+      
+      <a class='menu-trigger'>
+        <span>قائمة</span>
+      </a>  
     </nav>
             </div>
         </div>

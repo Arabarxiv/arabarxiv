@@ -88,16 +88,19 @@ class UserProfileAdmin(admin.ModelAdmin):
 
 @admin.register(Post)
 class PostAdmin(admin.ModelAdmin):
-    list_display = ['title', 'author', 'status', 'is_approved', 'created_at']
+    list_display = ['meaningful_id', 'title', 'author', 'status', 'is_approved', 'created_at']
     list_filter = ['status', 'is_approved', 'created_at']
-    search_fields = ['title', 'author__username']
+    search_fields = ['title', 'author__username', 'meaningful_id']
+    readonly_fields = ['meaningful_id']
     verbose_name = 'مشاركة'
     verbose_name_plural = 'المشاركات'
 
 @admin.register(TranslationPost)
 class TranslationPostAdmin(admin.ModelAdmin):
-    list_display = ['title', 'author', 'translator', 'status', 'is_approved']
+    list_display = ['meaningful_id', 'title', 'author', 'translator', 'status', 'is_approved']
     list_filter = ['status', 'is_approved']
+    search_fields = ['title', 'author__username', 'meaningful_id']
+    readonly_fields = ['meaningful_id']
     verbose_name = 'مشاركة مترجمة'
     verbose_name_plural = 'المشاركات المترجمة'
 
@@ -116,11 +119,23 @@ class MainCategoryAdmin(admin.ModelAdmin):
 
 @admin.register(KeywordTranslation)
 class KeywordTranslationAdmin(admin.ModelAdmin):
-    list_display = ['english_keyword', 'arabic_translation', 'category']
-    list_filter = ['category']
+    list_display = ['english_keyword', 'arabic_translation', 'category', 'status', 'submitted_by', 'submitted_at']
+    list_filter = ['category', 'status', 'submitted_at']
     search_fields = ['english_keyword', 'arabic_translation']
+    readonly_fields = ['submitted_at']
+    actions = ['approve_terms', 'reject_terms']
     verbose_name = 'ترجمة مصطلح'
     verbose_name_plural = 'ترجمات المصطلحات'
+    
+    def approve_terms(self, request, queryset):
+        updated = queryset.update(status='approved')
+        self.message_user(request, f'تمت الموافقة على {updated} مصطلح.')
+    approve_terms.short_description = "الموافقة على المصطلحات المحددة"
+    
+    def reject_terms(self, request, queryset):
+        updated = queryset.update(status='rejected')
+        self.message_user(request, f'تم رفض {updated} مصطلح.')
+    reject_terms.short_description = "رفض المصطلحات المحددة"
 
 @admin.register(Comment)
 class CommentAdmin(admin.ModelAdmin):

@@ -98,6 +98,23 @@
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
 }
 
+/* Button group styling */
+.button-group {
+    display: flex;
+    gap: 25px;
+    flex-wrap: wrap;
+}
+
+.categories-btn {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.25);
+}
+
+.categories-btn:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: translateX(-5px);
+}
+
 .encouragement-btn i {
     transition: transform 0.3s ease;
 }
@@ -270,10 +287,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="encouragement-content">
                         <h4>اكتشف كنوز المعرفة العربية!</h4>
                         <p>تصفح مجموعتنا المتنوعة من المشاركات الأكاديمية والترجمات المميزة. اكتشف أبحاثًا جديدة، ترجمات قيمة، ومحتوى علمي عالي الجودة من باحثين عرب موهوبين.</p>
-                        <a href="/posts" class="encouragement-btn">
-                            <i class="fas fa-arrow-left"></i>
-                            تصفح جميع المشاركات
-                        </a>
+                        <div class="button-group">
+                            <a href="/categories" class="encouragement-btn categories-btn">
+                                <i class="fas fa-th-large"></i>
+                                تصفح تصنيفاتنا
+                            </a>
+                            <a href="/posts" class="encouragement-btn">
+                                <i class="fas fa-arrow-left"></i>
+                                تصفح جميع المشاركات
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>

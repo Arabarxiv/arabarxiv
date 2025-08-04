@@ -7,7 +7,7 @@
 {% block content %}
 <style>
     .post-detail-container {
-        max-width: 800px;
+        max-width: 1200px;
         margin: 0 auto;
         padding: 20px;
         overflow-x: hidden;
@@ -36,6 +36,7 @@
         overflow-wrap: break-word;
         max-width: 100%;
         overflow-x: hidden;
+        color: #e8f5e8;
     }
     
     .post-meta {
@@ -62,9 +63,13 @@
     }
     
     .post-description {
+        background: #e9ecef;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        border: 1px solid #dee2e6;
         font-size: 1.2em;
         line-height: 1.8;
-        margin-bottom: 25px;
         text-align: justify;
         word-wrap: break-word;
         overflow-wrap: break-word;
@@ -74,7 +79,7 @@
     }
     
     .post-info {
-        background: #e9ecef;
+        background: white;
         padding: 20px;
         border-radius: 8px;
         margin-bottom: 20px;
@@ -291,6 +296,9 @@
         <h1 class="post-title">{{ post.title }}</h1>
         <div class="post-meta">
             <p>تاريخ النشر: {{ post.created_at|date:"d/m/Y" }}</p>
+            {% if post.status == "Approved" %}
+                <p>تاريخ الموافقة: {{ post.updated_at|date:"d/m/Y" }}</p>
+            {% endif %}
             {% if post.is_translation %}
                 <p>نوع المشاركة: مترجمة</p>
             {% else %}
@@ -309,10 +317,6 @@
     </div>
     
     <div class="post-content">
-        <div class="post-description">
-            {{ post.description }}
-        </div>
-        
         <div class="post-info">
             <h5>معلومات المشاركة</h5>
             {% if post.translator %}
@@ -359,11 +363,18 @@
                 </p>
             {% endif %}
             
-            <p><strong>التصنيف:</strong> {{ post.category }}</p>
+                            
+            <p><strong>التصنيف:</strong> 
+                {% for category in post.categories.all %}
+                    {{ category.name }}{% if not forloop.last %}, {% endif %}
+                {% empty %}
+                    غير محدد
+                {% endfor %}
+            </p>
             <p><strong>الكلمات المفتاحية:</strong> {{ post.keywords }}</p>
             <p><strong>المشاهدات:</strong> 
                 <img src="{% static 'assets/images/view.png' %}" alt="مشاهدات" style="width: 16px; height: 16px; margin-left: 5px; vertical-align: middle;">
-                {{ post.get_view_count }} مشاهدة
+                {{ post.get_total_view_count }} مشاهدة
                 &nbsp;&nbsp;&nbsp;
                 <strong>التعليقات:</strong> 
                 <i class="fas fa-comments" style="color: #28a745; margin-left: 5px;"></i>
@@ -379,13 +390,19 @@
                     <a href="{% url 'find_user_by_name' author_name=post.final_reviewer.username %}" class="author-link">{{ post.final_reviewer.username }}</a>
                 </p>
             {% endif %}
-            
-            {% if post.pdf %}
-                <a href="{{ post.pdf.url }}" target="_blank" class="pdf-link">
-                    <i class="fas fa-file-pdf"></i> تصفح الملف PDF
-                </a>
-            {% endif %}
         </div>
+        
+        <div class="post-description">
+            {{ post.description }}
+        </div>
+        
+               {% if post.pdf %}
+           <div style="text-align: center; margin-top: 20px;">
+               <a href="{% url 'download_pdf' post.id %}" target="_blank" class="pdf-link">
+                   <i class="fas fa-file-pdf"></i> تصفح الملف PDF
+               </a>
+           </div>
+       {% endif %}
     </div>
     
     <div class="comments-section">

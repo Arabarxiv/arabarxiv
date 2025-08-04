@@ -14,7 +14,7 @@
                 <div class="card-body">
                     <p class="text-muted mb-3">
                         <strong>المشاركة:</strong> 
-                        <a href="{% url 'post_detail' post.id %}">{{ post.title }}</a>
+                        <a href="{% url 'post_detail_by_meaningful_id' post.meaningful_id %}">{{ post.title }}</a>
                     </p>
                     
                     <form method="post">
@@ -23,7 +23,7 @@
                         
                         <div class="text-center mt-4">
                             <button type="submit" class="btn btn-primary">حفظ التعديلات</button>
-                            <a href="{% url 'post_detail' post.id %}" class="btn btn-secondary">إلغاء</a>
+                            <a href="{% url 'post_detail_by_meaningful_id' post.meaningful_id %}" class="btn btn-secondary">إلغاء</a>
                         </div>
                     </form>
                 </div>

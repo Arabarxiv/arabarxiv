@@ -12,12 +12,26 @@ def has_group(user, group_name):
 
 @register.filter
 def count_approved_posts_in_category(posts, category):
-    return sum(1 for post in posts if post.status == "Approved" and post.category.main_category.id == category.id)
+    return sum(1 for post in posts if post.status == "Approved" and any(cat.main_category.id == category.id for cat in post.categories.all()))
 
 @register.filter(name='add_class')
 def add_class(field, css_class):
     """Add CSS class to a form field"""
-    return field.as_widget(attrs={"class": css_class})
+    # Get existing attrs and merge with new class
+    existing_attrs = getattr(field.field.widget, 'attrs', {}).copy()
+    existing_class = existing_attrs.get('class', '')
+    
+    # Combine existing classes with new class
+    if existing_class:
+        new_class = f"{existing_class} {css_class}"
+    else:
+        new_class = css_class
+    
+    # Update attrs with new class
+    existing_attrs['class'] = new_class
+    
+    # Return the field with updated attrs
+    return field.as_widget(attrs=existing_attrs)
 
 @register.filter(name='split')
 def split_string(value, key):

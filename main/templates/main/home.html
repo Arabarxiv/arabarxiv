@@ -61,14 +61,22 @@
 }
 
 .card-header h5 a {
-    color: #2c3e50;
-    text-decoration: none;
-    transition: color 0.3s ease;
+    color: #005109;
+    text-decoration: underline;
+    text-decoration-color: #005109;
+    text-decoration-thickness: 2px;
+    transition: all 0.3s ease;
+    font-weight: 600;
+    position: relative;
+    cursor: pointer;
 }
 
 .card-header h5 a:hover {
-    color: #005109;
+    color: #003d07;
+    transform: translateY(-1px);
 }
+
+
 
 .card-body {
     padding: 25px;
@@ -98,6 +106,17 @@
 .author-name, .translator-name {
     color: #6c757d;
     font-style: italic;
+}
+
+.post-reviewer {
+    margin-bottom: 10px;
+    color: #495057;
+    font-weight: 500;
+}
+
+.post-reviewer i {
+    color: #28a745;
+}
     font-weight: 400;
 }
 
@@ -749,13 +768,8 @@
                                             <span class="badge {% if post.is_translation %}badge-translated{% else %}badge-original{% endif %}">
                                                 {% if post.is_translation %}مترجم{% else %}أصلي{% endif %}
                                             </span>
-                                            <h5><a href="{% url 'post_detail' post.id %}">{{ post.title }}</a></h5>
-                                        </div>
-                                {% if post.pdf %}
-                                            <a href="{{ post.pdf.url }}" target="_blank" class="btn btn-sm btn-outline-secondary">
-                                                <i class="fas fa-file-pdf me-1"></i>PDF
-                                            </a>
-                              {% endif %} 
+                                            <h5><a href="{% url 'post_detail_by_meaningful_id' post.meaningful_id %}">{{ post.title }}</a></h5>
+                                        </div> 
                           </div>
                               
                             <div class="card-body">
@@ -794,24 +808,36 @@
                               {% endif %}
                                                 
                                                 <p class="post-keywords">
-                                                    <i class="fas fa-tag me-2"></i>التصنيف: {{ post.category }}
+                                                    <i class="fas fa-tag me-2"></i>التصنيف: 
+                                                    {% for category in post.categories.all %}
+                                                        {{ category.name }}{% if not forloop.last %}, {% endif %}
+                                                    {% empty %}
+                                                        غير محدد
+                                                    {% endfor %}
                                                 </p>
                                                               <p class="post-description" id="description-{{ post.id }}" data-full-description="{{ post.description }}">
                                   {{ post.description|truncatechars:200 }}
                                   {% if post.description|length > 200 %}
-                                      <a href="{% url 'post_detail' post.id %}" class="see-more-btn">اقرأ المزيد</a>
+                                      <a href="{% url 'post_detail_by_meaningful_id' post.meaningful_id %}" class="see-more-btn">اقرأ المزيد</a>
                                   {% endif %}
                               </p>
                                                 <p class="post-keywords">
                                                     <i class="fas fa-key me-2"></i>الكلمات المفتاحية: {{ post.keywords }}
                                                 </p>
+                                                
+                                                {% if post.final_reviewer %}
+                                                    <p class="post-reviewer">
+                                                        <i class="fas fa-user-check me-2"></i>المراجع: 
+                                                        <a href="{% url 'find_user_by_name' author_name=post.final_reviewer.username %}" class="author-link">{{ post.final_reviewer.username }}</a>
+                                                    </p>
+                                                {% endif %}
                                             </div>
                                             
                                             <div class="col-md-4">
                                                 <div class="post-views">
                                                     <div>
                                                         <img src="{% static 'assets/images/view.png' %}" alt="مشاهدات">
-                                {{ post.get_view_count }} مشاهدات
+                                {{ post.get_total_view_count }} مشاهدات
                                                     </div>
                                                     <div>
                                                         <i class="fas fa-comments"></i>
@@ -820,7 +846,7 @@
                                                 </div>
                                                 
                                 {% if post.pdf %}
-                                                    <a href="{{ post.pdf.url }}" target="_blank" class="{% if post.is_translation %}translated-file-link{% else %}original-file-link{% endif %}">
+                                                    <a href="{% url 'download_pdf' post.id %}" target="_blank" class="{% if post.is_translation %}translated-file-link{% else %}original-file-link{% endif %}">
                                                         <i class="fas fa-file-pdf"></i>
                                       تصفح الملف
                                     </a>
@@ -852,25 +878,22 @@
                       {% with approved_posts_count=posts|count_approved_posts_in_category:category %}
                       {% if approved_posts_count > 0 %}
                           {% for post in posts %}
-                            {% if post.status == "Approved" and post.category.main_category.id == category.id %}
+                            {% if post.status == "Approved" %}
+                                {% for post_category in post.categories.all %}
+                                    {% if post_category.main_category.id == category.id %}
                                         <div class="card post-card {% if post.is_translation %}translated{% else %}original{% endif %}" 
                                              data-type="{% if post.is_translation %}translated{% else %}original{% endif %}" 
                                              data-title="{{ post.title|lower }}" 
                                              data-authors="{{ post.authors|lower }}" 
                                              data-keywords="{{ post.keywords|lower }}">
                                             
-                                            <div class="card-header d-flex justify-content-between align-items-center">
-                                                <div class="d-flex align-items-center gap-3">
-                                                    <span class="badge {% if post.is_translation %}badge-translated{% else %}badge-original{% endif %}">
-                                                        {% if post.is_translation %}مترجم{% else %}أصلي{% endif %}
-                                                    </span>
-                                                    <h5><a href="{% url 'post_detail' post.id %}">{{ post.title }}</a></h5>
-                                                </div>
-                                {% if post.pdf %}
-                                                    <a href="{{ post.pdf.url }}" target="_blank" class="btn btn-sm btn-outline-secondary">
-                                                        <i class="fas fa-file-pdf me-1"></i>PDF
-                                                    </a>
-                                {% endif %} 
+                                                                                    <div class="card-header d-flex justify-content-between align-items-center">
+                                            <div class="d-flex align-items-center gap-3">
+                                                <span class="badge {% if post.is_translation %}badge-translated{% else %}badge-original{% endif %}">
+                                                    {% if post.is_translation %}مترجم{% else %}أصلي{% endif %}
+                                                </span>
+                                                <h5><a href="{% url 'post_detail_by_meaningful_id' post.meaningful_id %}">{{ post.title }}</a></h5>
+                                            </div> 
                             </div>
                                 
                               <div class="card-body">
@@ -909,24 +932,36 @@
                                 {% endif %}
                                                         
                                                         <p class="post-keywords">
-                                                            <i class="fas fa-tag me-2"></i>التصنيف: {{ post.category }}
+                                                            <i class="fas fa-tag me-2"></i>التصنيف: 
+                                                            {% for category in post.categories.all %}
+                                                                {{ category.name }}{% if not forloop.last %}, {% endif %}
+                                                            {% empty %}
+                                                                غير محدد
+                                                            {% endfor %}
                                                         </p>
                                 <p class="post-description" id="description-{{ post.id }}" data-full-description="{{ post.description }}">
                                   {{ post.description|truncatechars:200 }}
                                   {% if post.description|length > 200 %}
-                                      <a href="{% url 'post_detail' post.id %}" class="see-more-btn">اقرأ المزيد</a>
+                                      <a href="{% url 'post_detail_by_meaningful_id' post.meaningful_id %}" class="see-more-btn">اقرأ المزيد</a>
                                   {% endif %}
                               </p>
                                                         <p class="post-keywords">
                                                             <i class="fas fa-key me-2"></i>الكلمات المفتاحية: {{ post.keywords }}
                                                         </p>
+                                                        
+                                                        {% if post.final_reviewer %}
+                                                            <p class="post-reviewer">
+                                                                <i class="fas fa-user-check me-2"></i>المراجع: 
+                                                                <a href="{% url 'find_user_by_name' author_name=post.final_reviewer.username %}" class="author-link">{{ post.final_reviewer.username }}</a>
+                                                            </p>
+                                                        {% endif %}
                                                     </div>
                                                     
                                                     <div class="col-md-4">
                                                         <div class="post-views">
                                                             <div>
                                                                 <img src="{% static 'assets/images/view.png' %}" alt="مشاهدات">
-                                {{ post.get_view_count }} مشاهدات
+                                {{ post.get_total_view_count }} مشاهدات
                                                             </div>
                                                             <div>
                                                                 <i class="fas fa-comments"></i>
@@ -935,7 +970,7 @@
                                                         </div>
                                                         
                                 {% if post.pdf %}
-                                                            <a href="{{ post.pdf.url }}" target="_blank" class="{% if post.is_translation %}translated-file-link{% else %}original-file-link{% endif %}">
+                                                            <a href="{% url 'download_pdf' post.id %}" target="_blank" class="{% if post.is_translation %}translated-file-link{% else %}original-file-link{% endif %}">
                                                                 <i class="fas fa-file-pdf"></i>
                                       تصفح الملف
                                     </a>
@@ -950,8 +985,10 @@
                                                 </span>
                                             </div>
                                         </div>
-                                  {% endif %}
-                                  {% endfor %}
+                                    {% endif %}
+                                {% endfor %}
+                            {% endif %}
+                            {% endfor %}
                               {% else %}
                                 <div class="empty-state">
                                     <i class="fas fa-folder-open"></i>
@@ -977,7 +1014,7 @@
                                 <i class="fas fa-file-alt"></i>
                             </div>
                             <div class="activity-content">
-                                <h6><a href="{% url 'post_detail' post.id %}">{{ post.title|truncatechars:30 }}</a></h6>
+                                <h6><a href="{% url 'post_detail_by_meaningful_id' post.meaningful_id %}">{{ post.title|truncatechars:30 }}</a></h6>
                                 <p>{{ post.created_at|time_elapsed }}</p>
                             </div>
                         </div>
