@@ -58,7 +58,47 @@
 }
 </style>
 <div class="container">
-    <h2>نتائج البحث</h2>
+    <div class="row">
+        <div class="col-md-8">
+            <h2>نتائج البحث</h2>
+            {% if query %}
+                <p class="text-muted">البحث عن: "{{ query }}" - {{ total_results }} نتيجة</p>
+            {% endif %}
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'advanced_search' %}" class="btn btn-outline-primary">
+                <i class="fas fa-search-plus"></i> البحث المتقدم
+            </a>
+        </div>
+    </div>
+    
+    <!-- Search Filters -->
+    {% if query %}
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" action="{% url 'search' %}" class="row g-3">
+                <input type="hidden" name="searchKeyword" value="{{ query }}">
+                <div class="col-md-4">
+                    <label for="post_type" class="form-label">نوع المقال</label>
+                    <select class="form-select" id="post_type" name="post_type" onchange="this.form.submit()">
+                        <option value="all" {% if post_type == 'all' %}selected{% endif %}>الكل</option>
+                        <option value="original" {% if post_type == 'original' %}selected{% endif %}>أصلي</option>
+                        <option value="translated" {% if post_type == 'translated' %}selected{% endif %}>مترجم</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="sort_by" class="form-label">ترتيب النتائج</label>
+                    <select class="form-select" id="sort_by" name="sort_by" onchange="this.form.submit()">
+                        <option value="relevance" {% if sort_by == 'relevance' %}selected{% endif %}>حسب الأهمية</option>
+                        <option value="date" {% if sort_by == 'date' %}selected{% endif %}>حسب التاريخ</option>
+                        <option value="title" {% if sort_by == 'title' %}selected{% endif %}>حسب العنوان</option>
+                    </select>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+    
     {% if results %}
             {% for post in results %}
             <div class="card mt-2">

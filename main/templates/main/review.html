@@ -1,48 +1,10 @@
 {% extends 'main/base.html' %}
 {% load my_filters %}
-{% load static %}
 
 {% block title %}مراجعة المشاركات{% endblock %}
 
 {% block content %}
 <style>
-    /* Fix table layout issues */
-    .table {
-        table-layout: fixed;
-        width: 100%;
-    }
-    
-    .table th,
-    .table td {
-        word-wrap: break-word;
-        overflow-wrap: break-word;
-        vertical-align: top;
-    }
-    
-    /* Ensure form elements don't break table layout */
-    .form-control-sm {
-        max-width: 100%;
-    }
-    
-    /* Prevent hover effects from affecting column widths */
-    .table tbody tr:hover {
-        background-color: #f8f9fa;
-    }
-    
-    /* Ensure buttons don't cause layout shifts */
-    .btn-sm {
-        white-space: nowrap;
-    }
-    
-    /* Fix form layout within table cells */
-    .form-group {
-        margin-bottom: 0.5rem;
-    }
-    
-    /* Ensure consistent spacing */
-    .table td {
-        padding: 0.75rem;
-    }
      .alert-info {
         background-color: #b8e6bd;
         margin-top:20px; 
@@ -138,7 +100,9 @@
         white-space: nowrap;
     }
     
-    .table td:hover {
+    /* Only apply hover effect to specific content that needs it */
+    .table td:hover .reviewer-comments,
+    .table td:hover .admin-comments {
         white-space: normal;
         word-wrap: break-word;
         overflow-wrap: break-word;
@@ -151,93 +115,113 @@
         max-width: 150px;
     }
     
-         /* Specific styling for content that should wrap */
-     .table td .reviewer-comments,
-     .table td .admin-comments {
-         white-space: normal;
-         word-wrap: break-word;
-         overflow-wrap: break-word;
-         max-width: 250px;
-         overflow: hidden;
+    /* Specific styling for content that should wrap */
+    .table td .reviewer-comments,
+    .table td .admin-comments {
+        white-space: normal;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        max-width: 250px;
+        overflow: hidden;
+    }
+    
+    /* Select2 RTL Support */
+    .select2-container--default .select2-selection--single {
+        text-align: right;
+        direction: rtl;
+        border: 2px solid #28a745; /* Green border like screenshot */
+        border-radius: 5px;
+        height: 40px;
+        line-height: 1.5;
+        background-color: #fff;
+        transition: all 0.3s ease;
+    }
+    
+    .select2-container--default .select2-selection--single:hover {
+        border-color: #218838;
+        box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+    }
+    
+    .select2-container--default .select2-results__option {
+        text-align: right;
+        direction: rtl;
+        padding: 8px 12px;
+    }
+    
+    .select2-search__field {
+        text-align: right;
+        direction: rtl;
+        padding: 10px 12px;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        font-size: 14px;
+    }
+    
+    .select2-search__field:focus {
+        outline: none;
+        border-color: #28a745;
+        box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+    }
+    
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+        text-align: right;
+        direction: rtl;
+        padding: 6px 12px;
+        line-height: 40px;
+        color: #495057;
+        font-weight: 500;
+    }
+    
+    /* Ensure Select2 dropdown appears above other elements */
+    .select2-container--open {
+        z-index: 9999;
+    }
+    
+    /* Enhanced dropdown styling */
+    .select2-dropdown {
+        border: 2px solid #28a745;
+        border-radius: 5px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .select2-container--default .select2-results__option--highlighted[aria-selected] {
+        background-color: #28a745;
+        color: white;
+    }
+    
+    .select2-container--default .select2-results__option[aria-selected=true] {
+        background-color: #e8f5e8;
+        color: #28a745;
+    }
+    
+    /* Fix Bootstrap conflicts */
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 40px;
+        right: auto;
+        left: 6px;
+        width: 20px;
+    }
+    
+    .select2-container--default .select2-selection--single .select2-selection__arrow b {
+        border-color: #28a745 transparent transparent transparent;
+        border-style: solid;
+        border-width: 5px 4px 0 4px;
+        height: 0;
+        left: 50%;
+        margin-left: -4px;
+        margin-top: -2px;
+        position: absolute;
+        top: 50%;
+        width: 0;
+    }
+    
+         /* Ensure proper width */
+     .select2-container {
+         width: 100% !important;
      }
      
-                  /* Ensure dropdown menus appear above tables */
-       .dropdown-menu {
-           z-index: 9999 !important;
-           position: relative !important;
-       }
-       
-       /* Additional styling for moderator dropdown */
-       [id^="moderator-dropdown-menu-"] {
-           z-index: 9999 !important;
-           position: relative !important;
-           box-shadow: 0 4px 8px rgba(0,0,0,0.1) !important;
-       }
-       
-       /* Fix dropdown item selection styling */
-       .dropdown-item:hover,
-       .dropdown-item:focus,
-       .dropdown-item:active {
-           background-color: #f8f9fa !important;
-           color: #212529 !important;
-       }
-       
-       /* Remove the black background on selection */
-       .dropdown-item.active,
-       .dropdown-item:active {
-           background-color: #e9ecef !important;
-           color: #212529 !important;
-       }
-       
-       /* Override Bootstrap's default active state */
-       .dropdown-item:active,
-       .dropdown-item.active,
-       .dropdown-item.show {
-           background-color: #e9ecef !important;
-           color: #212529 !important;
-       }
-       
-       /* Force override any Bootstrap active states */
-       .dropdown-item:active,
-       .dropdown-item.active,
-       .dropdown-item.show,
-       .dropdown-item:focus:active,
-       .dropdown-item:active:focus {
-           background-color: #e9ecef !important;
-           color: #212529 !important;
-           border-color: #e9ecef !important;
-       }
-       
-       /* Ensure all dropdowns are visible */
-       .dropdown-menu.show {
-           display: block !important;
-       }
-       
-       /* Nuclear option - override ALL possible states */
-       .dropdown-item,
-       .dropdown-item:hover,
-       .dropdown-item:focus,
-       .dropdown-item:active,
-       .dropdown-item.active,
-       .dropdown-item.show,
-       .dropdown-item:focus:active,
-       .dropdown-item:active:focus,
-       .dropdown-item:visited,
-       .dropdown-item:link {
-           background-color: transparent !important;
-           color: #212529 !important;
-       }
-       
-       .dropdown-item:hover {
-           background-color: #f8f9fa !important;
-       }
-       
-       .dropdown-item:active,
-       .dropdown-item.active,
-       .dropdown-item.show {
-           background-color: #e9ecef !important;
-       }
-    </style>
+                                                                                                                                                                           
+     </style>
 
 {# Show Django messages #}
 {% if messages %}
@@ -293,15 +277,10 @@
         </tr>
     </thead>
     <tbody>
-                 {% for post in posts %}
-             {% if post.reviewer == user and post.status in "Pending,Rejected_For_Reassignment" and not post.review_started %}
-                 <tr>
-                                         <td title="{{ post.title }}">
-                                             {{ post.title }}
-                                             {% if post.status == 'Rejected_For_Reassignment' %}
-                                                 <span class="badge badge-warning ml-2">مرفوض لإعادة التعيين</span>
-                                             {% endif %}
-                                         </td>
+        {% for post in posts %}
+            {% if post.reviewer == user and post.status == "Pending" and not post.review_started %}
+                <tr>
+                                         <td title="{{ post.title }}">{{ post.title }}</td>
                      <td title="{{ post.authors }}">{{ post.authors }}</td>
                      <td>
                          {% if post|class_name == 'TranslationPost' %}
@@ -317,28 +296,24 @@
                            <a href="{{ post.pdf.url }}" target="_blank" class="original-file-link">عرض الـ PDF</a>
                          {% endif %}
                      </td>
-                                           <td>
-                          <form method="post" action="{% url 'start_reviewing' post.id %}" style="display: inline;">
-                              {% csrf_token %}
-                              <button type="submit" class="btn btn-success">بدء المراجعة</button>
-                          </form>
-                          
-                          <!-- Quick rejection for reassignment -->
-                          <form method="post" action="{% url 'review' %}" style="display: inline; margin-left: 5px;">
-                              {% csrf_token %}
-                              <input type="hidden" name="post_id" value="{{ post.id }}">
-                              <input type="hidden" name="review_status" value="rejected_for_reassignment">
-                              <input type="hidden" name="public_comment" value="تم رفض المقال لإعادة تعيينه لمراجع آخر.">
-                              <button type="submit" class="btn btn-warning btn-sm" 
-                                      onclick="return confirm('هل أنت متأكد من رفض هذا المقال لإعادة تعيينه لمراجع آخر؟')">
-                                  رفض لإعادة التعيين
-                              </button>
-                          </form>
-                          
-                          {% if post.is_edited_after_approval %}
-                              <span class="badge badge-warning" style="margin-left: 10px;">تم التعديل</span>
-                          {% endif %}
-                      </td>
+                                                                                       <td>
+                           <form method="post" action="{% url 'start_reviewing' post.id %}" style="display: inline;">
+                               {% csrf_token %}
+                               <button type="submit" class="btn btn-success">بدء المراجعة</button>
+                           </form>
+                           
+                           <!-- Reject for reassignment button -->
+                           <form method="post" action="{% url 'reject_for_reassignment' post.id %}" style="display: inline; margin-right: 10px;">
+                               {% csrf_token %}
+                               <button type="submit" class="btn btn-danger" onclick="return confirm('هل أنت متأكد من رفض هذه المشاركة لإعادة تعيينها؟')">
+                                   رفض لإعادة تعيين
+                               </button>
+                           </form>
+                           
+                           {% if post.is_edited_after_approval %}
+                               <span class="badge badge-warning" style="margin-left: 10px;">تم التعديل</span>
+                           {% endif %}
+                       </td>
                 </tr>
             {% endif %}
         {% empty %}
@@ -371,15 +346,10 @@
         </tr>
     </thead>
     <tbody>
-                 {% for post in posts %}
-             {% if post.reviewer == user and post.status in "Pending,Rejected_For_Reassignment" and post.review_started %}
-                 <tr>
-                                         <td title="{{ post.title }}">
-                                             {{ post.title }}
-                                             {% if post.status == 'Rejected_For_Reassignment' %}
-                                                 <span class="badge badge-warning ml-2">مرفوض لإعادة التعيين</span>
-                                             {% endif %}
-                                         </td>
+        {% for post in posts %}
+            {% if post.reviewer == user and post.status == "Pending" and post.review_started %}
+                <tr>
+                                         <td title="{{ post.title }}">{{ post.title }}</td>
                      <td title="{{ post.authors }}">{{ post.authors }}</td>
                      <td>
                          {% if post|class_name == 'TranslationPost' %}
@@ -397,19 +367,6 @@
                      </td>
                                            <td>
                           <a href="{% url 'detailed_review' post.id %}" class="btn btn-primary">مراجعة</a>
-                          
-                          <!-- Quick rejection for reassignment -->
-                          <form method="post" action="{% url 'review' %}" style="display: inline; margin-left: 5px;">
-                              {% csrf_token %}
-                              <input type="hidden" name="post_id" value="{{ post.id }}">
-                              <input type="hidden" name="review_status" value="rejected_for_reassignment">
-                              <input type="hidden" name="public_comment" value="تم رفض المقال لإعادة تعيينه لمراجع آخر.">
-                              <button type="submit" class="btn btn-warning btn-sm" 
-                                      onclick="return confirm('هل أنت متأكد من رفض هذا المقال لإعادة تعيينه لمراجع آخر؟')">
-                                  رفض لإعادة التعيين
-                              </button>
-                          </form>
-                          
                           {% if post.is_edited_after_approval %}
                               <span class="badge badge-warning" style="margin-left: 10px;">تم التعديل</span>
                           {% endif %}
@@ -433,275 +390,160 @@
 {% endif %}
 
             {% if user.is_staff or user.is_superuser %}
-            <h2 style="margin-top: 40px;">المشاركات في انتظار المراجعة / مرفوضة لإعادة التعيين</h2>
-                <table class="table table-bordered">
-                    <thead>
+            <h2 style="margin-top: 40px;">المشاركات في انتظار المراجعة</h2>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-dark">
                         <tr>
-                            <th style="width: 50%;">عنوان المشاركة</th>
-                            <th style="width: 30%;">تحديد مشرف</th>
-                            <th style="width: 20%;">الإجراءات</th>
+                            <th>عنوان المشاركة</th>
+                            <th>المراجعون السابقون</th>
+                            <th>اختيار المشرف</th>
+                            <th>الإجراءات</th>
                         </tr>
                     </thead>
                     <tbody>
-                                                                          {% for post in unassigned_posts %}
-                              <tr data-post-id="{{ post.id }}">
-                                 <td>
-                                     {{ post.title }}
-                                     {% if post.status == 'Rejected_For_Reassignment' %}
-                                         <span class="badge badge-warning ml-2">مرفوض لإعادة التعيين</span>
-                                     {% endif %}
-                                 </td>
-                                                                                                                                                                         <td>
-                                        <div class="form-group mb-2">
-                                            <div class="dropdown">
-                                                <button class="btn btn-outline-primary dropdown-toggle w-100" type="button" 
-                                                        id="moderator-dropdown-{{ post.id }}" 
-                                                        data-toggle="dropdown" 
-                                                        aria-haspopup="true" 
-                                                        aria-expanded="false">
-                                                    <i class="fas fa-users me-2"></i>اختر مراجع
-                                                </button>
-                                                <div class="dropdown-menu w-100" id="moderator-dropdown-menu-{{ post.id }}" 
-                                                     style="max-height: 300px; overflow-y: auto;">
-                                                  <!-- Search bar -->
-                                                  <div class="p-2 border-bottom">
-                                                      <input type="text" class="form-control form-control-sm" 
-                                                             id="moderator-search-{{ post.id }}" 
-                                                             placeholder="ابحث عن مراجع..." 
-                                                             style="border-color: #007bff;">
-                                                  </div>
-                                                  <!-- Reviewers will be loaded here via AJAX -->
-                                                  <div id="moderators-list-{{ post.id }}">
-                                                      <!-- Reviewers list will be populated here -->
-                                                  </div>
-                                              </div>
-                                          </div>
-                                          <div id="selected-moderator-{{ post.id }}" class="mt-2">
-                                              <!-- Selected moderator will be displayed here -->
-                                          </div>
-                                          <!-- Hidden input to store selected moderator ID -->
-                                          <input type="hidden" name="moderator_{{ post.id }}" id="hidden_moderator_{{ post.id }}" value="">
-                                      </div>
-                                                                           {% if post.previous_reviewers.all %}
-                                          <small class="text-muted d-block previous-reviewers-text">
-                                              المراجعون السابقون: 
-                                              {% for prev_reviewer in post.previous_reviewers.all %}
-                                                  {{ prev_reviewer.username }}{% if not forloop.last %}, {% endif %}
-                                              {% endfor %}
-                                          </small>
-                                      {% endif %}
-                                 </td>
-                                 <td>
-                                                                           <form method="post" action="review/assign_mod" id="reviewer_assign_{{ post.id }}">
-                                          {% csrf_token %}
-                                          <input type="hidden" name="post_id" value="{{ post.id }}">
-                                         {% if post.status == 'Rejected_For_Reassignment' %}
-                                             <button type="submit" class="btn btn-warning btn-sm" onclick="return updateHiddenField({{ post.id }})">إعادة تعيين مراجع</button>
-                                             <small class="text-muted d-block">مرفوض من مراجع سابق</small>
-                                         {% elif post.previous_reviewers.all %}
-                                             <button type="submit" class="btn btn-warning btn-sm" onclick="return updateHiddenField({{ post.id }})">إعادة تعيين مشرف</button>
-                                             <small class="text-muted d-block">طلب إعادة مراجعة</small>
-                                         {% else %}
-                                             <button type="submit" class="btn btn-primary btn-sm" onclick="return updateHiddenField({{ post.id }})">تعيين مشرف</button>
-                                         {% endif %}
-                                     </form>
-                                 </td>
-                             </tr>
+                        {% for post in unassigned_posts %}
+                            <tr>
+                                <td>
+                                    <strong>{{ post.title }}</strong>
+                                </td>
+                                <td>
+                                    {% if post.previous_reviewers.all %}
+                                        <small class="text-muted">
+                                            {% for prev_reviewer in post.previous_reviewers.all %}
+                                                {{ prev_reviewer.username }}{% if not forloop.last %}, {% endif %}
+                                            {% endfor %}
+                                        </small>
+                                    {% else %}
+                                        <span class="text-success">جديد</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <form method="post" action="review/assign_mod" id="reviwer_assign_{{ post.id }}" style="margin: 0;">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="post_id" value="{{ post.id }}">
+                                        
+                                                                                 <select class="form-control" name="moderator_{{ post.id }}" required>
+                                             <option value="">اختر المشرف</option>
+                                             {% for moderator in moderators %}
+                                                 {% if moderator not in post.previous_reviewers.all %}
+                                                     <option value="{{ moderator.id }}">{{ moderator.username }}</option>
+                                                 {% else %}
+                                                     <option value="{{ moderator.id }}" disabled>{{ moderator.username }} (مراجع سابق)</option>
+                                                 {% endif %}
+                                             {% endfor %}
+                                         </select>
+                                    </form>
+                                </td>
+                                <td>
+                                    <button type="submit" form="reviwer_assign_{{ post.id }}" class="btn btn-primary btn-sm">
+                                        {% if post.previous_reviewers.all %}
+                                            إعادة تعيين
+                                        {% else %}
+                                            تعيين مشرف
+                                        {% endif %}
+                                    </button>
+                                    
+                                    {% if post.status == 'Rejected_For_Reassignment' %}
+                                        <small class="text-danger d-block">تم رفضها</small>
+                                    {% elif post.previous_reviewers.all %}
+                                        <small class="text-warning d-block">طلب إعادة مراجعة</small>
+                                    {% endif %}
+                                </td>
+                            </tr>
                         {% empty %}
                             <tr>
-                                <td colspan="3" class="text-center">
-                                    <p class="text-muted mb-0">لا توجد مشاركات في انتظار المراجعة أو مرفوضة لإعادة التعيين.</p>
+                                <td colspan="4" class="text-center">
+                                    <div class="alert alert-info mb-0">
+                                        لا توجد مشاركات في انتظار المراجعة.
+                                    </div>
                                 </td>
                             </tr>
                         {% endfor %}
                     </tbody>
                 </table>
+            </div>
             
-                 {% endif %}
-         
-         </div>
-     </div>
- </div>
- 
-             <script>
-    // Initialize moderator dropdowns for each post
-    document.addEventListener('DOMContentLoaded', function() {
-        const unassignedPosts = document.querySelectorAll('[id^="moderator-dropdown-"]');
+        {% endif %}
         
-        unassignedPosts.forEach(function(dropdownButton) {
-            const postId = dropdownButton.id.replace('moderator-dropdown-', '');
-            initializeModeratorDropdown(postId);
-        });
-    });
+        </div>
+    </div>
+</div>
+{% endif %}
 
-    function initializeModeratorDropdown(postId) {
-        const dropdownButton = document.getElementById('moderator-dropdown-' + postId);
-        const dropdownMenu = document.getElementById('moderator-dropdown-menu-' + postId);
-        const moderatorsList = document.getElementById('moderators-list-' + postId);
-        const moderatorSearch = document.getElementById('moderator-search-' + postId);
-        const selectedModeratorDiv = document.getElementById('selected-moderator-' + postId);
-        const hiddenModeratorInput = document.getElementById('hidden_moderator_' + postId);
-        
-        let selectedModerator = null;
-        let allModerators = [];
-
-        // Load moderators when dropdown is clicked
-        dropdownButton.addEventListener('click', function() {
-            // Close all other dropdowns first
-            document.querySelectorAll('.dropdown-menu.show').forEach(menu => {
-                if (menu !== dropdownMenu) {
-                    menu.classList.remove('show');
-                    const otherButton = menu.previousElementSibling;
-                    if (otherButton) {
-                        otherButton.setAttribute('aria-expanded', 'false');
-                    }
-                }
-            });
-            
-            if (moderatorsList.children.length === 0) {
-                loadModerators(postId);
-            }
-        });
-
-        // Search functionality
-        moderatorSearch.addEventListener('input', function() {
-            filterModerators(postId, this.value);
-        });
-
-        function loadModerators(postId) {
-            fetch('/get-moderators/')
-                .then(response => response.json())
-                .then(data => {
-                    allModerators = data.moderators;
-                    displayModerators(postId, allModerators);
-                })
-                .catch(error => {
-                    console.error('Error loading moderators:', error);
-                    moderatorsList.innerHTML = '<div class="dropdown-item text-danger">خطأ في تحميل المراجعين</div>';
-                });
-        }
-
-        function displayModerators(postId, moderators) {
-            moderatorsList.innerHTML = '';
-            
-            if (moderators.length === 0) {
-                const noModeratorsItem = document.createElement('div');
-                noModeratorsItem.className = 'dropdown-item text-muted';
-                noModeratorsItem.textContent = 'لا يوجد مراجعون متاحون';
-                moderatorsList.appendChild(noModeratorsItem);
-            } else {
-                moderators.forEach(moderator => {
-                    const moderatorItem = document.createElement('a');
-                    moderatorItem.className = 'dropdown-item';
-                    moderatorItem.href = '#';
-                    moderatorItem.textContent = moderator.username;
-                    moderatorItem.dataset.moderatorId = moderator.id;
-                    moderatorItem.dataset.moderatorName = moderator.username;
-                    
-                                         // Check if this moderator is a previous reviewer
-                     const previousReviewersText = document.querySelector(`[data-post-id="${postId}"] .previous-reviewers-text`);
-                     const isPreviousReviewer = previousReviewersText && 
-                         previousReviewersText.textContent.includes(moderator.username);
-                    
-                    if (isPreviousReviewer) {
-                        moderatorItem.style.color = '#6c757d';
-                        moderatorItem.style.fontStyle = 'italic';
-                        moderatorItem.textContent += ' (مراجع سابق)';
-                        moderatorItem.style.pointerEvents = 'none';
-                    }
-                    
-                    moderatorItem.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        if (!isPreviousReviewer) {
-                            selectModerator(postId, moderator.id, moderator.username);
-                            // Close the dropdown after selection
-                            dropdownMenu.classList.remove('show');
-                            dropdownButton.setAttribute('aria-expanded', 'false');
-                        }
-                    });
-                    
-                    moderatorsList.appendChild(moderatorItem);
-                });
-            }
-        }
-
-        function filterModerators(postId, searchTerm) {
-            const filteredModerators = allModerators.filter(moderator => 
-                moderator.username.toLowerCase().includes(searchTerm.toLowerCase())
-            );
-            displayModerators(postId, filteredModerators);
-        }
-
-        function selectModerator(postId, moderatorId, moderatorName) {
-            selectedModerator = { id: moderatorId, name: moderatorName };
-            updateSelectedModeratorDisplay(postId);
-            updateHiddenInput(postId);
-        }
-
-        function updateSelectedModeratorDisplay(postId) {
-            selectedModeratorDiv.innerHTML = '';
-            
-            if (!selectedModerator) {
-                selectedModeratorDiv.innerHTML = '<small class="text-muted"><i class="fas fa-info-circle me-1"></i>لم يتم اختيار مراجع</small>';
-                return;
-            }
-
-            const moderatorTag = document.createElement('span');
-            moderatorTag.className = 'badge me-2 mb-2 p-2';
-            moderatorTag.style.backgroundColor = '#007bff';
-            moderatorTag.style.color = 'white';
-            moderatorTag.innerHTML = `
-                <i class="fas fa-user me-1"></i>${selectedModerator.name}
-                <button type="button" class="btn btn-sm btn-outline-light ms-2" onclick="removeModeratorById('${postId}')">
-                    <i class="fas fa-times"></i>
-                </button>
-            `;
-            selectedModeratorDiv.appendChild(moderatorTag);
-        }
-
-        function updateHiddenInput(postId) {
-            if (selectedModerator) {
-                hiddenModeratorInput.value = selectedModerator.id;
-            } else {
-                hiddenModeratorInput.value = '';
-            }
-        }
-
-        // Make removeModeratorById available globally
-        window.removeModeratorById = function(postId) {
-            selectedModerator = null;
-            updateSelectedModeratorDisplay(postId);
-            updateHiddenInput(postId);
-        };
-
-        // Initialize display
-        updateSelectedModeratorDisplay(postId);
+<script>
+// Wait for both jQuery and Select2 to be available
+function initializeSelect2() {
+    console.log('Attempting to initialize Select2...');
+    console.log('jQuery version:', $.fn.jquery);
+    console.log('Select2 available:', typeof $.fn.select2 !== 'undefined');
+    
+    // Check if Select2 is available
+    if (typeof $.fn.select2 === 'undefined') {
+        console.error('Select2 is not loaded! Waiting...');
+        setTimeout(initializeSelect2, 100);
+        return;
     }
     
-    // Close dropdowns when clicking outside
-    document.addEventListener('click', function(e) {
-        if (!e.target.closest('.dropdown')) {
-            document.querySelectorAll('.dropdown-menu.show').forEach(menu => {
-                menu.classList.remove('show');
-                const button = menu.previousElementSibling;
-                if (button) {
-                    button.setAttribute('aria-expanded', 'false');
+    // Check if jQuery is available
+    if (typeof $ === 'undefined') {
+        console.error('jQuery is not loaded!');
+        return;
+    }
+    
+    // Find all select2 elements
+    var select2Elements = $('.select2');
+    console.log('Found', select2Elements.length, 'Select2 elements');
+    
+    if (select2Elements.length === 0) {
+        console.warn('No .select2 elements found!');
+        return;
+    }
+    
+    // Initialize Select2 for all reviewer dropdowns
+    try {
+        select2Elements.each(function(index, element) {
+            console.log('Initializing Select2 for element:', element.id || element.name);
+            $(element).select2({
+                width: '100%',
+                placeholder: "اختر مشرفًا",
+                allowClear: true,
+                dir: 'rtl',
+                language: {
+                    noResults: function() {
+                        return "لم يتم العثور على مشرف";
+                    },
+                    searching: function() {
+                        return "جاري البحث...";
+                    }
                 }
             });
-        }
-    });
-
-    function updateHiddenField(postId) {
-        const hiddenField = document.getElementById('hidden_moderator_' + postId);
-        
-        if (hiddenField.value === '') {
-            alert('يرجى اختيار مراجع أولاً');
-            return false;
-        }
-        
-        return true;
+        });
+        console.log('Select2 initialized successfully for all elements');
+    } catch (error) {
+        console.error('Error initializing Select2:', error);
     }
-    </script>
- 
- {% endif %}
- {% endblock content %}
+}
+
+// Try multiple approaches to ensure initialization
+$(document).ready(function() {
+    console.log('Document ready, starting Select2 initialization...');
+    initializeSelect2();
+});
+
+// Also try on window load as backup
+$(window).on('load', function() {
+    console.log('Window loaded, checking Select2 again...');
+    setTimeout(initializeSelect2, 500);
+});
+
+// Fallback: try after a delay
+setTimeout(function() {
+    console.log('Fallback: trying Select2 initialization...');
+    initializeSelect2();
+}, 1000);
+
+
+</script>
+
+{% endblock content %}

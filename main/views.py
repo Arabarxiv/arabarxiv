@@ -262,13 +262,42 @@ def send_confirmation_email(user, request):
 
 
 def search_posts(request):
+    """Enhanced search functionality with better query handling"""
+    from django.db.models import Q
+    
     query = request.GET.get('searchKeyword', '')
-    results = Post.objects.filter(
-        Q(title__icontains=query) | Q(authors__icontains=query), is_approved=True
-    )
+    post_type = request.GET.get('post_type', 'all')
+    sort_by = request.GET.get('sort_by', 'relevance')
+    
+    # Start with approved posts
+    results = Post.objects.filter(status="Approved")
+    
+    # Apply search query
+    if query:
+        # Enhanced search across multiple fields
+        results = results.filter(
+            Q(title__icontains=query) | 
+            Q(authors__icontains=query) | 
+            Q(description__icontains=query) | 
+            Q(keywords__icontains=query)
+        )
     
     # Get translation post IDs for comparison
     translation_post_ids = TranslationPost.objects.values_list('post_ptr_id', flat=True)
+    
+    # Apply post type filter
+    if post_type == 'original':
+        results = results.exclude(id__in=translation_post_ids)
+    elif post_type == 'translated':
+        results = results.filter(id__in=translation_post_ids)
+    
+    # Apply sorting
+    if sort_by == 'date':
+        results = results.order_by('-created_at')
+    elif sort_by == 'title':
+        results = results.order_by('title')
+    else:  # relevance - default sorting by creation date
+        results = results.order_by('-created_at')
     
     # Mark which posts are translations and add translator field
     for post in results:
@@ -279,7 +308,15 @@ def search_posts(request):
             except:
                 post.translator = ""
     
-    return render(request, 'main/search_results.html', {'results': results})
+    context = {
+        'results': results,
+        'query': query,
+        'post_type': post_type,
+        'sort_by': sort_by,
+        'total_results': results.count(),
+    }
+    
+    return render(request, 'main/search_results.html', context)
 
 
 def send_thank_you_email(user, post):
@@ -586,7 +623,6 @@ def get_users(request):
 
 def get_moderators(request):
     # Get all moderators and staff users, ordered by username
-    # Use the same logic as is_mod_or_staff function
     moderators = User.objects.filter(
         Q(is_superuser=True) | Q(is_staff=True) | Q(groups__name='mod')
     ).distinct().order_by('username')
@@ -596,10 +632,10 @@ def get_moderators(request):
     for moderator in moderators:
         moderators_list.append({
             'id': moderator.id,
-            'username': moderator.username
+            'username': moderator.username,
+            'full_name': f"{moderator.first_name} {moderator.last_name}".strip() or moderator.username
         })
     
-    from django.http import JsonResponse
     return JsonResponse({'moderators': moderators_list})
 
 
@@ -1368,6 +1404,46 @@ def detailed_review(request, post_id):
     return render(request, 'main/detailed_review.html', context)
 
 @login_required
+@moderator_required
+def reject_for_reassignment(request, post_id):
+    """Allow reviewers to reject a post for reassignment to another reviewer"""
+    try:
+        post = Post.objects.get(pk=post_id)
+    except Post.DoesNotExist:
+        messages.error(request, 'المشاركة غير موجودة.')
+        return redirect('review')
+    
+    # Check if the current user is the assigned reviewer
+    if post.reviewer != request.user:
+        messages.error(request, 'ليس لديك صلاحية لرفض هذه المشاركة.')
+        return redirect('review')
+    
+    # Check if the post is assigned to the current user and not started yet
+    if post.status != 'Pending' or post.review_started:
+        messages.error(request, 'لا يمكن رفض هذه المشاركة لإعادة تعيينها.')
+        return redirect('review')
+    
+    if request.method == 'POST':
+        # Add current reviewer to previous reviewers list
+        post.previous_reviewers.add(request.user)
+        
+        # Reset the post status and remove current reviewer
+        post.status = 'Pending'
+        post.reviewer = None
+        post.review_started = False
+        post.reviewer_comments = ''
+        post.save()
+        
+        messages.success(request, f'تم رفض المشاركة "{post.title}" لإعادة تعيينها إلى مراجع آخر.')
+        return redirect('review')
+    
+    # If not POST, show confirmation page
+    context = {
+        'post': post,
+    }
+    return render(request, 'main/reject_for_reassignment.html', context)
+
+@login_required
 def become_reviewer(request):
     print(f"become_reviewer called by user: {request.user.username}")
     print(f"Request method: {request.method}")
@@ -1861,3 +1937,111 @@ def download_pdf(request, post_id):
         return redirect(post.pdf.url)
     else:
         raise Http404("PDF not found")
+
+def advanced_search(request):
+    """Advanced search functionality similar to arXiv.org"""
+    from datetime import datetime, timedelta
+    from django.db.models import Q
+    
+    # Get search parameters
+    query = request.GET.get('query', '')
+    title = request.GET.get('title', '')
+    authors = request.GET.get('authors', '')
+    abstract = request.GET.get('abstract', '')
+    categories = request.GET.getlist('categories')
+    date_from = request.GET.get('date_from', '')
+    date_to = request.GET.get('date_to', '')
+    post_type = request.GET.get('post_type', 'all')  # all, original, translated
+    sort_by = request.GET.get('sort_by', 'relevance')  # relevance, date, title
+    results_per_page = int(request.GET.get('results_per_page', 25))
+    
+    # Start with approved posts
+    posts = Post.objects.filter(status="Approved")
+    
+    # Get translation post IDs for comparison
+    translation_post_ids = set(TranslationPost.objects.values_list('post_ptr_id', flat=True))
+    
+    # Apply filters
+    if query:
+        # General search across multiple fields
+        posts = posts.filter(
+            Q(title__icontains=query) |
+            Q(authors__icontains=query) |
+            Q(description__icontains=query) |
+            Q(keywords__icontains=query)
+        )
+    
+    if title:
+        posts = posts.filter(title__icontains=title)
+    
+    if authors:
+        posts = posts.filter(authors__icontains=authors)
+    
+    if abstract:
+        posts = posts.filter(description__icontains=abstract)
+    
+    if categories:
+        posts = posts.filter(categories__id__in=categories).distinct()
+    
+    if date_from:
+        try:
+            date_from_obj = datetime.strptime(date_from, '%Y-%m-%d')
+            posts = posts.filter(created_at__gte=date_from_obj)
+        except ValueError:
+            pass
+    
+    if date_to:
+        try:
+            date_to_obj = datetime.strptime(date_to, '%Y-%m-%d') + timedelta(days=1)
+            posts = posts.filter(created_at__lt=date_to_obj)
+        except ValueError:
+            pass
+    
+    # Apply post type filter
+    if post_type == 'original':
+        posts = posts.exclude(id__in=translation_post_ids)
+    elif post_type == 'translated':
+        posts = posts.filter(id__in=translation_post_ids)
+    
+    # Apply sorting
+    if sort_by == 'date':
+        posts = posts.order_by('-created_at')
+    elif sort_by == 'title':
+        posts = posts.order_by('title')
+    else:  # relevance - default sorting by creation date
+        posts = posts.order_by('-created_at')
+    
+    # Mark which posts are translations and add translator field
+    for post in posts:
+        post.is_translation = post.id in translation_post_ids
+        if post.is_translation:
+            try:
+                post.translator = post.translationpost.translator
+            except:
+                post.translator = ""
+    
+    # Get all categories for the search form
+    all_categories = Category.objects.all().order_by('main_category__name', 'name')
+    
+    # Get main categories for grouping
+    main_categories = MainCategory.objects.all().order_by('name')
+    
+    # Prepare context
+    context = {
+        'results': posts,
+        'query': query,
+        'title': title,
+        'authors': authors,
+        'abstract': abstract,
+        'selected_categories': categories,
+        'date_from': date_from,
+        'date_to': date_to,
+        'post_type': post_type,
+        'sort_by': sort_by,
+        'results_per_page': results_per_page,
+        'all_categories': all_categories,
+        'main_categories': main_categories,
+        'total_results': posts.count(),
+    }
+    
+    return render(request, 'main/advanced_search.html', context)

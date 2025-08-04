@@ -344,6 +344,24 @@
     font-size: 1.1rem;
 }
 
+.advanced-search-link {
+    position: absolute;
+    left: 50px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #005109;
+    font-size: 1.1rem;
+    text-decoration: none;
+    padding: 8px;
+    transition: all 0.3s ease;
+}
+
+.advanced-search-link:hover {
+    color: #003d07;
+    transform: translateY(-50%) scale(1.1);
+    text-decoration: none;
+}
+
 .filter-buttons {
     display: flex;
     gap: 10px;
@@ -708,6 +726,9 @@
                 <div class="search-box">
                     <i class="fas fa-search"></i>
                     <input type="text" id="searchInput" placeholder="ابحث في المشاركات..." class="form-control">
+                    <a href="{% url 'advanced_search' %}" class="advanced-search-link" title="البحث المتقدم">
+                        <i class="fas fa-filter"></i>
+                    </a>
                 </div>
             </div>
             <div class="col-md-3">
@@ -1049,9 +1070,9 @@
                     <a href="{% url 'create_translation_post' %}" class="btn btn-outline-success btn-sm w-100 mb-2">
                         <i class="fas fa-language me-2"></i>ترجمة جديدة
                     </a>
-                    <a href="{% url 'search' %}" class="btn btn-outline-primary btn-sm w-100">
-                        <i class="fas fa-search me-2"></i>البحث المتقدم
-                    </a>
+                                    <a href="{% url 'advanced_search' %}" class="btn btn-outline-primary btn-sm w-100">
+                    <i class="fas fa-search me-2"></i>البحث المتقدم
+                </a>
                 </div>
             </div>
         </div>
