@@ -349,7 +349,7 @@ class Post(models.Model):
         """Return the total view count including both authenticated and anonymous views"""
         # Count authenticated user views
         authenticated_views = self.views.filter(user__isnull=False).count()
-        # Count anonymous device views
+        # Count anonymous session views
         anonymous_views = self.views.filter(user__isnull=True).count()
         # Count PDF views
         pdf_views = self.pdf_views.count()
@@ -377,45 +377,45 @@ class Post(models.Model):
             # For authenticated users, record with user
             PostView.objects.get_or_create(post=self, user=request.user)
         else:
-            # For anonymous users, record with IP address and user agent (device-based)
-            ip_address = self._get_client_ip(request)
-            user_agent = request.META.get('HTTP_USER_AGENT', '')[:500]  # Limit length
-            
-            # Only record if we have valid IP and user agent
-            if ip_address and user_agent:
-                PostView.objects.get_or_create(
-                    post=self, 
-                    ip_address=ip_address, 
-                    user_agent=user_agent
-                )
-    
-    def _get_client_ip(self, request):
-        """Get the client's IP address from the request"""
-        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-        if x_forwarded_for:
-            ip = x_forwarded_for.split(',')[0].strip()
-        else:
-            ip = request.META.get('REMOTE_ADDR')
-        
-        # Validate IP address
-        if ip and ip != '127.0.0.1' and ip != 'localhost':
-            return ip
-        return None
+            # For anonymous users, record with session key
+            session_key = request.session.session_key
+            if session_key:
+                PostView.objects.get_or_create(post=self, session_key=session_key)
+            else:
+                # If no session key, create one
+                request.session.create()
+                session_key = request.session.session_key
+                PostView.objects.get_or_create(post=self, session_key=session_key)
 
     def generate_meaningful_id(self):
-        """Generate a meaningful ID based on the primary category"""
+        """Generate a comprehensive meaningful ID that includes all categories"""
         if self.categories.exists():
-            # Get the first category (primary category)
-            primary_category = self.categories.first()
-            main_category = primary_category.main_category
+            # Get all categories ordered by main category ID, then sub category ID
+            categories = self.categories.all().order_by('main_category__id', 'id')
             
-            # Count posts in this category to get the sequence number
+            # Initialize the ID parts
+            main1_id = 0
+            sub1_id = 0
+            main2_id = 0
+            sub2_id = 0
+            
+            # Fill in the category IDs based on what we have
+            if len(categories) >= 1:
+                main1_id = categories[0].main_category.id
+                sub1_id = categories[0].id
+            
+            if len(categories) >= 2:
+                main2_id = categories[1].main_category.id
+                sub2_id = categories[1].id
+            
+            # Get sequence number based on the first category
+            primary_category = categories[0]
             category_posts_count = Post.objects.filter(
                 categories=primary_category
             ).count()
             
-            # Format: main_category_id.sub_category_id.sequence_number
-            meaningful_id = f"{main_category.id}.{primary_category.id}.{category_posts_count + 1}"
+            # Format: main1.sub1.main2.sub2.sequence
+            meaningful_id = f"{main1_id}.{sub1_id}.{main2_id}.{sub2_id}.{category_posts_count + 1}"
             return meaningful_id
         return None
     
@@ -434,10 +434,41 @@ class Post(models.Model):
         return None
     
     def get_meaningful_id_display(self):
-        """Get a human-readable version of the meaningful ID"""
+        """Get a human-readable version of the comprehensive meaningful ID"""
         if self.meaningful_id:
             parts = self.meaningful_id.split('.')
-            if len(parts) == 3:
+            if len(parts) == 5:
+                main1_id, sub1_id, main2_id, sub2_id, seq_num = parts
+                
+                # Build the display string
+                display_parts = []
+                
+                # First category
+                if main1_id != '0' and sub1_id != '0':
+                    try:
+                        main1 = MainCategory.objects.get(id=main1_id)
+                        sub1 = Category.objects.get(id=sub1_id)
+                        display_parts.append(f"{main1.name} - {sub1.name}")
+                    except (MainCategory.DoesNotExist, Category.DoesNotExist):
+                        display_parts.append(f"Main{main1_id} - Sub{sub1_id}")
+                
+                # Second category (if exists)
+                if main2_id != '0' and sub2_id != '0':
+                    try:
+                        main2 = MainCategory.objects.get(id=main2_id)
+                        sub2 = Category.objects.get(id=sub2_id)
+                        display_parts.append(f"{main2.name} - {sub2.name}")
+                    except (MainCategory.DoesNotExist, Category.DoesNotExist):
+                        display_parts.append(f"Main{main2_id} - Sub{sub2_id}")
+                
+                # Add sequence number
+                if display_parts:
+                    return f"{' + '.join(display_parts)} - {seq_num}"
+                else:
+                    return f"ID-{seq_num}"
+            
+            # Fallback for old format (3 parts)
+            elif len(parts) == 3:
                 main_cat_id, sub_cat_id, seq_num = parts
                 try:
                     main_category = MainCategory.objects.get(id=main_cat_id)
@@ -445,6 +476,7 @@ class Post(models.Model):
                     return f"{main_category.name} - {sub_category.name} - {seq_num}"
                 except (MainCategory.DoesNotExist, Category.DoesNotExist):
                     return self.meaningful_id
+        
         return self.meaningful_id or f"ID-{self.id}"
     
     def save(self, *args, **kwargs):
@@ -568,8 +600,7 @@ class Comment(models.Model):
 class PostView(models.Model):
     post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='views')
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='post_views', null=True, blank=True)
-    ip_address = models.GenericIPAddressField(blank=True, null=True, help_text='IP address for anonymous users')
-    user_agent = models.TextField(blank=True, null=True, help_text='User agent for device identification')
+    session_key = models.CharField(max_length=40, blank=True, null=True, help_text='Session key for anonymous users')
     viewed_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
@@ -577,7 +608,7 @@ class PostView(models.Model):
         verbose_name_plural = 'مشاهدات المشاركات'
         unique_together = [
             ('post', 'user'),  # One view per authenticated user per post
-            ('post', 'ip_address', 'user_agent')  # One view per device per post
+            ('post', 'session_key')  # One view per session per post
         ]
         ordering = ['-viewed_at']
     
@@ -585,7 +616,7 @@ class PostView(models.Model):
         if self.user:
             return f'مشاهدة من {self.user.username} لـ {self.post.title}'
         else:
-            return f'مشاهدة من جهاز (IP: {self.ip_address}) لـ {self.post.title}'
+            return f'مشاهدة مجهولة (جلسة: {self.session_key[:8]}...) لـ {self.post.title}'
 
 
 class AnonymousPostView(models.Model):
@@ -622,9 +653,6 @@ class NewsletterSubscriber(models.Model):
     email = models.EmailField(unique=True, verbose_name='البريد الإلكتروني')
     name = models.CharField(max_length=100, blank=True, verbose_name='الاسم')
     subscribed_at = models.DateTimeField(auto_now_add=True, verbose_name='تاريخ الاشتراك')
-    is_active = models.BooleanField(default=True, verbose_name='نشط')
-    confirmation_token = models.CharField(max_length=100, blank=True, null=True)
-    is_confirmed = models.BooleanField(default=False, verbose_name='مؤكد')
     
     class Meta:
         verbose_name = 'مشترك في النشرة الإخبارية'

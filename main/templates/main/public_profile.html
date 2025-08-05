@@ -184,7 +184,6 @@
                                     <th>العنوان</th>
                                     <th>النوع</th>
                                     <th>تاريخ التقديم</th>
-                                    <th>الحالة</th>
                                     <th>المشاهدات</th>
                                     <th>التعليقات</th>
                                     <th class="actions-column">الإجراءات</th>
@@ -202,15 +201,6 @@
                                             {% endif %}
                                         </td>
                                         <td>{{ post.created_at|date:"F j, Y" }} {{ post.created_at|time:"g:i A" }}</td>
-                                        <td>
-                                            {% if post.status == "Approved" %}
-                                                <span class="badge badge-success">تم الموافقة</span>
-                                            {% elif post.status == "Rejected" %}
-                                                <span class="badge badge-danger">لم يتم الموافقة</span>
-                                            {% else %}
-                                                <span class="badge badge-warning">قيد الإنتظار</span>
-                                            {% endif %}
-                                        </td>
                                         <td><span class="badge badge-info">{{ post.get_total_view_count }}</span></td>
                                         <td><span class="badge badge-secondary">{{ post.get_comment_count }}</span></td>
                                         <td class="actions-column">

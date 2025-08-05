@@ -1,4 +1,6 @@
 from django.contrib import admin
+from import_export import resources
+from import_export.admin import ImportExportModelAdmin
 from .models import Post, TranslationPost, UserProfile, Category, MainCategory, KeywordTranslation, ReviewerRequest, Comment, PostView, AnonymousPostView, NewsletterSubscriber, PostAuthor
 
 # Register your models here.
@@ -148,9 +150,9 @@ class CommentAdmin(admin.ModelAdmin):
 
 @admin.register(PostView)
 class PostViewAdmin(admin.ModelAdmin):
-    list_display = ['post', 'user', 'ip_address', 'viewed_at']
+    list_display = ['post', 'user', 'session_key', 'viewed_at']
     list_filter = ['viewed_at', 'post']
-    search_fields = ['post__title', 'user__username', 'ip_address']
+    search_fields = ['post__title', 'user__username', 'session_key']
     readonly_fields = ['viewed_at']
     verbose_name = 'مشاهدة مشاركة'
     verbose_name_plural = 'مشاهدات المشاركات'
@@ -164,25 +166,23 @@ class AnonymousPostViewAdmin(admin.ModelAdmin):
     verbose_name = 'مشاهدة مجهولة'
     verbose_name_plural = 'مشاهدات مجهولة'
 
+class NewsletterSubscriberResource(resources.ModelResource):
+    class Meta:
+        model = NewsletterSubscriber
+        fields = ('email', 'name', 'subscribed_at')
+        export_order = ('email', 'name', 'subscribed_at')
+        skip_unchanged = True
+        report_skipped = False
+
 @admin.register(NewsletterSubscriber)
-class NewsletterSubscriberAdmin(admin.ModelAdmin):
-    list_display = ['email', 'name', 'subscribed_at', 'is_active', 'is_confirmed']
-    list_filter = ['is_active', 'is_confirmed', 'subscribed_at']
+class NewsletterSubscriberAdmin(ImportExportModelAdmin):
+    resource_class = NewsletterSubscriberResource
+    list_display = ['email', 'name', 'subscribed_at']
+    list_filter = ['subscribed_at']
     search_fields = ['email', 'name']
-    readonly_fields = ['subscribed_at', 'confirmation_token']
-    actions = ['activate_subscribers', 'deactivate_subscribers']
+    readonly_fields = ['subscribed_at']
     verbose_name = 'مشترك في النشرة الإخبارية'
     verbose_name_plural = 'المشتركون في النشرة الإخبارية'
-    
-    def activate_subscribers(self, request, queryset):
-        updated = queryset.update(is_active=True)
-        self.message_user(request, f'تم تفعيل {updated} مشترك.')
-    activate_subscribers.short_description = "تفعيل المشتركين المحددين"
-    
-    def deactivate_subscribers(self, request, queryset):
-        updated = queryset.update(is_active=False)
-        self.message_user(request, f'تم إلغاء تفعيل {updated} مشترك.')
-    deactivate_subscribers.short_description = "إلغاء تفعيل المشتركين المحددين"
 
 @admin.register(PostAuthor)
 class PostAuthorAdmin(admin.ModelAdmin):

@@ -50,8 +50,6 @@ urlpatterns = [
     path('comment/delete/<int:comment_id>/', views.delete_comment, name='delete_comment'),
     path('author/<str:author_name>/', views.find_user_by_name, name='find_user_by_name'),
     path('newsletter/signup/', views.newsletter_signup, name='newsletter_signup'),
-    path('newsletter/confirm/<str:token>/', views.confirm_newsletter_signup, name='confirm_newsletter_signup'),
-    path('newsletter/unsubscribe/<str:token>/', views.unsubscribe_newsletter, name='unsubscribe_newsletter'),
     path('newsletter/test/', views.newsletter_test, name='newsletter_test'),
 
 ]

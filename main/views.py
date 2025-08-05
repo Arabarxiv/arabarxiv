@@ -187,8 +187,8 @@ def public_profile(request, user_id):
         # Get translation post IDs for comparison
         translation_post_ids = TranslationPost.objects.values_list('post_ptr_id', flat=True)
         
-        # Get user's posts and mark which ones are translations
-        posts = Post.objects.filter(author=user)
+        # Get user's accepted posts and mark which ones are translations
+        posts = Post.objects.filter(author=user, status="Approved")
         for post in posts:
             post.is_translation = post.id in translation_post_ids
             # Add translator field for easy access in template
@@ -1226,20 +1226,20 @@ def review_post(request):
     
     # Superusers see all pending posts, others see only assigned posts
     if request.user.is_superuser:
-        assigned_posts = Post.objects.filter(status__in=['Pending', 'Rejected_For_Reassignment'])
+        assigned_posts = Post.objects.filter(status__in=['Pending', 'Rejected_For_Reassignment']).order_by('-created_at')
         logger.debug(f"Superuser {request.user.username} seeing {assigned_posts.count()} pending posts")
     else:
         assigned_posts = Post.objects.filter(
             Q(reviewer=request.user) | Q(reviewer__isnull=True),
             status__in=['Pending', 'Rejected_For_Reassignment']
-        )
+        ).order_by('-created_at')
         logger.debug(f"Regular user {request.user.username} seeing {assigned_posts.count()} assigned posts")
     
     # Separate queryset for unassigned posts (المشاركات في انتظار المراجعة)
     unassigned_posts = Post.objects.filter(
         Q(status='Pending', reviewer__isnull=True) | 
         Q(status='Rejected_For_Reassignment')
-    )
+    ).order_by('-created_at')  # Newest posts first
 
     if request.method == 'POST':
         post_id = request.POST.get('post_id')  # Extract post_id from the form post
@@ -1714,14 +1714,14 @@ def post_detail(request, post_id):
     return response
 
 def post_detail_by_meaningful_id(request, meaningful_id):
-    """View post by meaningful ID (e.g., '2.9.15')"""
+    """View post by meaningful ID (supports both old 3-part and new 5-part format)"""
     try:
-        # Parse the meaningful ID to extract main_category, sub_category, and sequence
+        # Parse the meaningful ID
         parts = meaningful_id.split('.')
-        if len(parts) != 3:
-            raise Http404("Invalid meaningful ID format")
         
-        main_category_id, sub_category_id, sequence = parts
+        # Support both old format (3 parts) and new format (5 parts)
+        if len(parts) not in [3, 5]:
+            raise Http404("Invalid meaningful ID format")
         
         # Find the post by matching the meaningful ID
         post = get_object_or_404(Post, meaningful_id=meaningful_id)
@@ -1858,68 +1858,17 @@ def find_user_by_name(request, author_name):
         return redirect(f'/search_results?searchKeyword={author_name}')
 
 def newsletter_signup(request):
-    """Handle newsletter signup"""
+    """Handle newsletter signup - simple version that just saves to database"""
     if request.method == 'POST':
         form = NewsletterSignupForm(request.POST)
         if form.is_valid():
-            # Generate confirmation token
-            import secrets
-            token = secrets.token_urlsafe(32)
-            
-            # Create subscriber with confirmation token
-            subscriber = form.save(commit=False)
-            subscriber.confirmation_token = token
-            subscriber.save()
-            
-            # Send confirmation email
-            subject = "تأكيد الاشتراك في النشرة الإخبارية - أراب أركسيف"
-            email_template_name = "main/newsletter_confirmation_email.html"
-            context = {
-                "subscriber": subscriber,
-                "token": token,
-                'domain': request.META['HTTP_HOST'],
-                'protocol': 'https' if request.is_secure() else 'http',
-            }
-            email = render_to_string(email_template_name, context)
-            
-            try:
-                send_mail(subject, email, settings.DEFAULT_FROM_EMAIL, [subscriber.email], fail_silently=False)
-                messages.success(request, 'تم إرسال رابط التأكيد إلى بريدك الإلكتروني. يرجى التحقق من بريدك وتأكيد الاشتراك.')
-            except Exception as e:
-                messages.error(request, f'حدث خطأ في إرسال بريد التأكيد: {e}')
-            
+            subscriber = form.save()
+            messages.success(request, 'تم الاشتراك في النشرة الإخبارية بنجاح!')
             return redirect('real_home')
     else:
         form = NewsletterSignupForm()
     
     return render(request, 'main/newsletter_signup.html', {'form': form})
-
-def confirm_newsletter_signup(request, token):
-    """Confirm newsletter signup"""
-    try:
-        subscriber = NewsletterSubscriber.objects.get(confirmation_token=token, is_confirmed=False)
-        subscriber.is_confirmed = True
-        subscriber.confirmation_token = ''  # Clear the token
-        subscriber.save()
-        
-        messages.success(request, 'تم تأكيد اشتراكك في النشرة الإخبارية بنجاح!')
-    except NewsletterSubscriber.DoesNotExist:
-        messages.error(request, 'رابط التأكيد غير صحيح أو منتهي الصلاحية.')
-    
-    return redirect('real_home')
-
-def unsubscribe_newsletter(request, token):
-    """Unsubscribe from newsletter"""
-    try:
-        subscriber = NewsletterSubscriber.objects.get(confirmation_token=token, is_active=True)
-        subscriber.is_active = False
-        subscriber.save()
-        
-        messages.success(request, 'تم إلغاء اشتراكك في النشرة الإخبارية بنجاح.')
-    except NewsletterSubscriber.DoesNotExist:
-        messages.error(request, 'رابط إلغاء الاشتراك غير صحيح أو منتهي الصلاحية.')
-    
-    return redirect('real_home')
 
 def newsletter_test(request):
     """Test page for newsletter signup"""
@@ -1927,12 +1876,11 @@ def newsletter_test(request):
 
 
 def download_pdf(request, post_id):
-    """Handle PDF downloads and increment view counter"""
+    """Handle PDF downloads and increment view counter for both authenticated and anonymous users"""
     post = get_object_or_404(Post, id=post_id)
     
-    # Increment PDF view counter
-    if request.user.is_authenticated:
-        post.add_pdf_view(request.user)
+    # Record view for both authenticated and anonymous users
+    post.add_pdf_view(request.user)
     
     # Redirect to the actual PDF file
     if post.pdf:

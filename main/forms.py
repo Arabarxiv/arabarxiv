@@ -245,7 +245,7 @@ class PostForm(forms.ModelForm):
             instance.authors = instance.get_authors_string()
             instance.save(update_fields=['authors'])
             
-            # Generate meaningful ID after categories are added
+            # Generate comprehensive meaningful ID after categories are added
             if not instance.meaningful_id and instance.categories.exists():
                 meaningful_id = instance.generate_meaningful_id()
                 if meaningful_id:
@@ -333,7 +333,7 @@ class TranslationPostForm(forms.ModelForm):
             if second_category and second_category != category:
                 instance.categories.add(second_category)
             
-            # Generate meaningful ID after categories are added
+            # Generate comprehensive meaningful ID after categories are added
             if not instance.meaningful_id and instance.categories.exists():
                 meaningful_id = instance.generate_meaningful_id()
                 if meaningful_id:
@@ -447,6 +447,6 @@ class NewsletterSignupForm(forms.ModelForm):
     
     def clean_email(self):
         email = self.cleaned_data.get('email')
-        if NewsletterSubscriber.objects.filter(email=email, is_active=True).exists():
+        if NewsletterSubscriber.objects.filter(email=email).exists():
             raise ValidationError("هذا البريد الإلكتروني مشترك بالفعل في النشرة الإخبارية.")
         return email

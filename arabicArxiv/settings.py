@@ -41,7 +41,8 @@ INSTALLED_APPS = [
     "crispy_forms", 
     "crispy_bootstrap5",
     # 'gdstorage', 
-    'widget_tweaks'
+    'widget_tweaks',
+    'import_export',
 ]
 
 

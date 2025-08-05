@@ -393,7 +393,7 @@
             <h2 style="margin-top: 40px;">المشاركات في انتظار المراجعة</h2>
             <div class="table-responsive">
                 <table class="table table-hover">
-                    <thead class="table-dark">
+                    <thead style="background-color: #28a745; color: white;">
                         <tr>
                             <th>عنوان المشاركة</th>
                             <th>المراجعون السابقون</th>
@@ -445,9 +445,9 @@
                                     </button>
                                     
                                     {% if post.status == 'Rejected_For_Reassignment' %}
-                                        <small class="text-danger d-block">تم رفضها</small>
+                                        <small style="color: #8b0000; font-weight: bold;" class="d-block">تم رفضها</small>
                                     {% elif post.previous_reviewers.all %}
-                                        <small class="text-warning d-block">طلب إعادة مراجعة</small>
+                                        <small style="color: #b8860b; font-weight: bold;" class="d-block">طلب إعادة مراجعة</small>
                                     {% endif %}
                                 </td>
                             </tr>
