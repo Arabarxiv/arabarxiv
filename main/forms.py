@@ -156,6 +156,13 @@ class PostForm(forms.ModelForm):
         required=False
     )
     
+    # Hidden field for author ordering
+    author_order = forms.CharField(
+        widget=forms.HiddenInput(),
+        required=False,
+        help_text='JSON string of author IDs in order'
+    )
+    
     class Meta:
         model = Post
         fields = ['title', 'description', 'keywords', 'external_doi', 'pdf']
@@ -173,6 +180,13 @@ class PostForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)
         super(PostForm, self).__init__(*args, **kwargs)
+        
+        # Set initial author order if this is an existing post
+        if self.instance and self.instance.pk:
+            authors = self.instance.get_ordered_authors()
+            if authors.exists():
+                author_ids = [str(author.user.id) for author in authors]
+                self.fields['author_order'].initial = ','.join(author_ids)
     
     def clean(self):
         cleaned_data = super().clean()
@@ -206,6 +220,30 @@ class PostForm(forms.ModelForm):
                 instance.categories.add(category)
             if second_category and second_category != category:
                 instance.categories.add(second_category)
+            
+            # Handle author ordering
+            author_order = self.cleaned_data.get('author_order', '')
+            if author_order:
+                author_ids = [int(id.strip()) for id in author_order.split(',') if id.strip()]
+                
+                # Clear existing author relationships
+                instance.post_authors.all().delete()
+                
+                # Add authors in the specified order
+                for order, user_id in enumerate(author_ids, 1):
+                    try:
+                        user = User.objects.get(id=user_id)
+                        is_creator = (user == self.user)
+                        instance.add_author(user, order=order, is_creator=is_creator)
+                    except User.DoesNotExist:
+                        pass
+            else:
+                # Default: add current user as first author
+                instance.add_author(self.user, order=1, is_creator=True)
+            
+            # Update the authors string field for backward compatibility
+            instance.authors = instance.get_authors_string()
+            instance.save(update_fields=['authors'])
             
             # Generate meaningful ID after categories are added
             if not instance.meaningful_id and instance.categories.exists():

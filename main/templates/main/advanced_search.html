@@ -42,6 +42,38 @@
     font-weight: 400;
 }
 
+.btn-back-to-posts {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    text-decoration: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.95rem;
+}
+
+.btn-back-to-posts:hover {
+    background: rgba(255, 255, 255, 0.3);
+    color: white;
+    text-decoration: none;
+    transform: translateX(-3px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.btn-back-to-posts i {
+    transition: transform 0.3s ease;
+}
+
+.btn-back-to-posts:hover i {
+    transform: translateX(-2px);
+}
+
 .search-form-body {
     padding: 30px;
 }
@@ -348,6 +380,18 @@
     .results-sort {
         justify-content: space-between;
     }
+    
+    .search-form-header .d-flex {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+    }
+    
+    .btn-back-to-posts {
+        align-self: center;
+        font-size: 0.9rem;
+        padding: 8px 16px;
+    }
 }
 </style>
 
@@ -356,8 +400,16 @@
         <!-- Search Form -->
         <div class="search-form-card">
             <div class="search-form-header">
-                <h2><i class="fas fa-search"></i> البحث المتقدم</h2>
-                <p>ابحث في قاعدة بيانات أراب أركسيف باستخدام معايير متعددة</p>
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2><i class="fas fa-search"></i> البحث المتقدم</h2>
+                        <p>ابحث في قاعدة بيانات أراب أركسيف باستخدام معايير متعددة</p>
+                    </div>
+                    <a href="{% url 'posts' %}" class="btn-back-to-posts">
+                        <i class="fas fa-arrow-right"></i>
+                        العودة إلى المشاركات
+                    </a>
+                </div>
             </div>
             
             <div class="search-form-body">

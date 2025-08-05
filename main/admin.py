@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Post, TranslationPost, UserProfile, Category, MainCategory, KeywordTranslation, ReviewerRequest, Comment, PostView, NewsletterSubscriber
+from .models import Post, TranslationPost, UserProfile, Category, MainCategory, KeywordTranslation, ReviewerRequest, Comment, PostView, AnonymousPostView, NewsletterSubscriber, PostAuthor
 
 # Register your models here.
 
@@ -148,12 +148,21 @@ class CommentAdmin(admin.ModelAdmin):
 
 @admin.register(PostView)
 class PostViewAdmin(admin.ModelAdmin):
-    list_display = ['user', 'post', 'viewed_at']
+    list_display = ['post', 'user', 'ip_address', 'viewed_at']
     list_filter = ['viewed_at', 'post']
-    search_fields = ['user__username', 'post__title']
+    search_fields = ['post__title', 'user__username', 'ip_address']
     readonly_fields = ['viewed_at']
     verbose_name = 'مشاهدة مشاركة'
     verbose_name_plural = 'مشاهدات المشاركات'
+
+@admin.register(AnonymousPostView)
+class AnonymousPostViewAdmin(admin.ModelAdmin):
+    list_display = ['post', 'session_key', 'viewed_at']
+    list_filter = ['viewed_at', 'post']
+    search_fields = ['post__title', 'session_key']
+    readonly_fields = ['viewed_at']
+    verbose_name = 'مشاهدة مجهولة'
+    verbose_name_plural = 'مشاهدات مجهولة'
 
 @admin.register(NewsletterSubscriber)
 class NewsletterSubscriberAdmin(admin.ModelAdmin):
@@ -174,3 +183,12 @@ class NewsletterSubscriberAdmin(admin.ModelAdmin):
         updated = queryset.update(is_active=False)
         self.message_user(request, f'تم إلغاء تفعيل {updated} مشترك.')
     deactivate_subscribers.short_description = "إلغاء تفعيل المشتركين المحددين"
+
+@admin.register(PostAuthor)
+class PostAuthorAdmin(admin.ModelAdmin):
+    list_display = ['post', 'user', 'order', 'is_creator']
+    list_filter = ['is_creator', 'order']
+    search_fields = ['post__title', 'user__username', 'user__first_name', 'user__last_name']
+    ordering = ['post', 'order']
+    verbose_name = 'مؤلف مشاركة'
+    verbose_name_plural = 'مؤلفو المشاركات'

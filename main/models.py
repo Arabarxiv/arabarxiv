@@ -346,8 +346,15 @@ class Post(models.Model):
         return self.pdf_views.count()
     
     def get_total_view_count(self):
-        """Return the total view count including both post views and PDF views"""
-        return self.views.count() + self.pdf_views.count()
+        """Return the total view count including both authenticated and anonymous views"""
+        # Count authenticated user views
+        authenticated_views = self.views.filter(user__isnull=False).count()
+        # Count anonymous device views
+        anonymous_views = self.views.filter(user__isnull=True).count()
+        # Count PDF views
+        pdf_views = self.pdf_views.count()
+        
+        return authenticated_views + anonymous_views + pdf_views
     
     def add_pdf_view(self, user):
         """Add a PDF view for this post by a user, but only if they haven't viewed the post details"""
@@ -357,11 +364,43 @@ class Post(models.Model):
             # Check if user has already viewed the PDF
             has_viewed_pdf = self.pdf_views.filter(user=user).exists()
             
-            # Only add PDF view if user hasn't viewed the PDF before
-            if not has_viewed_pdf:
+            # Only add PDF view if user hasn't viewed the PDF before AND hasn't viewed the post details
+            # This prevents double counting when user views post then downloads PDF
+            if not has_viewed_pdf and not has_viewed_post:
                 PostPdfView.objects.get_or_create(post=self, user=user)
                 return True
         return False
+    
+    def record_view(self, request):
+        """Record a view for this post, handling both authenticated and anonymous users"""
+        if request.user.is_authenticated:
+            # For authenticated users, record with user
+            PostView.objects.get_or_create(post=self, user=request.user)
+        else:
+            # For anonymous users, record with IP address and user agent (device-based)
+            ip_address = self._get_client_ip(request)
+            user_agent = request.META.get('HTTP_USER_AGENT', '')[:500]  # Limit length
+            
+            # Only record if we have valid IP and user agent
+            if ip_address and user_agent:
+                PostView.objects.get_or_create(
+                    post=self, 
+                    ip_address=ip_address, 
+                    user_agent=user_agent
+                )
+    
+    def _get_client_ip(self, request):
+        """Get the client's IP address from the request"""
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            ip = x_forwarded_for.split(',')[0].strip()
+        else:
+            ip = request.META.get('REMOTE_ADDR')
+        
+        # Validate IP address
+        if ip and ip != '127.0.0.1' and ip != 'localhost':
+            return ip
+        return None
 
     def generate_meaningful_id(self):
         """Generate a meaningful ID based on the primary category"""
@@ -411,6 +450,44 @@ class Post(models.Model):
     def save(self, *args, **kwargs):
         # Save the post normally - meaningful ID generation is handled in forms
         super(Post, self).save(*args, **kwargs)
+    
+    def get_ordered_authors(self):
+        """Get authors in their proper order"""
+        return self.post_authors.all().order_by('order')
+    
+    def get_authors_string(self):
+        """Get authors as a formatted string in order"""
+        authors = self.get_ordered_authors()
+        if authors.exists():
+            return ', '.join([f"{author.user.first_name} {author.user.last_name}".strip() or author.user.username for author in authors])
+        return self.authors  # Fallback to the old field
+    
+    def add_author(self, user, order=None, is_creator=False):
+        """Add an author to the post with specified order"""
+        if order is None:
+            # Get the next available order
+            max_order = self.post_authors.aggregate(models.Max('order'))['order__max'] or 0
+            order = max_order + 1
+        
+        PostAuthor.objects.get_or_create(
+            post=self,
+            user=user,
+            defaults={'order': order, 'is_creator': is_creator}
+        )
+    
+    def reorder_authors(self, author_orders):
+        """Reorder authors based on a list of (user_id, order) tuples"""
+        for user_id, new_order in author_orders:
+            try:
+                post_author = self.post_authors.get(user_id=user_id)
+                post_author.order = new_order
+                post_author.save()
+            except PostAuthor.DoesNotExist:
+                pass
+        
+        # Update the authors string field for backward compatibility
+        self.authors = self.get_authors_string()
+        self.save(update_fields=['authors'])
 
 class TranslationPost(Post):
     translator = models.CharField(max_length=400)
@@ -490,17 +567,41 @@ class Comment(models.Model):
 
 class PostView(models.Model):
     post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='views')
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='post_views')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='post_views', null=True, blank=True)
+    ip_address = models.GenericIPAddressField(blank=True, null=True, help_text='IP address for anonymous users')
+    user_agent = models.TextField(blank=True, null=True, help_text='User agent for device identification')
     viewed_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
         verbose_name = 'مشاهدة مشاركة'
         verbose_name_plural = 'مشاهدات المشاركات'
-        unique_together = ['post', 'user']  # Ensures one view per user per post
+        unique_together = [
+            ('post', 'user'),  # One view per authenticated user per post
+            ('post', 'ip_address', 'user_agent')  # One view per device per post
+        ]
         ordering = ['-viewed_at']
     
     def __str__(self):
-        return f'مشاهدة من {self.user.username} لـ {self.post.title}'
+        if self.user:
+            return f'مشاهدة من {self.user.username} لـ {self.post.title}'
+        else:
+            return f'مشاهدة من جهاز (IP: {self.ip_address}) لـ {self.post.title}'
+
+
+class AnonymousPostView(models.Model):
+    """Legacy model for backward compatibility - will be merged into PostView"""
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='anonymous_views')
+    session_key = models.CharField(max_length=40)
+    viewed_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        verbose_name = 'مشاهدة مجهولة'
+        verbose_name_plural = 'مشاهدات مجهولة'
+        unique_together = ['post', 'session_key']
+        ordering = ['-viewed_at']
+    
+    def __str__(self):
+        return f'مشاهدة مجهولة (جلسة: {self.session_key[:8]}...) لـ {self.post.title}'
 
 
 class PostPdfView(models.Model):
@@ -532,4 +633,20 @@ class NewsletterSubscriber(models.Model):
     
     def __str__(self):
         return f'{self.email} ({self.name if self.name else "بدون اسم"})'
+
+
+class PostAuthor(models.Model):
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='post_authors')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='authored_posts_ordered')
+    order = models.PositiveIntegerField(default=0, help_text='Order of the author in the paper (1 = first author)')
+    is_creator = models.BooleanField(default=False, help_text='Whether this user created the post')
+    
+    class Meta:
+        verbose_name = 'مؤلف مشاركة'
+        verbose_name_plural = 'مؤلفو المشاركات'
+        ordering = ['order']
+        unique_together = ['post', 'user']
+    
+    def __str__(self):
+        return f"{self.user.get_full_name() or self.user.username} - {self.post.title} (Order: {self.order})"
 

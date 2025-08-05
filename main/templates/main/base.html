@@ -9,6 +9,22 @@
 
     <title>{% block title %}أرشيف العرب{% endblock %}</title>
 
+    <!-- Open Graph Meta Tags for Social Media Sharing -->
+    {% block meta %}
+    <meta property="og:title" content="{% block og_title %}أرشيف العرب{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}منصة للبحث العلمي والمساهمات الأدبية باللغة العربية{% endblock %}">
+    <meta property="og:url" content="{{ request.build_absolute_uri }}">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="ArabArxiv">
+    <meta property="og:image" content="{% static 'assets/images/favicon.ico' %}">
+    
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{% block twitter_title %}أرشيف العرب{% endblock %}">
+    <meta name="twitter:description" content="{% block twitter_description %}منصة للبحث العلمي والمساهمات الأدبية باللغة العربية{% endblock %}">
+    <meta name="twitter:image" content="{% static 'assets/images/favicon.ico' %}">
+    {% endblock %}
+
     <link rel="shortcut icon" type="image/x-icon" href="{% static 'assets/images/favicon.ico' %}">
     <link href="{% static 'vendor/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
     <!-- Additional CSS Files -->
@@ -150,10 +166,16 @@
             color: white;
         }
         
-        .login-btn:hover {
-            background: linear-gradient(135deg, rgba(0, 81, 9, 1) 0%, rgba(0, 61, 7, 1) 100%);
-            color: white;
-        }
+                 .login-btn:hover {
+             background: linear-gradient(135deg, rgba(0, 81, 9, 1) 0%, rgba(0, 61, 7, 1) 100%);
+             color: white;
+         }
+         
+                   
+         
+
+        
+        
         
                                                                                                                                                /* Logout button positioned on the far left */
             .logout-left {
@@ -199,10 +221,14 @@
             }
         }
         
-                 @media (max-width: 768px) {
+                          @media (max-width: 768px) {
              .nav-left {
                  gap: 10px;
              }
+             
+                           
+             
+             
              
              .main-nav .nav {
                  position: static;
@@ -211,64 +237,72 @@
                  flex-wrap: wrap;
                  justify-content: center;
              }
-            
-            .username {
-                font-size: 0.9rem;
-                padding: 6px 12px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                line-height: 1;
-            }
-            
-            .user-section {
-                gap: 8px;
-            }
-            
-            .user-btn {
-                padding: 8px 12px;
-                min-width: 60px;
-            }
-            
-            .user-btn i {
-                font-size: 1rem;
-            }
-            
-            .user-btn span {
-                font-size: 0.7rem;
-            }
-            
-                                                   .logout-left {
-                  left: 0;
-                  padding: 6px 10px;
-                  min-width: 50px;
-              }
-              
-              .logout-left i {
-                  font-size: 0.9rem;
-              }
-              
-              .logout-left span {
-                  font-size: 0.6rem;
-              }
-              
-                             .username-left {
-                   left: 85px;
-                   font-size: 0.9rem;
-                   padding: 6px 12px;
+             
+             .username {
+                 font-size: 0.9rem;
+                 padding: 6px 12px;
+                 display: flex;
+                 align-items: center;
+                 justify-content: center;
+                 line-height: 1;
+             }
+             
+             .user-section {
+                 gap: 8px;
+                 flex-direction: column;
+                 align-items: flex-end;
+             }
+             
+             .user-btn {
+                 padding: 8px 12px;
+                 min-width: 60px;
+             }
+             
+             .user-btn i {
+                 font-size: 1rem;
+             }
+             
+             .user-btn span {
+                 font-size: 0.7rem;
+             }
+             
+             
+             
+                                                     .logout-left {
+                   left: 0;
+                   padding: 6px 10px;
+                   min-width: 50px;
                }
-        }
+               
+               .logout-left i {
+                   font-size: 0.9rem;
+               }
+               
+               .logout-left span {
+                   font-size: 0.6rem;
+               }
+               
+                              .username-left {
+                    left: 85px;
+                    font-size: 0.9rem;
+                    padding: 6px 12px;
+                }
+         }
         
-        @media (max-width: 480px) {
-            .user-section {
-                flex-direction: column;
-                gap: 6px;
-            }
-            
-            .user-btn {
-                min-width: 70px;
-            }
-        }
+                 @media (max-width: 480px) {
+             .user-section {
+                 flex-direction: column;
+                 gap: 6px;
+             }
+             
+             .user-btn {
+                 min-width: 70px;
+             }
+             
+                           
+             
+             
+         }
     </style>
  
 </head>
@@ -304,18 +338,18 @@
                  </a>
                  {% endif %}
                  
-          <nav class="main-nav">
-       <div class="nav-left">
-          <a href="/home" class="logo">
-            <h1>أرشيف العرب </h1>
-          </a>
-        </div>
+                    <nav class="main-nav">
+                       <div class="nav-left">
+           <a href="/home" class="logo">
+             <h1>أرشيف العرب </h1>
+           </a>
+         </div>
       
-             <ul class="nav">
-         <li class="nav-item"><a class="nav-link" href="/posts">قائمة المشاركات</a></li>
-         <li class="nav-item"><a class="nav-link" href="/advanced-search">البحث المتقدم</a></li>
-         <li class="nav-item"><a class="nav-link" href="/newsletter/signup">اشتراك في النشرة</a></li>
-         <li class="nav-item"><a class="nav-link" href="/terms">قاموس المصطلحات</a></li>
+                                                                                                               <ul class="nav">
+            <li class="nav-item"><a class="nav-link" href="/posts">قائمة المشاركات</a></li>
+            <li class="nav-item"><a class="nav-link" href="/advanced-search">البحث المتقدم</a></li>
+          <li class="nav-item"><a class="nav-link" href="/newsletter/signup">اشتراك في النشرة</a></li>
+          <li class="nav-item"><a class="nav-link" href="/terms">قاموس المصطلحات</a></li>
                    <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="#" id="submitPostDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                 تقديم منشور
@@ -339,26 +373,28 @@
          {% endif %}
        </ul> 
       
-             <!-- User section on the right -->
-       <div class="user-section">
-         {% if user.is_authenticated %}
-           {% if not user.is_staff and not user.is_superuser and not user.groups.all %}
-           <a href="/become_reviewer" class="user-btn reviewer-btn">
-             <i class="fas fa-user-plus"></i>
-             <span>طلب مراجع</span>
-           </a>
-           {% endif %}
-           
-           
-           
-           
-         {% else %}
-           <a href="/login" class="user-btn login-btn">
-             <i class="fas fa-sign-in-alt"></i>
-             <span>تسجيل الدخول</span>
-           </a>
-         {% endif %}
-       </div>
+                           <!-- User section on the right -->
+        <div class="user-section">
+          {% if user.is_authenticated %}
+            {% if not user.is_staff and not user.is_superuser and not user.groups.all %}
+            <a href="/become_reviewer" class="user-btn reviewer-btn">
+              <i class="fas fa-user-plus"></i>
+              <span>طلب مراجع</span>
+            </a>
+            {% endif %}
+            
+            
+            
+            
+          {% else %}
+            <a href="/login" class="user-btn login-btn">
+              <i class="fas fa-sign-in-alt"></i>
+              <span>تسجيل الدخول</span>
+            </a>
+          {% endif %}
+          
+          
+        </div>
       
       <a class='menu-trigger'>
         <span>قائمة</span>
@@ -516,5 +552,7 @@ function closeReviewerRequestAlert() {
         alert.style.display = 'none';
     }
 }
+
+
 </script>
 </html>

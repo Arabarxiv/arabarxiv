@@ -23,6 +23,14 @@
   select option:not([disabled]):hover {
     background-color: #f8f9fa;
   }
+  
+  /* Drag and drop cursor styles */
+  .author-item {
+    cursor: grab;
+  }
+  .author-item.dragging {
+    cursor: grabbing;
+  }
 </style>
 <div class="container">
   <div class="row justify-content-center">
@@ -48,35 +56,49 @@
               {% endif %}
             </div>
 
-            <!-- Authors field with custom dropdown -->
+            <!-- Authors field with drag-and-drop ordering -->
             <div class="form-group mb-4">
-              <label for="authors-dropdown" class="form-label fw-bold text-dark">هل لديك مؤلفون آخرون لإضافتهم؟</label>
-              <div class="dropdown">
-                <button class="btn btn-outline-success dropdown-toggle w-100" type="button" id="authors-dropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="border-color: #005109; color: #005109;">
-                  <i class="fas fa-users me-2"></i>اختر المؤلفين الإضافيين (اختياري)
-                </button>
-                <div class="dropdown-menu w-100" id="authors-dropdown-menu" style="max-height: 300px; overflow-y: auto; background-color: white; color: #212529;">
-                  <!-- Search bar -->
-                  <div class="p-2 border-bottom">
-                    <input type="text" class="form-control form-control-sm" id="authors-search" placeholder="ابحث عن المستخدمين..." style="border-color: #005109;">
-                  </div>
-                  <!-- Users will be loaded here via AJAX -->
-                  <div id="authors-list">
-                    <!-- Users list will be populated here -->
+              <label class="form-label fw-bold text-dark">ترتيب المؤلفين</label>
+              <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>ملاحظة:</strong> أنت المؤلف الأول افتراضياً. يمكنك إضافة مؤلفين آخرين وإعادة ترتيبهم بالضغط والسحب.
+              </div>
+              
+                             <!-- Current user (creator) is always first -->
+               <div id="authors-container" class="border rounded p-3 bg-light">
+                 <div class="author-item mb-2 p-2 bg-white border rounded" data-user-id="{{ user.id }}" data-user-name="{{ user.get_full_name|default:user.username }}">
+                   <div class="d-flex align-items-center">
+                     <i class="fas fa-grip-vertical me-2 text-muted drag-handle" style="cursor: grab;" draggable="true"></i>
+                     <span class="author-order me-2 badge bg-primary">1</span>
+                     <i class="fas fa-user me-2"></i>
+                     <span class="author-name">{{ user.get_full_name|default:user.username }}</span>
+                     <span class="badge bg-success ms-auto">منشئ المقال</span>
+                   </div>
+                 </div>
+               </div>
+              
+              <!-- Add more authors dropdown -->
+              <div class="mt-3">
+                <label for="authors-dropdown" class="form-label fw-bold text-dark">إضافة مؤلفين آخرين</label>
+                <div class="dropdown">
+                  <button class="btn btn-outline-success dropdown-toggle w-100" type="button" id="authors-dropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="border-color: #005109; color: #005109;">
+                    <i class="fas fa-plus me-2"></i>اختر مؤلفين إضافيين
+                  </button>
+                  <div class="dropdown-menu w-100" id="authors-dropdown-menu" style="max-height: 300px; overflow-y: auto; background-color: white; color: #212529;">
+                    <!-- Search bar -->
+                    <div class="p-2 border-bottom">
+                      <input type="text" class="form-control form-control-sm" id="authors-search" placeholder="ابحث عن المستخدمين..." style="border-color: #005109;">
+                    </div>
+                    <!-- Users will be loaded here via AJAX -->
+                    <div id="authors-list">
+                      <!-- Users list will be populated here -->
+                    </div>
                   </div>
                 </div>
               </div>
-              <div class="mt-2">
-                <small class="text-muted">
-                  <i class="fas fa-info-circle me-1"></i>
-                  <strong>ملاحظة:</strong> يمكن إضافة المستخدمين المسجلين فقط كأعضاء مشاركين
-                </small>
-              </div>
-              <div id="selected-authors" class="mt-3">
-                <!-- Selected authors will be displayed here -->
-              </div>
-              <!-- Hidden input to store selected author IDs -->
-              <input type="hidden" name="authors" id="authors-input" value="">
+              
+              <!-- Hidden input to store author order -->
+              <input type="hidden" name="author_order" id="author-order-input" value="{{ user.id }}">
             </div>
 
             <!-- Description field -->
@@ -200,9 +222,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const authorsDropdownMenu = document.getElementById('authors-dropdown-menu');
     const authorsList = document.getElementById('authors-list');
     const authorsSearch = document.getElementById('authors-search');
-    const selectedAuthorsDiv = document.getElementById('selected-authors');
-    const authorsInput = document.getElementById('authors-input');
-    let selectedAuthors = [];
+    const authorsContainer = document.getElementById('authors-container');
+    const authorOrderInput = document.getElementById('author-order-input');
     let allUsers = [];
 
     // Load users when dropdown is clicked
@@ -265,55 +286,126 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function addAuthor(userId, userName) {
-        // Check if author is already selected
-        if (selectedAuthors.find(author => author.id === userId)) {
+        // Check if author is already added
+        const existingAuthor = authorsContainer.querySelector(`[data-user-id="${userId}"]`);
+        if (existingAuthor) {
             return;
         }
 
-        selectedAuthors.push({ id: userId, name: userName });
-        updateSelectedAuthorsDisplay();
-        updateHiddenInput();
-    }
-
-    function removeAuthor(userId) {
-        selectedAuthors = selectedAuthors.filter(author => author.id !== userId);
-        updateSelectedAuthorsDisplay();
-        updateHiddenInput();
-    }
-
-    function updateSelectedAuthorsDisplay() {
-        selectedAuthorsDiv.innerHTML = '';
+        const authorItem = document.createElement('div');
+        authorItem.className = 'author-item mb-2 p-2 bg-white border rounded';
+        authorItem.setAttribute('data-user-id', userId);
+        authorItem.setAttribute('data-user-name', userName);
+        authorItem.setAttribute('draggable', 'true');
         
-        if (selectedAuthors.length === 0) {
-            selectedAuthorsDiv.innerHTML = '<small class="text-muted"><i class="fas fa-info-circle me-1"></i>لم يتم اختيار مؤلفين إضافيين</small>';
-            return;
-        }
+        const order = authorsContainer.children.length + 1;
+        
+                 authorItem.innerHTML = `
+             <div class="d-flex align-items-center">
+                 <i class="fas fa-grip-vertical me-2 text-muted drag-handle" style="cursor: grab;" draggable="true"></i>
+                 <span class="author-order me-2 badge bg-secondary">${order}</span>
+                 <i class="fas fa-user me-2"></i>
+                 <span class="author-name">${userName}</span>
+                 <button type="button" class="btn btn-sm btn-outline-danger ms-auto" onclick="removeAuthorById(${userId})">
+                     <i class="fas fa-times"></i>
+                 </button>
+             </div>
+         `;
+        
+        authorsContainer.appendChild(authorItem);
+        updateAuthorOrders();
+        updateHiddenInput();
+        
+        // Add drag and drop functionality
+        setupDragAndDrop(authorItem);
+    }
 
-        selectedAuthors.forEach(author => {
-            const authorTag = document.createElement('span');
-            authorTag.className = 'badge me-2 mb-2 p-2';
-            authorTag.style.backgroundColor = '#005109';
-            authorTag.style.color = 'white';
-            authorTag.innerHTML = `
-                <i class="fas fa-user me-1"></i>${author.name}
-                <button type="button" class="btn btn-sm btn-outline-light ms-2" onclick="removeAuthorById(${author.id})">
-                    <i class="fas fa-times"></i>
-                </button>
-            `;
-            selectedAuthorsDiv.appendChild(authorTag);
+    function removeAuthorById(userId) {
+        const authorItem = authorsContainer.querySelector(`[data-user-id="${userId}"]`);
+        if (authorItem) {
+            authorItem.remove();
+            updateAuthorOrders();
+            updateHiddenInput();
+        }
+    }
+
+    function updateAuthorOrders() {
+        const authorItems = authorsContainer.querySelectorAll('.author-item');
+        authorItems.forEach((item, index) => {
+            const orderBadge = item.querySelector('.author-order');
+            orderBadge.textContent = index + 1;
+            orderBadge.className = index === 0 ? 'author-order me-2 badge bg-primary' : 'author-order me-2 badge bg-secondary';
         });
     }
 
     function updateHiddenInput() {
-        const authorIds = selectedAuthors.map(author => author.id);
-        authorsInput.value = authorIds.join(',');
+        const authorItems = authorsContainer.querySelectorAll('.author-item');
+        const authorIds = Array.from(authorItems).map(item => item.getAttribute('data-user-id'));
+        authorOrderInput.value = authorIds.join(',');
     }
 
-    // Make removeAuthorById available globally
-    window.removeAuthorById = removeAuthor;
+    function setupDragAndDrop(element) {
+        const dragHandle = element.querySelector('.drag-handle');
+        
+        dragHandle.addEventListener('dragstart', function(e) {
+            const authorItem = e.target.closest('.author-item');
+            e.dataTransfer.setData('text/plain', authorItem.getAttribute('data-user-id'));
+            authorItem.classList.add('dragging');   // ✅ mark as dragging
+            authorItem.style.opacity = '0.5';
+        });
 
-    // Initialize display
-    updateSelectedAuthorsDisplay();
+        dragHandle.addEventListener('dragend', function(e) {
+            const authorItem = e.target.closest('.author-item');
+            authorItem.classList.remove('dragging'); // ✅ remove marker
+            authorItem.style.opacity = '1';
+        });
+    }
+
+    // Setup drag and drop for the container
+    authorsContainer.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        const draggable = document.querySelector('.dragging');
+        if (draggable) {
+            const afterElement = getDragAfterElement(authorsContainer, e.clientY);
+            if (afterElement == null) {
+                authorsContainer.appendChild(draggable);
+            } else {
+                authorsContainer.insertBefore(draggable, afterElement);
+            }
+        }
+    });
+
+    authorsContainer.addEventListener('drop', function(e) {
+        e.preventDefault();
+        updateAuthorOrders();
+        updateHiddenInput();
+    });
+
+    function getDragAfterElement(container, y) {
+        const draggableElements = [...container.querySelectorAll('.author-item:not(.dragging)')];
+        
+        return draggableElements.reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = y - box.top - box.height / 2;
+            
+            if (offset < 0 && offset > closest.offset) {
+                return { offset: offset, element: child };
+            } else {
+                return closest;
+            }
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
+    }
+
+    // Setup drag and drop for existing author items
+    const existingAuthorItems = authorsContainer.querySelectorAll('.author-item');
+    existingAuthorItems.forEach(setupDragAndDrop);
+
+    // Make removeAuthorById available globally
+    window.removeAuthorById = removeAuthorById;
+
+    // Initialize
+    updateAuthorOrders();
+    updateHiddenInput();
 });
 
 // Enhanced category dropdown functionality

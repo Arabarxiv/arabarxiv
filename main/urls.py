@@ -40,6 +40,7 @@ urlpatterns = [
     path('get-categories/', views.get_categories, name='get_categories'),
     path('get-users/', views.get_users, name='get_users'),
     path('get-moderators/', views.get_moderators, name='get_moderators'),
+    path('post/<int:post_id>/reorder-authors/', views.reorder_authors, name='reorder_authors'),
 
     path('reviewer-request-status/', views.check_reviewer_request_status, name='reviewer_request_status'),
     path('post/<str:meaningful_id>/', views.post_detail_by_meaningful_id, name='post_detail_by_meaningful_id'),

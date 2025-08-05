@@ -101,7 +101,7 @@
 /* Button group styling */
 .button-group {
     display: flex;
-    gap: 25px;
+    gap: 100px;
     flex-wrap: wrap;
 }
 
@@ -190,6 +190,44 @@
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(0, 81, 9, 0.4);
 }
+
+/* Advanced Search Button Styles */
+.advanced-search-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    width: 100%;
+    padding: 20px 30px;
+    background: linear-gradient(135deg, #005109 0%, #003d07 100%);
+    color: white;
+    text-decoration: none;
+    border-radius: 15px;
+    font-size: 1.3rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 6px 20px rgba(0, 81, 9, 0.3);
+    border: 2px solid #005109;
+}
+
+.advanced-search-btn:hover {
+    background: linear-gradient(135deg, #003d07 0%, #002805 100%);
+    color: white;
+    text-decoration: none;
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0, 81, 9, 0.4);
+    border-color: #003d07;
+}
+
+.advanced-search-btn i {
+    font-size: 1.5rem;
+    color: white;
+}
+
+.advanced-search-btn span {
+    font-size: 1.3rem;
+    font-weight: 600;
+}
 </style>
 <div class="container">
     <div class="row">
@@ -274,6 +312,18 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
+
+<!-- Advanced Search Button Section -->
+<div class="container mb-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <a href="{% url 'advanced_search' %}" class="advanced-search-btn">
+                <i class="fas fa-search-plus"></i>
+                <span>البحث المتقدم</span>
+            </a>
+        </div>
+    </div>
+</div>
 
 <!-- Posts Encouragement Notice and About Initiative -->
 <div class="container">
@@ -381,4 +431,6 @@ document.addEventListener('DOMContentLoaded', function() {
       </div>
     </div>
   </div>
+
+
 {% endblock %}

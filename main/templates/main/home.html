@@ -98,6 +98,34 @@
 
 .author-link:hover {
     color: #003d07;
+}
+
+/* Small Citation Button Styles */
+.btn-citation-small {
+    background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    transition: all 0.3s ease;
+    border: none;
+    box-shadow: 0 2px 4px rgba(108, 117, 125, 0.3);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.btn-citation-small:hover {
+    background: linear-gradient(135deg, #495057 0%, #343a40 100%);
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 6px rgba(108, 117, 125, 0.4);
+}
+
+.btn-citation-small i {
+    font-size: 0.8rem;
+}
     text-decoration: none;
     background: rgba(0, 81, 9, 0.1);
     transform: translateY(-1px);
@@ -603,6 +631,62 @@
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
+/* Browse More Details Button */
+.browse-details-btn {
+    background: linear-gradient(135deg, #005109 0%, #003d07 100%);
+    border: none;
+    color: white;
+    padding: 12px 25px;
+    border-radius: 25px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 4px 15px rgba(0, 81, 9, 0.2);
+}
+
+.browse-details-btn:hover {
+    background: linear-gradient(135deg, #003d07 0%, #002805 100%);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 81, 9, 0.3);
+    text-decoration: none;
+}
+
+.browse-details-btn i {
+    font-size: 1.1rem;
+}
+
+/* Browse Details Link */
+.browse-details-link {
+    color: #005109;
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 500;
+    padding: 6px 12px;
+    border-radius: 15px;
+    background: rgba(0, 81, 9, 0.1);
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+.browse-details-link:hover {
+    color: #003d07;
+    background: rgba(0, 81, 9, 0.2);
+    text-decoration: none;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 81, 9, 0.15);
+}
+
+.browse-details-link i {
+    font-size: 0.8rem;
+}
+
 /* Responsive design */
 @media (max-width: 768px) {
     .card-body {
@@ -725,7 +809,7 @@
             <div class="col-md-6">
                 <div class="search-box">
                     <i class="fas fa-search"></i>
-                    <input type="text" id="searchInput" placeholder="ابحث في المشاركات..." class="form-control">
+                    <input type="text" id="searchInput" placeholder="ابحث في المشاركات..." class="form-control" value="{{ search_query|default:'' }}">
                     <a href="{% url 'advanced_search' %}" class="advanced-search-link" title="البحث المتقدم">
                         <i class="fas fa-filter"></i>
                     </a>
@@ -780,7 +864,7 @@
                                 <div class="card post-card {% if post.is_translation %}translated{% else %}original{% endif %}" 
                                      data-type="{% if post.is_translation %}translated{% else %}original{% endif %}" 
                                      data-title="{{ post.title|lower }}" 
-                                     data-authors="{{ post.authors|lower }}" 
+                                     data-authors="{% if post.get_ordered_authors %}{% for post_author in post.get_ordered_authors %}{{ post_author.user.get_full_name|default:post_author.user.username|lower }}{% if not forloop.last %}, {% endif %}{% endfor %}{% else %}{{ post.authors|lower }}{% endif %}" 
                                      data-keywords="{{ post.keywords|lower }}">
                                     
                                     <div class="card-header d-flex justify-content-between align-items-center">
@@ -790,6 +874,17 @@
                                                 {% if post.is_translation %}مترجم{% else %}أصلي{% endif %}
                                             </span>
                                             <h5><a href="{% url 'post_detail_by_meaningful_id' post.meaningful_id %}">{{ post.title }}</a></h5>
+                                        </div>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <a href="{% url 'post_detail_by_meaningful_id' post.meaningful_id %}" class="browse-details-link">
+                                                <i class="fas fa-eye"></i>
+                                                تصفح المزيد من التفاصيل
+                                            </a>
+                                            <button type="button" class="btn btn-citation-small" 
+                                                    onclick="openCitationModal('{{ post.title|escapejs }}', '{{ post.get_ordered_authors|safe|escapejs }}', '{{ post.authors|escapejs }}', '{{ post.created_at|date:'Y' }}', '{{ request.build_absolute_uri }}{% url 'post_detail_by_meaningful_id' post.meaningful_id %}', '{{ post.description|escapejs }}', '{{ post.keywords|escapejs }}')">
+                                                <i class="fas fa-quote-left"></i>
+                                                استشهد
+                                            </button>
                                         </div> 
                           </div>
                               
@@ -798,17 +893,23 @@
                                             <div class="col-md-8">
                                                 <h6 class="post-author">
                                                     <i class="fas fa-user me-2"></i>{% if post.is_translation %}المؤلف الأصلي:{% else %}المؤلف:{% endif %}
-                                  {% with authors_list=post.authors|split:"," %}
-                                      {% for author in authors_list %}
-                                          {% with author_name=author|strip %}
-                                              {% if author_name|user_exists %}
-                                                  <a href="{% url 'find_user_by_name' author_name=author_name %}" class="author-link">{{ author_name }}</a>{% if not forloop.last %}, {% endif %}
-                                              {% else %}
-                                                  <span class="author-name">{{ author_name }}</span>{% if not forloop.last %}, {% endif %}
-                                              {% endif %}
-                                          {% endwith %}
-                                      {% endfor %}
-                                  {% endwith %}
+                                  {% for post_author in post.get_ordered_authors %}
+                                      {% with author_name=post_author.user.get_full_name|default:post_author.user.username %}
+                                          <a href="{% url 'find_user_by_name' author_name=author_name %}" class="author-link" dir="ltr">{{ author_name }}</a>{% if not forloop.last %}, {% endif %}
+                                      {% endwith %}
+                                  {% empty %}
+                                      {% with authors_list=post.authors|split:"," %}
+                                          {% for author in authors_list %}
+                                              {% with author_name=author|strip %}
+                                                  {% if author_name|user_exists %}
+                                                      <a href="{% url 'find_user_by_name' author_name=author_name %}" class="author-link" dir="ltr">{{ author_name }}</a>{% if not forloop.last %}, {% endif %}
+                                                  {% else %}
+                                                      <span class="author-name" dir="ltr">{{ author_name }}</span>{% if not forloop.last %}, {% endif %}
+                                                  {% endif %}
+                                              {% endwith %}
+                                          {% endfor %}
+                                      {% endwith %}
+                                  {% endfor %}
                                                 </h6>
                                                 
                                                 {% if post.is_translation and post.translator %}
@@ -905,7 +1006,7 @@
                                         <div class="card post-card {% if post.is_translation %}translated{% else %}original{% endif %}" 
                                              data-type="{% if post.is_translation %}translated{% else %}original{% endif %}" 
                                              data-title="{{ post.title|lower }}" 
-                                             data-authors="{{ post.authors|lower }}" 
+                                             data-authors="{% if post.get_ordered_authors %}{% for post_author in post.get_ordered_authors %}{{ post_author.user.get_full_name|default:post_author.user.username|lower }}{% if not forloop.last %}, {% endif %}{% endfor %}{% else %}{{ post.authors|lower }}{% endif %}" 
                                              data-keywords="{{ post.keywords|lower }}">
                                             
                                                                                     <div class="card-header d-flex justify-content-between align-items-center">
@@ -914,7 +1015,18 @@
                                                     {% if post.is_translation %}مترجم{% else %}أصلي{% endif %}
                                                 </span>
                                                 <h5><a href="{% url 'post_detail_by_meaningful_id' post.meaningful_id %}">{{ post.title }}</a></h5>
-                                            </div> 
+                                            </div>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <a href="{% url 'post_detail_by_meaningful_id' post.meaningful_id %}" class="browse-details-link">
+                                                    <i class="fas fa-eye"></i>
+                                                    تصفح المزيد من التفاصيل
+                                                </a>
+                                                <button type="button" class="btn btn-citation-small" 
+                                                        onclick="openCitationModal('{{ post.title|escapejs }}', '{{ post.get_ordered_authors|safe|escapejs }}', '{{ post.authors|escapejs }}', '{{ post.created_at|date:'Y' }}', '{{ request.build_absolute_uri }}{% url 'post_detail_by_meaningful_id' post.meaningful_id %}', '{{ post.description|escapejs }}', '{{ post.keywords|escapejs }}')">
+                                                    <i class="fas fa-quote-left"></i>
+                                                    استشهد
+                                                </button>
+                                            </div>
                             </div>
                                 
                               <div class="card-body">
@@ -922,17 +1034,23 @@
                                                     <div class="col-md-8">
                                                         <h6 class="post-author">
                                                             <i class="fas fa-user me-2"></i>{% if post.is_translation %}المؤلف الأصلي:{% else %}المؤلف:{% endif %}
-                                    {% with authors_list=post.authors|split:"," %}
-                                        {% for author in authors_list %}
-                                            {% with author_name=author|strip %}
-                                                {% if author_name|user_exists %}
-                                                    <a href="{% url 'find_user_by_name' author_name=author_name %}" class="author-link">{{ author_name }}</a>{% if not forloop.last %}, {% endif %}
-                                                {% else %}
-                                                    <span class="author-name">{{ author_name }}</span>{% if not forloop.last %}, {% endif %}
-                                                {% endif %}
-                                            {% endwith %}
-                                        {% endfor %}
-                                    {% endwith %}
+                                    {% for post_author in post.get_ordered_authors %}
+                                        {% with author_name=post_author.user.get_full_name|default:post_author.user.username %}
+                                            <a href="{% url 'find_user_by_name' author_name=author_name %}" class="author-link">{{ author_name }}</a>{% if not forloop.last %}, {% endif %}
+                                        {% endwith %}
+                                    {% empty %}
+                                        {% with authors_list=post.authors|split:"," %}
+                                            {% for author in authors_list %}
+                                                {% with author_name=author|strip %}
+                                                    {% if author_name|user_exists %}
+                                                        <a href="{% url 'find_user_by_name' author_name=author_name %}" class="author-link">{{ author_name }}</a>{% if not forloop.last %}, {% endif %}
+                                                    {% else %}
+                                                        <span class="author-name">{{ author_name }}</span>{% if not forloop.last %}, {% endif %}
+                                                    {% endif %}
+                                                {% endwith %}
+                                            {% endfor %}
+                                        {% endwith %}
+                                    {% endfor %}
                                                         </h6>
                                                         
                                                         {% if post.is_translation and post.translator %}
@@ -1290,5 +1408,302 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }, 60000); // Update every minute
 });
+
+// Citation functionality for posts list
+function openCitationModal(title, orderedAuthors, legacyAuthors, year, url, description, keywords) {
+    // Create modal HTML
+    const modalHTML = `
+        <div class="modal fade" id="citationModal" tabindex="-1" role="dialog" aria-labelledby="citationModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="citationModalLabel">
+                            <i class="fas fa-quote-left"></i> استشهد بهذا المقال
+                        </h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <!-- Citation Format Tabs -->
+                        <ul class="nav nav-tabs" id="citationTabs" role="tablist">
+                            <li class="nav-item">
+                                <a class="nav-link active" id="plaintext-tab" data-toggle="tab" href="#plaintext" role="tab" aria-controls="plaintext" aria-selected="true">
+                                    <i class="fas fa-file-alt"></i> نص عادي
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" id="bibtex-tab" data-toggle="tab" href="#bibtex" role="tab" aria-controls="bibtex" aria-selected="false">
+                                    <i class="fas fa-code"></i> BibTeX
+                                </a>
+                            </li>
+                        </ul>
+                        
+                        <!-- Tab Content -->
+                        <div class="tab-content mt-3" id="citationTabContent">
+                            <!-- Plain Text Tab -->
+                            <div class="tab-pane fade show active" id="plaintext" role="tabpanel" aria-labelledby="plaintext-tab">
+                                <div class="citation-options mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="includeAbstract" checked>
+                                        <label class="form-check-label" for="includeAbstract">
+                                            تضمين الملخص
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="citation-content">
+                                    <textarea class="form-control" id="plaintextCitation" rows="8" readonly></textarea>
+                                </div>
+                                <div class="citation-actions mt-3">
+                                    <button type="button" class="btn btn-primary" onclick="copyCitation('plaintext')">
+                                        <i class="fas fa-copy"></i> نسخ
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- BibTeX Tab -->
+                            <div class="tab-pane fade" id="bibtex" role="tabpanel" aria-labelledby="bibtex-tab">
+                                <div class="citation-content">
+                                    <textarea class="form-control" id="bibtexCitation" rows="8" readonly></textarea>
+                                </div>
+                                <div class="citation-actions mt-3">
+                                    <button type="button" class="btn btn-primary" onclick="copyCitation('bibtex')">
+                                        <i class="fas fa-copy"></i> نسخ
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Remove existing modal if any
+    const existingModal = document.getElementById('citationModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    // Add modal to body
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    
+    // Store citation data
+    window.citationData = {
+        title: title,
+        orderedAuthors: orderedAuthors,
+        legacyAuthors: legacyAuthors,
+        year: year,
+        url: url,
+        description: description,
+        keywords: keywords
+    };
+    
+    // Show modal
+    $('#citationModal').modal('show');
+    
+    // Generate citations when modal is shown
+    $('#citationModal').on('shown.bs.modal', function () {
+        generateCitationsFromData();
+    });
+    
+    // Update citations when checkbox changes
+    $('#citationModal').on('shown.bs.modal', function () {
+        document.getElementById('includeAbstract').addEventListener('change', function() {
+            generateCitationsFromData();
+        });
+    });
+}
+
+function generateCitationsFromData() {
+    const includeAbstract = document.getElementById('includeAbstract').checked;
+    const data = window.citationData;
+    
+    // Generate Plain Text citation
+    const plaintextCitation = generatePlainTextCitationFromData(data, includeAbstract);
+    document.getElementById('plaintextCitation').value = plaintextCitation;
+    
+    // Generate BibTeX citation
+    const bibtexCitation = generateBibTeXCitationFromData(data);
+    document.getElementById('bibtexCitation').value = bibtexCitation;
+}
+
+function generatePlainTextCitationFromData(data, includeAbstract) {
+    // Parse authors (simplified for this context)
+    let authorString = data.legacyAuthors || 'Unknown Author';
+    
+    let citation = `${authorString}, "${data.title}," ArabArxiv, ${data.year}. Available: ${data.url}`;
+    
+    if (includeAbstract && data.description) {
+        citation += `\n\nAbstract: ${data.description}`;
+    }
+    
+    return citation;
+}
+
+function generateBibTeXCitationFromData(data) {
+    // Parse authors (simplified for this context)
+    let authorString = data.legacyAuthors || 'Unknown Author';
+    
+    // Generate a unique key
+    const firstAuthor = authorString.split(',')[0].toLowerCase().replace(/\s+/g, '');
+    const key = `${firstAuthor}${data.year}${data.title.toLowerCase().replace(/[^a-z0-9]/g, '').substring(0, 20)}`;
+    
+    let bibtex = `@misc{${key},\n`;
+    bibtex += `      title={${data.title}},\n`;
+    bibtex += `      author={${authorString}},\n`;
+    bibtex += `      year={${data.year}},\n`;
+    bibtex += `      url={${data.url}},\n`;
+    
+    if (data.description) {
+        bibtex += `      abstract={${data.description}},\n`;
+    }
+    
+    if (data.keywords) {
+        bibtex += `      keywords={${data.keywords}},\n`;
+    }
+    
+    bibtex += `      publisher={ArabArxiv}\n`;
+    bibtex += `}`;
+    
+    return bibtex;
+}
+
+function copyCitation(type) {
+    const textarea = document.getElementById(`${type}Citation`);
+    textarea.select();
+    textarea.setSelectionRange(0, 99999);
+    
+    try {
+        document.execCommand('copy');
+        showCopySuccess();
+    } catch (err) {
+        navigator.clipboard.writeText(textarea.value).then(function() {
+            showCopySuccess();
+        }).catch(function(err) {
+            console.error('Could not copy text: ', err);
+        });
+    }
+}
+
+function showCopySuccess() {
+    const successDiv = document.createElement('div');
+    successDiv.className = 'alert alert-success';
+    successDiv.style.position = 'fixed';
+    successDiv.style.top = '20px';
+    successDiv.style.left = '50%';
+    successDiv.style.transform = 'translateX(-50%)';
+    successDiv.style.zIndex = '9999';
+    successDiv.style.padding = '10px 20px';
+    successDiv.style.borderRadius = '5px';
+    successDiv.style.backgroundColor = '#d4edda';
+    successDiv.style.color = '#155724';
+    successDiv.style.border = '1px solid #c3e6cb';
+    successDiv.innerHTML = '<i class="fas fa-check"></i> تم نسخ الاستشهاد بنجاح!';
+    
+    document.body.appendChild(successDiv);
+    
+    setTimeout(function() {
+        if (successDiv.parentNode) {
+            successDiv.parentNode.removeChild(successDiv);
+        }
+    }, 3000);
+}
 </script>
+
+<!-- Citation Modal Styles -->
+<style>
+.modal-content {
+    border-radius: 15px;
+    border: none;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.modal-header {
+    background: linear-gradient(135deg, #005109 0%, #003d07 100%);
+    color: white;
+    border-radius: 15px 15px 0 0;
+    border-bottom: none;
+}
+
+.modal-header .modal-title {
+    color: white !important;
+}
+
+.modal-header .close {
+    color: white;
+    opacity: 0.8;
+    transition: opacity 0.3s ease;
+}
+
+.modal-header .close:hover {
+    opacity: 1;
+}
+
+.nav-tabs {
+    border-bottom: 2px solid #e9ecef;
+}
+
+.nav-tabs .nav-link {
+    border: none;
+    color: #6c757d;
+    font-weight: 600;
+    padding: 12px 20px;
+    transition: all 0.3s ease;
+}
+
+.nav-tabs .nav-link:hover {
+    border: none;
+    color: #005109;
+    background-color: #f8f9fa;
+}
+
+.nav-tabs .nav-link.active {
+    border: none;
+    color: #005109;
+    background-color: #e8f5e8;
+    border-bottom: 3px solid #005109;
+}
+
+.nav-tabs .nav-link i {
+    margin-left: 8px;
+}
+
+.citation-options {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.citation-content textarea {
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    resize: vertical;
+}
+
+.citation-content textarea:focus {
+    border-color: #005109;
+    box-shadow: 0 0 0 0.2rem rgba(0, 81, 9, 0.25);
+}
+
+.citation-actions {
+    text-align: center;
+}
+
+.citation-actions .btn {
+    padding: 10px 20px;
+    font-weight: 600;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.citation-actions .btn i {
+    margin-left: 8px;
+}
+</style>
+
 {% endblock %}

@@ -116,17 +116,23 @@
               <div class="card-body">
                 {% if post.translator %}
                 <h6 class="post-author">المؤلف الأصلي: 
-                    {% with authors_list=post.authors|split:"," %}
-                        {% for author in authors_list %}
-                            {% with author_name=author|strip %}
-                                {% if author_name|user_exists %}
-                                    <a href="{% url 'find_user_by_name' author_name=author_name %}" class="author-link">{{ author_name }}</a>{% if not forloop.last %}, {% endif %}
-                                {% else %}
-                                    <span class="author-name">{{ author_name }}</span>{% if not forloop.last %}, {% endif %}
-                                {% endif %}
-                            {% endwith %}
-                        {% endfor %}
-                    {% endwith %}
+                    {% for post_author in post.get_ordered_authors %}
+                        {% with author_name=post_author.user.get_full_name|default:post_author.user.username %}
+                            <a href="{% url 'find_user_by_name' author_name=author_name %}" class="author-link" dir="ltr">{{ author_name }}</a>{% if not forloop.last %}, {% endif %}
+                        {% endwith %}
+                    {% empty %}
+                        {% with authors_list=post.authors|split:"," %}
+                            {% for author in authors_list %}
+                                {% with author_name=author|strip %}
+                                    {% if author_name|user_exists %}
+                                        <a href="{% url 'find_user_by_name' author_name=author_name %}" class="author-link" dir="ltr">{{ author_name }}</a>{% if not forloop.last %}, {% endif %}
+                                    {% else %}
+                                        <span class="author-name" dir="ltr">{{ author_name }}</span>{% if not forloop.last %}, {% endif %}
+                                    {% endif %}
+                                {% endwith %}
+                            {% endfor %}
+                        {% endwith %}
+                    {% endfor %}
                 </h6>
                 
                 <p class="post-translator">المترجم: 
@@ -144,17 +150,23 @@
                 </p>
                 {% else %}
                 <h6 class="post-author">المؤلف: 
-                    {% with authors_list=post.authors|split:"," %}
-                        {% for author in authors_list %}
-                            {% with author_name=author|strip %}
-                                {% if author_name|user_exists %}
-                                    <a href="{% url 'find_user_by_name' author_name=author_name %}" class="author-link">{{ author_name }}</a>{% if not forloop.last %}, {% endif %}
-                                {% else %}
-                                    <span class="author-name">{{ author_name }}</span>{% if not forloop.last %}, {% endif %}
-                                {% endif %}
-                            {% endwith %}
-                        {% endfor %}
-                    {% endwith %}
+                    {% for post_author in post.get_ordered_authors %}
+                        {% with author_name=post_author.user.get_full_name|default:post_author.user.username %}
+                            <a href="{% url 'find_user_by_name' author_name=author_name %}" class="author-link" dir="ltr">{{ author_name }}</a>{% if not forloop.last %}, {% endif %}
+                        {% endwith %}
+                    {% empty %}
+                        {% with authors_list=post.authors|split:"," %}
+                            {% for author in authors_list %}
+                                {% with author_name=author|strip %}
+                                    {% if author_name|user_exists %}
+                                        <a href="{% url 'find_user_by_name' author_name=author_name %}" class="author-link" dir="ltr">{{ author_name }}</a>{% if not forloop.last %}, {% endif %}
+                                    {% else %}
+                                        <span class="author-name" dir="ltr">{{ author_name }}</span>{% if not forloop.last %}, {% endif %}
+                                    {% endif %}
+                                {% endwith %}
+                            {% endfor %}
+                        {% endwith %}
+                    {% endfor %}
                 </h6>
                 {% endif %}
                                   <p class="post-keywords">التصنيف: 

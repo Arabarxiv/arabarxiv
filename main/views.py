@@ -474,7 +474,7 @@ def home(request):
         post_count=Count('posts', filter=Q(posts__status="Approved"))
     ).order_by('-post_count')[:5]
 
-    return render(request, 'main/home.html', {
+    response = render(request, 'main/home.html', {
         "posts": posts,
         "categories": categories,
         "current_filter": filter_type,
@@ -486,6 +486,13 @@ def home(request):
         "recent_posts": recent_posts,
         "top_categories": top_categories,
     })
+    
+    # Add cache-busting headers
+    response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response['Pragma'] = 'no-cache'
+    response['Expires'] = '0'
+    
+    return response
 
 def custom_login_view(request):
     if request.method == 'POST':
@@ -526,27 +533,7 @@ def create_post(request):
                 post.author = request.user
                 post.status = 'Draft'  # Mark as draft
                 
-                # Handle custom author selection
-                authors_input = request.POST.get('authors', '')
-                if authors_input:
-                    author_ids = [int(id.strip()) for id in authors_input.split(',') if id.strip()]
-                    additional_authors = User.objects.filter(id__in=author_ids, is_superuser=False)
-                    
-                    # Build the authors string: current user + selected additional authors
-                    authors_list = [f"{request.user.first_name} {request.user.last_name}".strip() or request.user.username]
-                    
-                    # Add selected additional authors
-                    for author in additional_authors:
-                        author_name = f"{author.first_name} {author.last_name}".strip() or author.username
-                        if author_name not in authors_list:
-                            authors_list.append(author_name)
-                    
-                    post.authors = ', '.join(authors_list)
-                else:
-                    # Only current user as author
-                    post.authors = f"{request.user.first_name} {request.user.last_name}".strip() or request.user.username
-                
-                # Save the post with categories using the form's save method
+                # Save the post with categories and author ordering using the form's save method
                 post = form.save()
                 
                 messages.success(request, 'تم حفظ المسودة بنجاح.')
@@ -555,30 +542,9 @@ def create_post(request):
                 # Create new post
                 post = form.save(commit=False)
                 post.status = 'Pending'  # Set status to Pending for new submissions
-                
-                # Handle custom author selection
-                authors_input = request.POST.get('authors', '')
-                if authors_input:
-                    author_ids = [int(id.strip()) for id in authors_input.split(',') if id.strip()]
-                    additional_authors = User.objects.filter(id__in=author_ids, is_superuser=False)
-                    
-                    # Build the authors string: current user + selected additional authors
-                    authors_list = [f"{request.user.first_name} {request.user.last_name}".strip() or request.user.username]
-                    
-                    # Add selected additional authors
-                    for author in additional_authors:
-                        author_name = f"{author.first_name} {author.last_name}".strip() or author.username
-                        if author_name not in authors_list:
-                            authors_list.append(author_name)
-                    
-                    post.authors = ', '.join(authors_list)
-                else:
-                    # Only current user as author
-                    post.authors = f"{request.user.first_name} {request.user.last_name}".strip() or request.user.username
-                
                 post.author = request.user
                 
-                # Save the post with categories using the form's save method
+                # Save the post with categories and author ordering using the form's save method
                 post = form.save()
                 
                 send_thank_you_email(request.user, post)
@@ -620,6 +586,30 @@ def get_users(request):
             'username': user.username
         })
     return JsonResponse({'users': users_data})
+
+@login_required
+def reorder_authors(request, post_id):
+    """Handle AJAX request to reorder authors"""
+    if request.method == 'POST':
+        try:
+            post = Post.objects.get(id=post_id, author=request.user)
+            author_order = request.POST.get('author_order', '')
+            
+            if author_order:
+                author_ids = [int(id.strip()) for id in author_order.split(',') if id.strip()]
+                author_orders = [(user_id, order) for order, user_id in enumerate(author_ids, 1)]
+                post.reorder_authors(author_orders)
+                
+                return JsonResponse({'success': True, 'message': 'تم إعادة ترتيب المؤلفين بنجاح'})
+            else:
+                return JsonResponse({'success': False, 'message': 'لم يتم تحديد ترتيب المؤلفين'})
+                
+        except Post.DoesNotExist:
+            return JsonResponse({'success': False, 'message': 'المقال غير موجود'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f'خطأ: {str(e)}'})
+    
+    return JsonResponse({'success': False, 'message': 'طريقة طلب غير صحيحة'})
 
 def get_moderators(request):
     # Get all moderators and staff users, ordered by username
@@ -1695,9 +1685,8 @@ def post_detail(request, post_id):
         except:
             post.translator = ""
     
-    # Record view if user is authenticated
-    if request.user.is_authenticated:
-        PostView.objects.get_or_create(post=post, user=request.user)
+    # Record view for both authenticated and anonymous users
+    post.record_view(request)
     
     if request.method == 'POST' and request.user.is_authenticated:
         comment_form = CommentForm(request.POST)
@@ -1715,7 +1704,14 @@ def post_detail(request, post_id):
         'comments': comments,
         'comment_form': comment_form,
     }
-    return render(request, 'main/post_detail.html', context)
+    response = render(request, 'main/post_detail.html', context)
+    
+    # Add cache-busting headers
+    response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response['Pragma'] = 'no-cache'
+    response['Expires'] = '0'
+    
+    return response
 
 def post_detail_by_meaningful_id(request, meaningful_id):
     """View post by meaningful ID (e.g., '2.9.15')"""
@@ -1743,9 +1739,8 @@ def post_detail_by_meaningful_id(request, meaningful_id):
             except:
                 post.translator = ""
         
-        # Record view if user is authenticated
-        if request.user.is_authenticated:
-            PostView.objects.get_or_create(post=post, user=request.user)
+        # Record view for both authenticated and anonymous users
+        post.record_view(request)
         
         if request.method == 'POST' and request.user.is_authenticated:
             comment_form = CommentForm(request.POST)
@@ -1763,7 +1758,14 @@ def post_detail_by_meaningful_id(request, meaningful_id):
             'comments': comments,
             'comment_form': comment_form,
         }
-        return render(request, 'main/post_detail.html', context)
+        response = render(request, 'main/post_detail.html', context)
+        
+        # Add cache-busting headers
+        response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        response['Pragma'] = 'no-cache'
+        response['Expires'] = '0'
+        
+        return response
         
     except (ValueError, IndexError):
         raise Http404("Invalid meaningful ID format")

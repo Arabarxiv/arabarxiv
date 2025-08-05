@@ -1,31 +1,515 @@
 {% extends 'main/base.html' %}
 
 {% load crispy_forms_tags %}
+{% load my_filters %}
 {% block title %}تعديل المنشور{% endblock %}
 
 {% block content %}
+<style>
+  /* Custom styling for grouped category dropdown */
+  select option[disabled] {
+    font-weight: bold;
+    background-color: #e9ecef;
+    color: #495057;
+    padding: 8px 12px;
+    border-bottom: 1px solid #dee2e6;
+  }
+  
+  select option:not([disabled]) {
+    padding-left: 20px;
+    background-color: white;
+  }
+  
+  select option:not([disabled]):hover {
+    background-color: #f8f9fa;
+  }
+  
+  /* Drag and drop cursor styles */
+  .author-item {
+    cursor: grab;
+  }
+  .author-item.dragging {
+    cursor: grabbing;
+  }
+</style>
+
 <div class="container">
   <div class="row justify-content-center">
-    <div class="col-md-6">
-      <h1 class="text-right">تعديل المنشور</h1>
-      <p class="text-right text-muted">تعديل: {{ post.title }}</p>
-      
-      {% if post.status == "Approved" %}
-        <div class="alert alert-warning text-right" role="alert">
-          <strong>تنبيه:</strong> هذا المنشور تمت الموافقة عليه مسبقاً. عند التعديل، سيتم إعادة إرساله للمراجعة.
+    <div class="col-md-8">
+      <div class="card shadow">
+        <div class="card-header text-white" style="background-color: #005109;">
+          <h1 class="text-center mb-0">تعديل المنشور</h1>
         </div>
-      {% endif %}
-      
-      <form method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-        {{ form|crispy }}
-      
-        <div class="mt-3">
-          <button type="submit" class="btn btn-primary">حفظ التعديلات</button>
-          <a href="{% url 'user_profile' %}" class="btn btn-secondary">إلغاء</a>
+        <div class="card-body">
+          <p class="text-center text-muted">تعديل: {{ post.title }}</p>
+          
+          {% if post.status == "Approved" %}
+            <div class="alert alert-warning text-center" role="alert">
+              <strong>تنبيه:</strong> هذا المنشور تمت الموافقة عليه مسبقاً. عند التعديل، سيتم إعادة إرساله للمراجعة.
+            </div>
+          {% endif %}
+          
+          <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            <!-- Title field -->
+            <div class="form-group mb-4">
+              <label for="{{ form.title.id_for_label }}" class="form-label fw-bold text-dark">{{ form.title.label }}</label>
+              {{ form.title|add_class:"form-control form-control-lg" }}
+              {% if form.title.errors %}
+                <div class="invalid-feedback d-block">
+                  {% for error in form.title.errors %}
+                    {{ error }}
+                  {% endfor %}
+                </div>
+              {% endif %}
+            </div>
+
+            <!-- Authors field with drag-and-drop ordering -->
+            <div class="form-group mb-4">
+              <label class="form-label fw-bold text-dark">ترتيب المؤلفين</label>
+              <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>ملاحظة:</strong> يمكنك إضافة مؤلفين آخرين وإعادة ترتيبهم بالضغط والسحب.
+              </div>
+              
+                             <!-- Current authors -->
+               <div id="authors-container" class="border rounded p-3 bg-light">
+                 {% for post_author in post.get_ordered_authors %}
+                   <div class="author-item mb-2 p-2 bg-white border rounded" data-user-id="{{ post_author.user.id }}" data-user-name="{{ post_author.user.get_full_name|default:post_author.user.username }}">
+                     <div class="d-flex align-items-center">
+                       <i class="fas fa-grip-vertical me-2 text-muted drag-handle" style="cursor: grab;" draggable="true"></i>
+                       <span class="author-order me-2 badge {% if forloop.first %}bg-primary{% else %}bg-secondary{% endif %}">{{ forloop.counter }}</span>
+                       <i class="fas fa-user me-2"></i>
+                       <span class="author-name">{{ post_author.user.get_full_name|default:post_author.user.username }}</span>
+                       {% if post_author.is_creator %}
+                         <span class="badge bg-success ms-auto">منشئ المقال</span>
+                       {% else %}
+                         <button type="button" class="btn btn-sm btn-outline-danger ms-auto" onclick="removeAuthorById({{ post_author.user.id }})">
+                           <i class="fas fa-times"></i>
+                         </button>
+                       {% endif %}
+                     </div>
+                   </div>
+                 {% empty %}
+                   <!-- Fallback to old authors field -->
+                   {% with authors_list=post.authors|split:"," %}
+                     {% for author in authors_list %}
+                       <div class="author-item mb-2 p-2 bg-white border rounded" data-user-id="{{ forloop.counter }}" data-user-name="{{ author|strip }}">
+                         <div class="d-flex align-items-center">
+                           <i class="fas fa-grip-vertical me-2 text-muted drag-handle" style="cursor: grab;" draggable="true"></i>
+                           <span class="author-order me-2 badge {% if forloop.first %}bg-primary{% else %}bg-secondary{% endif %}">{{ forloop.counter }}</span>
+                           <i class="fas fa-user me-2"></i>
+                           <span class="author-name">{{ author|strip }}</span>
+                           {% if forloop.first %}
+                             <span class="badge bg-success ms-auto">منشئ المقال</span>
+                           {% else %}
+                             <button type="button" class="btn btn-sm btn-outline-danger ms-auto" onclick="removeAuthorById({{ forloop.counter }})">
+                               <i class="fas fa-times"></i>
+                             </button>
+                           {% endif %}
+                         </div>
+                       </div>
+                     {% endfor %}
+                   {% endwith %}
+                 {% endfor %}
+               </div>
+              
+              <!-- Add more authors dropdown -->
+              <div class="mt-3">
+                <label for="authors-dropdown" class="form-label fw-bold text-dark">إضافة مؤلفين آخرين</label>
+                <div class="dropdown">
+                  <button class="btn btn-outline-success dropdown-toggle w-100" type="button" id="authors-dropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="border-color: #005109; color: #005109;">
+                    <i class="fas fa-plus me-2"></i>اختر مؤلفين إضافيين
+                  </button>
+                  <div class="dropdown-menu w-100" id="authors-dropdown-menu" style="max-height: 300px; overflow-y: auto; background-color: white; color: #212529;">
+                    <!-- Search bar -->
+                    <div class="p-2 border-bottom">
+                      <input type="text" class="form-control form-control-sm" id="authors-search" placeholder="ابحث عن المستخدمين..." style="border-color: #005109;">
+                    </div>
+                    <!-- Users will be loaded here via AJAX -->
+                    <div id="authors-list">
+                      <!-- Users list will be populated here -->
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Hidden input to store author order -->
+              <input type="hidden" name="author_order" id="author-order-input" value="{% for post_author in post.get_ordered_authors %}{{ post_author.user.id }}{% if not forloop.last %},{% endif %}{% endfor %}">
+            </div>
+
+            <!-- Description field -->
+            <div class="form-group mb-4">
+              <label for="{{ form.description.id_for_label }}" class="form-label fw-bold text-dark">{{ form.description.label }}</label>
+              {{ form.description|add_class:"form-control" }}
+              {% if form.description.errors %}
+                <div class="invalid-feedback d-block">
+                  {% for error in form.description.errors %}
+                    {{ error }}
+                  {% endfor %}
+                </div>
+              {% endif %}
+            </div>
+
+            <!-- Keywords field -->
+            <div class="form-group mb-4">
+              <label for="{{ form.keywords.id_for_label }}" class="form-label fw-bold text-dark">{{ form.keywords.label }}</label>
+              {{ form.keywords|add_class:"form-control" }}
+              {% if form.keywords.errors %}
+                <div class="invalid-feedback d-block">
+                  {% for error in form.keywords.errors %}
+                    {{ error }}
+                  {% endfor %}
+                </div>
+              {% endif %}
+            </div>
+
+            <!-- Primary Category field -->
+            <div class="form-group mb-4">
+              <label for="{{ form.category.id_for_label }}" class="form-label fw-bold text-dark">{{ form.category.label }}</label>
+              {{ form.category|safe }}
+              <div class="mt-2">
+                <small class="text-muted">
+                  <i class="fas fa-info-circle me-1"></i>
+                  {{ form.category.help_text }}
+                </small>
+              </div>
+              {% if form.category.errors %}
+                <div class="invalid-feedback d-block">
+                  {% for error in form.category.errors %}
+                    {{ error }}
+                  {% endfor %}
+                </div>
+              {% endif %}
+            </div>
+
+            <!-- Secondary Category field -->
+            <div class="form-group mb-4">
+              <label for="{{ form.second_category.id_for_label }}" class="form-label fw-bold text-dark">{{ form.second_category.label }}</label>
+              {{ form.second_category|safe }}
+              <div class="mt-2">
+                <small class="text-muted">
+                  <i class="fas fa-info-circle me-1"></i>
+                  {{ form.second_category.help_text }}
+                </small>
+              </div>
+              {% if form.second_category.errors %}
+                <div class="invalid-feedback d-block">
+                  {% for error in form.second_category.errors %}
+                    {{ error }}
+                  {% endfor %}
+                </div>
+              {% endif %}
+            </div>
+
+            <!-- External DOI field -->
+            <div class="form-group mb-4">
+              <label for="{{ form.external_doi.id_for_label }}" class="form-label fw-bold text-dark">{{ form.external_doi.label }}</label>
+              {{ form.external_doi|add_class:"form-control" }}
+              {% if form.external_doi.errors %}
+                <div class="invalid-feedback d-block">
+                  {% for error in form.external_doi.errors %}
+                    {{ error }}
+                  {% endfor %}
+                </div>
+              {% endif %}
+            </div>
+
+            <!-- PDF field -->
+            <div class="form-group mb-4">
+              <label for="{{ form.pdf.id_for_label }}" class="form-label fw-bold text-dark">
+                <i class="fas fa-file-pdf me-2"></i>{{ form.pdf.label }}
+              </label>
+              <div class="custom-file">
+                {{ form.pdf|add_class:"form-control" }}
+                <div class="mt-2">
+                  <small class="text-muted">
+                    <i class="fas fa-info-circle me-1"></i>
+                    {{ form.pdf.help_text }}
+                  </small>
+                </div>
+              </div>
+              {% if form.pdf.errors %}
+                <div class="invalid-feedback d-block">
+                  {% for error in form.pdf.errors %}
+                    {{ error }}
+                  {% endfor %}
+                </div>
+              {% endif %}
+            </div>
+            
+            <div class="d-grid gap-2">
+              <button type="submit" class="btn btn-success btn-lg">
+                <i class="fas fa-save me-2"></i>حفظ التعديلات
+              </button>
+              <a href="{% url 'user_profile' %}" class="btn btn-secondary btn-lg">
+                <i class="fas fa-times me-2"></i>إلغاء
+              </a>
+            </div>
+          </form>
         </div>
-      </form>
+      </div>
     </div>
   </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const authorsDropdown = document.getElementById('authors-dropdown');
+    const authorsDropdownMenu = document.getElementById('authors-dropdown-menu');
+    const authorsList = document.getElementById('authors-list');
+    const authorsSearch = document.getElementById('authors-search');
+    const authorsContainer = document.getElementById('authors-container');
+    const authorOrderInput = document.getElementById('author-order-input');
+    let allUsers = [];
+
+    // Load users when dropdown is clicked
+    authorsDropdown.addEventListener('click', function() {
+        if (authorsList.children.length === 0) {
+            loadUsers();
+        }
+    });
+
+    // Search functionality
+    authorsSearch.addEventListener('input', function() {
+        filterUsers(this.value);
+    });
+
+    function loadUsers() {
+        fetch('/get-users/')
+            .then(response => response.json())
+            .then(data => {
+                allUsers = data.users;
+                displayUsers(allUsers);
+            })
+            .catch(error => {
+                console.error('Error loading users:', error);
+                authorsList.innerHTML = '<div class="dropdown-item text-danger">خطأ في تحميل المستخدمين</div>';
+            });
+    }
+
+    function displayUsers(users) {
+        authorsList.innerHTML = '';
+        
+        if (users.length === 0) {
+            const noUsersItem = document.createElement('div');
+            noUsersItem.className = 'dropdown-item text-muted';
+            noUsersItem.textContent = 'لا يوجد مستخدمون متاحون';
+            authorsList.appendChild(noUsersItem);
+        } else {
+            users.forEach(user => {
+                const userItem = document.createElement('a');
+                userItem.className = 'dropdown-item';
+                userItem.href = '#';
+                userItem.textContent = user.name;
+                userItem.dataset.userId = user.id;
+                userItem.dataset.userName = user.name;
+                
+                userItem.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    addAuthor(user.id, user.name);
+                });
+                
+                authorsList.appendChild(userItem);
+            });
+        }
+    }
+
+    function filterUsers(searchTerm) {
+        const filteredUsers = allUsers.filter(user => 
+            user.name.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+        displayUsers(filteredUsers);
+    }
+
+    function addAuthor(userId, userName) {
+        // Check if author is already added
+        const existingAuthor = authorsContainer.querySelector(`[data-user-id="${userId}"]`);
+        if (existingAuthor) {
+            return;
+        }
+
+        const authorItem = document.createElement('div');
+        authorItem.className = 'author-item mb-2 p-2 bg-white border rounded';
+        authorItem.setAttribute('data-user-id', userId);
+        authorItem.setAttribute('data-user-name', userName);
+        authorItem.setAttribute('draggable', 'true');
+        
+        const order = authorsContainer.children.length + 1;
+        
+                 authorItem.innerHTML = `
+             <div class="d-flex align-items-center">
+                 <i class="fas fa-grip-vertical me-2 text-muted drag-handle" style="cursor: grab;" draggable="true"></i>
+                 <span class="author-order me-2 badge bg-secondary">${order}</span>
+                 <i class="fas fa-user me-2"></i>
+                 <span class="author-name">${userName}</span>
+                 <button type="button" class="btn btn-sm btn-outline-danger ms-auto" onclick="removeAuthorById(${userId})">
+                     <i class="fas fa-times"></i>
+                 </button>
+             </div>
+         `;
+        
+        authorsContainer.appendChild(authorItem);
+        updateAuthorOrders();
+        updateHiddenInput();
+        
+        // Add drag and drop functionality
+        setupDragAndDrop(authorItem);
+    }
+
+    function removeAuthorById(userId) {
+        const authorItem = authorsContainer.querySelector(`[data-user-id="${userId}"]`);
+        if (authorItem) {
+            authorItem.remove();
+            updateAuthorOrders();
+            updateHiddenInput();
+        }
+    }
+
+    function updateAuthorOrders() {
+        const authorItems = authorsContainer.querySelectorAll('.author-item');
+        authorItems.forEach((item, index) => {
+            const orderBadge = item.querySelector('.author-order');
+            orderBadge.textContent = index + 1;
+            orderBadge.className = index === 0 ? 'author-order me-2 badge bg-primary' : 'author-order me-2 badge bg-secondary';
+        });
+    }
+
+    function updateHiddenInput() {
+        const authorItems = authorsContainer.querySelectorAll('.author-item');
+        const authorIds = Array.from(authorItems).map(item => item.getAttribute('data-user-id'));
+        authorOrderInput.value = authorIds.join(',');
+    }
+
+    function setupDragAndDrop(element) {
+        const dragHandle = element.querySelector('.drag-handle');
+        
+        dragHandle.addEventListener('dragstart', function(e) {
+            const authorItem = e.target.closest('.author-item');
+            e.dataTransfer.setData('text/plain', authorItem.getAttribute('data-user-id'));
+            authorItem.classList.add('dragging');   // ✅ mark as dragging
+            authorItem.style.opacity = '0.5';
+        });
+
+        dragHandle.addEventListener('dragend', function(e) {
+            const authorItem = e.target.closest('.author-item');
+            authorItem.classList.remove('dragging'); // ✅ remove marker
+            authorItem.style.opacity = '1';
+        });
+    }
+
+    // Setup drag and drop for the container
+    authorsContainer.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        const draggable = document.querySelector('.dragging');
+        if (draggable) {
+            const afterElement = getDragAfterElement(authorsContainer, e.clientY);
+            if (afterElement == null) {
+                authorsContainer.appendChild(draggable);
+            } else {
+                authorsContainer.insertBefore(draggable, afterElement);
+            }
+        }
+    });
+
+    authorsContainer.addEventListener('drop', function(e) {
+        e.preventDefault();
+        updateAuthorOrders();
+        updateHiddenInput();
+    });
+
+    function getDragAfterElement(container, y) {
+        const draggableElements = [...container.querySelectorAll('.author-item:not(.dragging)')];
+        
+        return draggableElements.reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = y - box.top - box.height / 2;
+            
+            if (offset < 0 && offset > closest.offset) {
+                return { offset: offset, element: child };
+            } else {
+                return closest;
+            }
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
+    }
+
+    // Setup drag and drop for existing author items
+    const existingAuthorItems = authorsContainer.querySelectorAll('.author-item');
+    existingAuthorItems.forEach(setupDragAndDrop);
+
+    // Make removeAuthorById available globally
+    window.removeAuthorById = removeAuthorById;
+
+    // Initialize
+    updateAuthorOrders();
+    updateHiddenInput();
+});
+
+// Enhanced category dropdown functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const categorySelect = document.querySelector('select[name="category"]');
+    const secondCategorySelect = document.querySelector('select[name="second_category"]');
+    
+    if (categorySelect) {
+        // Add visual feedback when hovering over main category headers
+        categorySelect.addEventListener('mouseover', function(e) {
+            if (e.target.disabled && e.target.value === '') {
+                e.target.style.cursor = 'default';
+            }
+        });
+        
+        // Prevent selection of disabled options (main category headers)
+        categorySelect.addEventListener('change', function(e) {
+            if (e.target.value === '') {
+                e.target.value = '';
+            }
+            // Update second category options
+            updateSecondCategoryOptions();
+        });
+    }
+    
+    if (secondCategorySelect) {
+        // Add visual feedback when hovering over main category headers
+        secondCategorySelect.addEventListener('mouseover', function(e) {
+            if (e.target.disabled && e.target.value === '') {
+                e.target.style.cursor = 'default';
+            }
+        });
+        
+        // Prevent selection of disabled options (main category headers)
+        secondCategorySelect.addEventListener('change', function(e) {
+            if (e.target.value === '') {
+                e.target.value = '';
+            }
+        });
+    }
+    
+    function updateSecondCategoryOptions() {
+        if (!categorySelect || !secondCategorySelect) return;
+        
+        const selectedCategory = categorySelect.value;
+        const currentSecondCategory = secondCategorySelect.value;
+        
+        // Reset second category if it matches the primary category
+        if (selectedCategory && currentSecondCategory === selectedCategory) {
+            secondCategorySelect.value = '';
+        }
+        
+        // Disable the selected primary category in the second dropdown
+        Array.from(secondCategorySelect.options).forEach(option => {
+            if (option.value === selectedCategory && option.value !== '') {
+                option.disabled = true;
+                option.style.display = 'none';
+            } else if (option.disabled && option.value !== '') {
+                option.disabled = false;
+                option.style.display = '';
+            }
+        });
+    }
+    
+    // Initialize on page load
+    updateSecondCategoryOptions();
+});
+</script>
 {% endblock %} 
